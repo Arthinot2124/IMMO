@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { Switch } from "../../components/ui/switch";
@@ -47,7 +48,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
           <img 
             src="/calque-6.png" 
             alt="Person" 
-            className="absolute right-1 sm:right-3 md:right-5 bottom-[-0px] h-[230px] sm:h-[240px] md:h-[280px] z-10"
+            className="absolute right-4 sm:right-3 md:right-5 bottom-[-0px] h-[230px] sm:h-[240px] md:h-[280px] z-10"
           />
         </div>
 
@@ -154,6 +155,9 @@ export const ElementAccueilSombre = (): JSX.Element => {
             ))}
           </CardContent>
         </Card>
+        
+        {/* Bottom Line */}
+        <div className="w-full h-[2px] bg-white my-8 mx-auto max-w-xl"></div>
       </div>
     </div>
   );
