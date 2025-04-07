@@ -157,7 +157,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
         </Card>
         
         {/* Bottom Line */}
-        <div className="w-full h-[2px] bg-white my-8 mx-auto max-w-xl"></div>
+        <div className="w-full h-[2px] bg-white mt-24 mb-4 mx-auto max-w-[12rem]"></div>
       </div>
     </div>
   );
