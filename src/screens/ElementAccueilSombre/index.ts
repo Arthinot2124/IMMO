@@ -1,0 +1,1 @@
+export { ElementAccueilSombre } from "./ElementAccueilSombre";
