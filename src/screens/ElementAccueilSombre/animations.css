@@ -1,0 +1,11 @@
+/* Animations pour la page d'accueil */
+.animate-on-mount {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.animate-in {
+  opacity: 1;
+  transform: translateY(0);
+} 
