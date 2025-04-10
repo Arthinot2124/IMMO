@@ -1,0 +1,309 @@
+CAHIER DE CHARGE IMMO
+Description de l’application
+Ce cahier des charges définit une application immobilière complète, performante et intuitive, destinée aux clients (acheteurs et propriétaires souhaitant louer ou vendre) ainsi qu'aux administrateurs d'agence. L’objectif est de proposer une plateforme simple d’utilisation tout en offrant des fonctionnalités avancées pour chaque profil d'utilisateur.
+ L'objectif est de proposer une plateforme intuitive permettant: 
+A l’Agence ( Admin ) de : 
+Insérer des données (Vidéos, Photos, Textes descriptif / Docs) et brader (catalogue),
+ Suivre(Dashboard: nombre de visiteur, flux des transactions par catégorie), 
+Prendre les commandes: demande de prise en charge / conclusion des Leads
+Au Client (Acheteur / Proprio) de :
+ Visiter, réserver (sous conditions), et rechercher avec filtre selon ses préférences.
+Commander ( Acheter, Prendre en location),
+ Demande d' une Prise en charge (soumettre, ajout descriptif détaillé: case à cocher si possible et photos)
+Réagir, 
+Suivi des statuts des immeubles (Dashboard et notification)
+
+Objectifs de l'Application
+
+Offrir aux clients un accès facile aux annonces immobilières avec des outils de recherche avancés.
+Faciliter le suivi de chaque bien
+Faciliter la mise en avant des offres et permettre aux clients de visiter et de commander des biens via l’application.
+Optimiser la gestion administrative et commerciale de l'agence grâce à un espace administrateur et un tableau de bord détaillé.
+Automatiser les processus pour gagner du temps et améliorer la rentabilité.
+Proposer des visites virtuelles immersives pour chaque bien (immeuble) listé.
+3. Fonctionnalités Principales
+A. Gestion des Utilisateurs (Clients & Administrateurs)
+Administrateurs : 
+Gestion des utilisateurs, insertion des annonces, et gestion des transactions.
+Gestion des rôles et permissions pour différencier les niveaux d'accès.
+Clients :
+ Inscription (nom, adresse,téléphone)
+Connexion (téléphone, mot de passe), personnalisation du profil (s’affiche uniquement dans l’espace admin), 
+Demande de mise en ligne d’un bien immobilier (Présentation des conditions de prise en charge + option de négociation)
+Passer des commandes ,
+Suivre l’état de chaque bien: recevoir des notifications de visite virtuelle ou de vue de son immeuble (Proprio), réagir et noter par étoile (visiteurs).
+Tableaux de bord personnalisés selon le type d’utilisateur.
+B. Fonctionnalités pour les Clients (Public Cible)
+Consultation des annonces : Aperçu (photos), et visites virtuelles immersives (vidéos ). Plus description détaillée en texte à côté.
+Moteur de recherche avancé (filtres par type de bien, prix, surface, localisation, etc.).
+Ajouter aux favoris et notifications d’alertes pour suivre les biens d’intérêt.
+Commande ou demande de prise en charge d’un bien (avec demande d’accompagnement par l’agence).
+Prise de rendez-vous automatisée pour visites physiques organisées à partir d’une proposition dans l’agenda, sous réserve de confirmation par l’agence.
+Accès à des conseils et guides ( Dans l’écran d’accueil ) sur l’achat, la location et le financement immobilier (si propriétaire).
+C. Fonctionnalités pour les Administrateurs (Gestion d’Agence)
+Ajout, modification et suppression de biens (Fonctionnalité exclusive pour Admin)  avec catégorisation : 
+LITE/ ESSENTIEL/ PREMIUM
+Gestion des commandes clients (demande de prise en charge, achat, location, services).
+Statistiques et reporting (Dashboard) sur les performances des annonces et de l’agence (visible uniquement par Admin).
+D. Systèmes de Communication et Interaction
+Notifications push et emails (vers clients) pour mises à jour des annonces et commandes.
+Suivi des commandes dans l’application.
+Réaction et notation des biens dans le catalogue.
+E. Outils de Marketing et Promotion
+Gestion des campagnes publicitaires ( relier vers pages facebook de l’agence) pour les biens mis en avant.
+Publicité payante pour les clients et partenaires (Ads)
+
+
+1. Table roles
+
+    Fonction :
+    La table roles définit les différents types d’utilisateurs dans le système, par exemple « Admin » et « Client ».
+
+    Colonnes Principales :
+
+        role_id : Identifiant unique (clé primaire) de chaque rôle.
+
+        role_name : Nom du rôle (unique).
+
+    Relation :
+    La table users fera référence à cette table afin de définir le niveau d’accès et le type d’utilisateur.
+
+2. Table users
+
+    Fonction :
+    Contient les informations de base pour tous les utilisateurs de l’application (qu’ils soient administrateurs ou clients).
+
+    Colonnes Principales :
+
+        user_id : Identifiant unique (clé primaire) de l’utilisateur.
+
+        role_id : Référence au rôle de l’utilisateur. C’est une clé étrangère qui pointe vers roles.role_id.
+
+        full_name, email, phone, address : Informations personnelles de l’utilisateur.
+
+        password_hash : Mot de passe stocké sous forme de hash pour la sécurité.
+
+        created_at et updated_at : Suivi temporel de la création et des mises à jour du profil.
+
+    Relations :
+
+        Avec la table roles : Chaque utilisateur se voit attribuer un rôle.
+
+        Avec les autres tables :
+
+            properties : L’ID d’un utilisateur peut être associé à la création d’un bien (le propriétaire ou celui qui crée l’annonce).
+
+            property_requests : L’utilisateur peut soumettre une demande de mise en ligne de bien.
+
+            orders, appointments, notifications, ratings et ad_campaigns : Ces tables utilisent l’ID de l’utilisateur pour enregistrer qui a effectué une action (par exemple, commander, planifier un rendez-vous, noter, etc.).
+
+3. Table properties
+
+    Fonction :
+    Stocke les informations relatives aux biens immobiliers.
+
+    Colonnes Principales :
+
+        property_id : Identifiant unique du bien.
+
+        user_id : Indique l’utilisateur propriétaire ou à l’origine de l’annonce (clé étrangère pointant vers users.user_id).
+
+        title, description, price, surface, location : Détails principaux du bien.
+
+        category : Catégorisation de la mise en avant (ex. LITE, ESSENTIEL, PREMIUM).
+
+        status : Statut du bien (Disponible, Réservé, Vendu, Loué).
+
+        created_at et updated_at : Dates de création et de modification.
+
+    Relations :
+
+        Avec la table users : Le propriétaire ou l’utilisateur qui crée l’annonce est référencé ici.
+
+        Avec property_media : Chaque propriété pourra avoir plusieurs médias associés.
+
+        Avec orders, appointments, ratings : Ces tables font référence à un bien pour enregistrer des actions (achat, location, visite, notation).
+
+4. Table property_media
+
+    Fonction :
+    Permet de lier plusieurs types de médias (photos, vidéos, documents) aux propriétés pour enrichir les annonces.
+
+    Colonnes Principales :
+
+        media_id : Identifiant unique du média.
+
+        property_id : Clé étrangère reliant le média à une propriété de la table properties.
+
+        media_type : Type de média (Photo, Vidéo, Document).
+
+        media_url : Lien vers le média.
+
+        uploaded_at : Date d’upload du fichier.
+
+    Relation :
+    Chaque enregistrement de property_media est lié à une propriété précise via la clé étrangère property_id.
+
+5. Table property_requests
+
+    Fonction :
+    Enregistre les demandes des propriétaires pour mettre en ligne ou confier la gestion de leur bien sur la plateforme.
+
+    Colonnes Principales :
+
+        request_id : Identifiant unique de la demande.
+
+        user_id : Clé étrangère vers users.user_id identifiant l’utilisateur qui fait la demande.
+
+        title, description, additional_details : Informations sur la demande.
+
+        status : Statut de la demande (En attente, Accepté, Refusé).
+
+        submitted_at et updated_at : Dates associées à la soumission et aux modifications de la demande.
+
+    Relation :
+    La table relie directement chaque demande à un utilisateur via user_id.
+
+6. Table orders
+
+    Fonction :
+    Gère les commandes relatives aux biens, que ce soit pour un achat ou pour une location.
+
+    Colonnes Principales :
+
+        order_id : Identifiant unique de l’ordre.
+
+        property_id : Clé étrangère pointant vers properties.property_id pour identifier le bien concerné.
+
+        user_id : Clé étrangère vers users.user_id indiquant qui passe la commande.
+
+        order_type : Spécifie le type de transaction (Achat ou Location).
+
+        order_status : Suivi de l’état de la commande (En attente, Confirmé, Annulé, Terminé).
+
+        order_date : Date de la commande.
+
+    Relations :
+
+        Avec la table properties : Pour associer chaque commande à un bien immobilier.
+
+        Avec la table users : Pour indiquer le client qui réalise la transaction.
+
+7. Table appointments
+
+    Fonction :
+    Gère la planification des rendez-vous pour les visites de biens immobiliers.
+
+    Colonnes Principales :
+
+        appointment_id : Identifiant unique du rendez-vous.
+
+        property_id : Clé étrangère reliant le rendez-vous à une propriété.
+
+        user_id : Clé étrangère vers users.user_id indiquant l’utilisateur qui prend rendez-vous.
+
+        appointment_date : Date et heure du rendez-vous.
+
+        confirmation_status : Statut de confirmation du rendez-vous (En attente, Confirmé, Annulé).
+
+        created_at : Date de création de l’enregistrement.
+
+    Relations :
+    Chaque rendez-vous se lie à une propriété et à un utilisateur pour garantir que la visite est correctement associée aux parties concernées.
+
+8. Table notifications
+
+    Fonction :
+    Enregistre les notifications envoyées aux utilisateurs pour divers événements (mise à jour d’annonce, statut d’une commande, etc.).
+
+    Colonnes Principales :
+
+        notification_id : Identifiant unique de la notification.
+
+        user_id : Clé étrangère vers users.user_id précisant à quel utilisateur la notification est destinée.
+
+        message : Contenu de la notification.
+
+        is_read : Indique si la notification a été lue.
+
+        created_at : Date de création de la notification.
+
+    Relations :
+    Relie chaque notification à l’utilisateur concerné par user_id.
+
+9. Table ratings
+
+    Fonction :
+    Permet aux utilisateurs de laisser des évaluations (notes et commentaires) sur les propriétés consultées.
+
+    Colonnes Principales :
+
+        rating_id : Identifiant unique de l’évaluation.
+
+        property_id : Clé étrangère reliant l’évaluation à la propriété concernée.
+
+        user_id : Clé étrangère vers users.user_id indiquant qui a laissé l’évaluation.
+
+        rating : Note attribuée, contrainte de valeur entre 1 et 5.
+
+        comment : Commentaire éventuel.
+
+        created_at : Date de création de l’évaluation.
+
+    Relations :
+
+        Avec la table properties : Chaque évaluation doit être liée à un bien précis.
+
+        Avec la table users : Pour identifier l’auteur de l’évaluation.
+
+10. Table ad_campaigns
+
+    Fonction :
+    Gère les campagnes publicitaires et de marketing mises en place par l’agence pour promouvoir certaines annonces.
+
+    Colonnes Principales :
+
+        campaign_id : Identifiant unique de la campagne.
+
+        admin_id : Clé étrangère vers users.user_id, identifiant l’administrateur qui lance la campagne.
+
+        campaign_name : Nom de la campagne publicitaire.
+
+        platform : Plateforme utilisée pour la campagne (par défaut « Facebook »).
+
+        start_date, end_date : Dates de début et de fin de la campagne.
+
+        budget : Budget alloué à la campagne.
+
+        created_at : Date d’enregistrement de la campagne.
+
+    Relations :
+    Associe une campagne à un administrateur via la colonne admin_id (qui correspond à un utilisateur ayant le rôle « Admin »).
+
+Schéma Relationnel Global
+
+    Hiérarchie et gestion des accès
+
+        roles est la table de référence pour définir les types d’utilisateurs.
+
+        users utilise role_id pour attribuer un rôle et déterminer les permissions dans l’application.
+
+    Interaction entre biens et utilisateurs
+
+        properties est liée à users par l’identifiant du créateur/propriétaire du bien.
+
+        Les interactions sur un bien (médias, commandes, rendez-vous et évaluations) établissent des relations directes entre properties et les autres tables (property_media, orders, appointments, ratings).
+
+    Processus et suivi des actions utilisateur
+
+        property_requests permet aux utilisateurs de soumettre des demandes pour la mise en ligne d’un bien.
+
+        orders et appointments suivent les transactions et rendez-vous liés aux biens.
+
+        notifications informe les utilisateurs sur l’évolution des actions ou du statut des biens.
+
+        ratings recueille des retours sur les biens pour alimenter un système d’évaluation.
+
+    Gestion marketing
+
+        ad_campaigns lie les campagnes publicitaires aux administrateurs, permettant ainsi une gestion et un suivi spécifique des actions marketing de l’agenc
