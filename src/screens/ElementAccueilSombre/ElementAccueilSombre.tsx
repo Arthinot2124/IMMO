@@ -119,9 +119,9 @@ export const ElementAccueilSombre = (): JSX.Element => {
         {/* Welcome Card */}
         <div className="relative bg-[#1E2B47] rounded-3xl p-6 sm:p-8 mb-8 sm:mb-12 animate-on-mount h-[180px] sm:h-[220px] md:h-[260px]" style={{animationDelay: '100ms'}}>
           <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <img src="/public_Accueil_Sombre/profil.png" alt="Profile" className="w-8 h-8 sm:w-10 sm:h-10" />
-            <img src="/public_Accueil_Sombre/notif.png" alt="Notifications" className="w-8 h-8 sm:w-10 sm:h-10" />
-            <img src="/public_Accueil_Sombre/parametre.png" alt="Settings" className="w-8 h-8 sm:w-10 sm:h-10" />
+            <img src="/public_Accueil_Sombre/profil.png" alt="Profile" className="w-8 h-8 sm:w-10 sm:h-10 cursor-pointer" onClick={() => navigate('/profile')} />
+            <img src="/public_Accueil_Sombre/notif.png" alt="Notifications" className="w-8 h-8 sm:w-10 sm:h-10 cursor-pointer" onClick={() => navigate('/notifications')} />
+            <img src="/public_Accueil_Sombre/parametre.png" alt="Settings" className="w-8 h-8 sm:w-10 sm:h-10 cursor-pointer" onClick={() => navigate('/profile')} />
           </div>
           <p className="text-white text-xl sm:text-2xl md:text-3xl max-w-xs sm:max-w-sm md:max-w-md pr-16 sm:pr-20 md:pr-0">
             Bienvenu ! En quelques clics, achetez, vendez ou louez le bien idéal en toute simplicité
@@ -193,7 +193,11 @@ export const ElementAccueilSombre = (): JSX.Element => {
         {/* Feature Cards Grid */}
         <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-4">
           {/* Sell/Rent Card */}
-          <Card className="bg-[#1E2B47] text-white rounded-xl overflow-hidden animate-on-mount" style={{width: '120%', animationDelay: '300ms'}}>
+          <Card 
+            className="bg-[#1E2B47] text-white rounded-xl overflow-hidden animate-on-mount cursor-pointer hover:opacity-90 transition-opacity" 
+            style={{width: '120%', animationDelay: '300ms'}}
+            onClick={() => navigate('/property-request')}
+          >
             <CardContent className="p-2 sm:p-3 md:p-4">
               <div className="flex justify-between items-start mb-1 sm:mb-2">
                 <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight">
@@ -228,7 +232,9 @@ export const ElementAccueilSombre = (): JSX.Element => {
           {/* Left Column with Guide Card and Settings Panel */}
           <div className="flex flex-col space-y-2 sm:space-y-3 md:space-y-4 animate-on-mount" style={{animationDelay: '500ms'}}>
             {/* Guide Card */}
-            <Card className="bg-[#1E2B47] text-white rounded-xl overflow-hidden h-[100px] sm:h-[150px] md:h-[200px]">
+            <Card className="bg-[#1E2B47] text-white rounded-xl overflow-hidden h-[100px] sm:h-[150px] md:h-[200px] cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => navigate('/guide')}
+            >
               <CardContent className="p-2 sm:p-3 md:p-4">
                 <div className="flex justify-between items-start mb-1 sm:mb-2">
                   <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold leading-tight">

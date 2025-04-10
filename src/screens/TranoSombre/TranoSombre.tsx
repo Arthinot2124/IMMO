@@ -79,9 +79,12 @@ export const TranoSombre = (): JSX.Element => {
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
               className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/home')}
             />
-            <BellIcon className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5]" />
+            <BellIcon 
+              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
+              onClick={() => navigate('/notifications')}
+            />
             <SettingsIcon className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5]" />
           </div>
           <div className="relative">
@@ -183,8 +186,11 @@ export const TranoSombre = (): JSX.Element => {
                     <button className="px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 bg-[#1e293b] text-[#59e0c5] rounded-full hover:bg-[#59e0c5] hover:text-[#1e293b] transition-colors text-[10px] xs:text-xs sm:text-sm">
                       Apérçu
                     </button>
-                    <button className="px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 bg-[#1e293b] text-[#59e0c5] rounded-full hover:bg-[#59e0c5] hover:text-[#1e293b] transition-colors text-[10px] xs:text-xs sm:text-sm">
-                      Visite Virtuelle
+                    <button 
+                      className="px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 bg-[#1e293b] text-[#59e0c5] rounded-full hover:bg-[#59e0c5] hover:text-[#1e293b] transition-colors text-[10px] xs:text-xs sm:text-sm"
+                      onClick={() => navigate(`/property/${property.id}`)}
+                    >
+                      Détails
                     </button>
                   </div>
                 </div>

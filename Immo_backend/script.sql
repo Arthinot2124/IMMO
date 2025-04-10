@@ -132,3 +132,26 @@ CREATE TABLE ad_campaigns (
     CONSTRAINT fk_campaign_admin FOREIGN KEY (admin_id) REFERENCES users(user_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+-- Table des favoris
+CREATE TABLE favorites (
+    favorite_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    property_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_favorite_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_favorite_property FOREIGN KEY (property_id) REFERENCES properties(property_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT unique_favorite UNIQUE (user_id, property_id)
+) ENGINE=InnoDB;
+
+
+
+
+-- Insertion d'utilisateurs
+INSERT INTO users (role_id, full_name, email, phone, address, password_hash) VALUES
+(1, 'Rakoto Admin', 'admin@tafoimmo.mg', '0341234567', 'Antananarivo, Madagascar', '$2a$10$N.zmdr9k7uOCQb376NoUnuTa.8tqrwBYg8n9zesdxhbXVccULX1kW'), -- mdp: admin123
+(2, 'Rasoa Client', 'rasoa@gmail.com', '0331234567', 'Fianarantsoa, Madagascar', '$2a$10$J5D.hpvUI1/c.15KCtoezeZKJgXikxU1V7ATEDEFBEn4pRz4EYlMa'), -- mdp: client123
+(2, 'Rabe Client', 'rabe@yahoo.fr', '0321234567', 'Tambohobe, Fianarantsoa', '$2a$10$LpUQQR91F7kUYQfP8O/G4elPdGdsg1euDtEif9P2VH89C24v8CpCW'), -- mdp: client456
+(2, 'Jean Dupont', 'jean@gmail.com', '0351234567', 'Antarandolo, Fianarantsoa', '$2a$10$XsAw45G9YGBGmFMpL7vBUO5K/XxIRGUIk0VPAI8Y3tH6afXEz5GYy'); -- mdp: jean789
