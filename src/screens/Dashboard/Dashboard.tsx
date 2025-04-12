@@ -5,6 +5,7 @@ import {
   BellIcon, HomeIcon, SettingsIcon, ClipboardListIcon, 
   CalendarIcon, BuildingIcon, GridIcon, ListIcon 
 } from "lucide-react";
+import NotificationBadge from "../../components/NotificationBadge";
 
 // Mock data for dashboard
 const mockProperties = [
@@ -227,6 +228,7 @@ export const Dashboard = (): JSX.Element => {
       className="bg-[#0f172a] min-h-screen"
     >
       <div className="max-w-[1440px] mx-auto px-4 xs:px-6 sm:px-8 md:px-12 lg:px-16 pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12">
+       
         {/* Navigation Bar */}
         <motion.header 
           initial={{ y: -20, opacity: 0 }}
@@ -239,10 +241,7 @@ export const Dashboard = (): JSX.Element => {
               className="w-8 h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
               onClick={() => navigate('/home')}
             />
-            <BellIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
-              onClick={() => navigate('/notifications')}
-            />
+            <NotificationBadge size="lg" />
             <SettingsIcon 
               className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
               onClick={() => navigate('/profile')}
@@ -348,4 +347,4 @@ export const Dashboard = (): JSX.Element => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

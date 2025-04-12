@@ -39,6 +39,11 @@ class PropertyRequest extends Model
         'user_id',
         'title',
         'description',
+        'price',
+        'surface',
+        'location',
+        'category',
+        'property_status',
         'additional_details',
         'status',
     ];
@@ -50,6 +55,9 @@ class PropertyRequest extends Model
      */
     protected $casts = [
         'status' => 'string',
+        'property_status' => 'string',
+        'price' => 'decimal:2',
+        'surface' => 'decimal:2',
         'submitted_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -60,6 +68,14 @@ class PropertyRequest extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
+    }
+    
+    /**
+     * Get the media for the property request.
+     */
+    public function media()
+    {
+        return $this->hasMany(PropertyRequestMedia::class, 'request_id', 'request_id');
     }
     
     /**

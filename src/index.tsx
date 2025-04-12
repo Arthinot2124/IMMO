@@ -13,6 +13,10 @@ import { Favorites } from "./screens/Favorites";
 import { AppointmentBooking } from "./screens/AppointmentBooking";
 import { Checkout } from "./screens/Checkout";
 import { Guide } from "./screens/Guide";
+import { AdminDashboard } from "./screens/Admin/AdminDashboard";
+import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval";
+import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 createRoot(document.getElementById("app") as HTMLElement).render(
   <StrictMode>
@@ -30,6 +34,56 @@ createRoot(document.getElementById("app") as HTMLElement).render(
         <Route path="/property/:id/book" element={<AppointmentBooking />} />
         <Route path="/property/:id/checkout" element={<Checkout />} />
         <Route path="/guide" element={<Guide />} />
+        
+        {/* Routes admin protégées */}
+        <Route 
+          path="/admin/dashboard" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/property-requests/:id" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PropertyRequestApproval />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/property-requests" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/property-requests/:id/approve" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PropertyRequestApproval />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/appointments" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AppointmentManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/users" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </Router>
   </StrictMode>,

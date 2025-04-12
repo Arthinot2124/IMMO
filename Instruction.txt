@@ -307,3 +307,18 @@ Schéma Relationnel Global
     Gestion marketing
 
         ad_campaigns lie les campagnes publicitaires aux administrateurs, permettant ainsi une gestion et un suivi spécifique des actions marketing de l’agenc
+
+
+
+
+
+
+
+        -------------------------------------A SAVOIR POUR L'UTILISATION DE BASE DE DONNEE-------------------------------
+
+        Workflow entre les deux tables
+L'utilisateur remplit un formulaire (PropertyRequest.tsx) qui est enregistré dans property_requests
+Un administrateur examine cette demande
+Si la demande est acceptée, un nouvel enregistrement est créé dans properties avec les informations complètes
+Le bien devient alors visible et disponible dans le catalogue
+C'est pourquoi votre formulaire n'envoie actuellement que le titre, la description et les détails additionnels - conformément au schéma de property_requests, tandis que les autres informations (prix, surface, etc.) sont stockées comme détails supplémentaires jusqu'à ce qu'un administrateur les valide et crée une entrée complète dans properties.

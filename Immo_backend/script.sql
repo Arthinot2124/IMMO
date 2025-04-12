@@ -105,6 +105,7 @@ CREATE TABLE notifications (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
+
 -- 9. Table des évaluations et réactions sur les propriétés
 CREATE TABLE ratings (
     rating_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -146,12 +147,18 @@ CREATE TABLE favorites (
     CONSTRAINT unique_favorite UNIQUE (user_id, property_id)
 ) ENGINE=InnoDB;
 
-
-
+-- Table des médias liés aux demandes de propriété
+CREATE TABLE property_request_media (
+    media_id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id INT NOT NULL,
+    media_type ENUM('Photo', 'Vidéo', 'Document') NOT NULL DEFAULT 'Photo',
+    media_url VARCHAR(255) NOT NULL,
+    uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_media_property_request FOREIGN KEY (request_id) REFERENCES property_requests(request_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
 
 -- Insertion d'utilisateurs
 INSERT INTO users (role_id, full_name, email, phone, address, password_hash) VALUES
 (1, 'Rakoto Admin', 'admin@tafoimmo.mg', '0341234567', 'Antananarivo, Madagascar', '$2a$10$N.zmdr9k7uOCQb376NoUnuTa.8tqrwBYg8n9zesdxhbXVccULX1kW'), -- mdp: admin123
-(2, 'Rasoa Client', 'rasoa@gmail.com', '0331234567', 'Fianarantsoa, Madagascar', '$2a$10$J5D.hpvUI1/c.15KCtoezeZKJgXikxU1V7ATEDEFBEn4pRz4EYlMa'), -- mdp: client123
-(2, 'Rabe Client', 'rabe@yahoo.fr', '0321234567', 'Tambohobe, Fianarantsoa', '$2a$10$LpUQQR91F7kUYQfP8O/G4elPdGdsg1euDtEif9P2VH89C24v8CpCW'), -- mdp: client456
-(2, 'Jean Dupont', 'jean@gmail.com', '0351234567', 'Antarandolo, Fianarantsoa', '$2a$10$XsAw45G9YGBGmFMpL7vBUO5K/XxIRGUIk0VPAI8Y3tH6afXEz5GYy'); -- mdp: jean789
+

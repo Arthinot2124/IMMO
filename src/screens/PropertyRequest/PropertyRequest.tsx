@@ -1,24 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BellIcon, HomeIcon, SettingsIcon, UploadIcon, XIcon, PlusIcon } from "lucide-react";
+import { HomeIcon, SettingsIcon, BuildingIcon, AlertCircleIcon, CheckCircleIcon, InfoIcon, XIcon, ImagePlusIcon } from "lucide-react";
+import NotificationBadge from "../../components/NotificationBadge";
+import axios from "axios";
 
 export const PropertyRequest = (): JSX.Element => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    propertyType: "villa", // default value
+    additional_details: "",
     price: "",
-    location: "",
-    numRooms: "",
-    numBathrooms: "",
     surface: "",
-    additionalDetails: ""
+    location: "",
+    category: "LITE",
+    property_status: "Disponible"
   });
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string[]}>({});
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Récupérer l'ID utilisateur au chargement
+  useEffect(() => {
+    // Récupérer l'ID utilisateur depuis le localStorage
+    const storedUserId = localStorage.getItem('user_id');
+    if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      // Si aucun utilisateur n'est connecté, rediriger vers la page de connexion
+      navigate('/');
+      setError("Vous devez être connecté pour soumettre une demande de propriété");
+    }
+  }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -26,6 +44,13 @@ export const PropertyRequest = (): JSX.Element => {
       ...formData,
       [name]: value
     });
+    
+    // Effacer l'erreur de validation pour ce champ
+    if (validationErrors[name]) {
+      const newErrors = {...validationErrors};
+      delete newErrors[name];
+      setValidationErrors(newErrors);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,21 +79,112 @@ export const PropertyRequest = (): JSX.Element => {
     setPreviewUrls(newPreviewUrls);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setValidationErrors({});
     
-    // Here you would typically send the formData and images to your backend
-    console.log("Form Data:", formData);
-    console.log("Images:", images);
-    
-    // Show success message
-    setSubmitSuccess(true);
-    
-    // Reset form after 3 seconds and redirect
-    setTimeout(() => {
-      setSubmitSuccess(false);
-      navigate('/home');
-    }, 3000);
+    try {
+      // Vérifications basiques
+      if (!userId) {
+        throw new Error("Vous devez être connecté pour soumettre une demande");
+      }
+      
+      // Préparer les données pour l'API (selon le schema de la base de données)
+      const requestData = {
+        user_id: parseInt(userId),
+        title: formData.title,
+        description: formData.description,
+        price: formData.price ? parseFloat(formData.price) : 0,
+        surface: formData.surface ? parseFloat(formData.surface) : 0,
+        location: formData.location || "",
+        category: formData.category || "LITE",
+        property_status: formData.property_status || "Disponible",
+        additional_details: formData.additional_details || "",
+        status: "En attente"
+      };
+      
+      console.log("Données envoyées:", requestData);
+      
+      // Configuration Axios avec CSRF protection pour Laravel
+      const axiosInstance = axios.create({
+        baseURL: 'http://localhost:8000',
+        withCredentials: true
+      });
+      
+      // Récupérer le token CSRF si nécessaire
+      await axiosInstance.get('/sanctum/csrf-cookie');
+      
+      // Appel API
+      const response = await axiosInstance.post(
+        '/api/property-requests',
+        requestData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+          }
+        }
+      );
+      
+      console.log("API Response:", response.data);
+      
+      // Gestion des images (si votre API le supporte)
+      if (images.length > 0 && response.data?.data?.request_id) {
+        const formData = new FormData();
+        
+        images.forEach(image => {
+          formData.append('images[]', image);
+        });
+        
+        try {
+          const uploadResponse = await axiosInstance.post(
+            `/api/property-requests/${response.data.data.request_id}/images`,
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+              }
+            }
+          );
+          
+          console.log("Images uploaded successfully:", uploadResponse.data);
+        } catch (uploadError) {
+          console.error("Error uploading images:", uploadError);
+          // We continue even if image upload fails
+        }
+      }
+      
+      // Afficher le message de succès
+      setSubmitSuccess(true);
+      
+      // Réinitialiser le formulaire et rediriger après 3 secondes
+      setTimeout(() => {
+        setSubmitSuccess(false);
+        navigate('/home');
+      }, 3000);
+    } catch (err: any) {
+      console.error("Erreur lors de l'envoi de la demande:", err);
+      
+      // Traitement des erreurs de validation (422)
+      if (err.response?.status === 422 && err.response?.data?.errors) {
+        setValidationErrors(err.response.data.errors);
+        setError("Veuillez corriger les erreurs de validation dans le formulaire.");
+      } else {
+        setError(err.response?.data?.message || err.message || "Une erreur est survenue lors de l'envoi de votre demande. Veuillez réessayer.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fonction utilitaire pour afficher les erreurs de validation
+  const getFieldError = (fieldName: string) => {
+    return validationErrors[fieldName] ? validationErrors[fieldName][0] : null;
   };
 
   return (
@@ -91,10 +207,7 @@ export const PropertyRequest = (): JSX.Element => {
               className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
               onClick={() => navigate('/home')}
             />
-            <BellIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
-              onClick={() => navigate('/notifications')}
-            />
+            <NotificationBadge size="lg" />
             <SettingsIcon className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5]" />
           </div>
         </motion.header>
@@ -118,6 +231,12 @@ export const PropertyRequest = (): JSX.Element => {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-4">
+                  <p className="text-white text-center">{error}</p>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div>
                   <label htmlFor="title" className="block text-sm text-[#59e0c5] mb-1">
@@ -129,29 +248,31 @@ export const PropertyRequest = (): JSX.Element => {
                     type="text"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
+                    className={`w-full bg-[#0f172a] border ${getFieldError('title') ? 'border-red-500' : 'border-[#59e0c5]'} rounded-lg px-4 py-2 text-white`}
                     placeholder="Ex: Villa moderne à Tambohobe"
                     required
+                    maxLength={150}
                   />
+                  {getFieldError('title') && (
+                    <p className="text-red-500 text-xs mt-1">{getFieldError('title')}</p>
+                  )}
                 </div>
                 
                 <div>
-                  <label htmlFor="propertyType" className="block text-sm text-[#59e0c5] mb-1">
-                    Type de bien*
+                  <label htmlFor="category" className="block text-sm text-[#59e0c5] mb-1">
+                    Catégorie*
                   </label>
                   <select
-                    id="propertyType"
-                    name="propertyType"
-                    value={formData.propertyType}
+                    id="category"
+                    name="category"
+                    value={formData.category}
                     onChange={handleInputChange}
                     className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
                     required
                   >
-                    <option value="villa">Villa</option>
-                    <option value="apartment">Appartement</option>
-                    <option value="house">Maison</option>
-                    <option value="land">Terrain</option>
-                    <option value="commercial">Local commercial</option>
+                    <option value="LITE">LITE</option>
+                    <option value="ESSENTIEL">ESSENTIEL</option>
+                    <option value="PREMIUM">PREMIUM</option>
                   </select>
                 </div>
                 
@@ -162,18 +283,19 @@ export const PropertyRequest = (): JSX.Element => {
                   <input
                     id="price"
                     name="price"
-                    type="text"
+                    type="number"
+                    min="0"
                     value={formData.price}
                     onChange={handleInputChange}
                     className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
-                    placeholder="Ex: 450 000 000 Ar"
+                    placeholder="Ex: 450000000"
                     required
                   />
                 </div>
                 
                 <div>
                   <label htmlFor="location" className="block text-sm text-[#59e0c5] mb-1">
-                    Emplacement*
+                    Emplacement
                   </label>
                   <input
                     id="location"
@@ -183,37 +305,7 @@ export const PropertyRequest = (): JSX.Element => {
                     onChange={handleInputChange}
                     className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
                     placeholder="Ex: Tambohobe, Fianarantsoa"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="numRooms" className="block text-sm text-[#59e0c5] mb-1">
-                    Nombre de pièces
-                  </label>
-                  <input
-                    id="numRooms"
-                    name="numRooms"
-                    type="number"
-                    value={formData.numRooms}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
-                    placeholder="Ex: 4"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="numBathrooms" className="block text-sm text-[#59e0c5] mb-1">
-                    Nombre de salles de bain
-                  </label>
-                  <input
-                    id="numBathrooms"
-                    name="numBathrooms"
-                    type="number"
-                    value={formData.numBathrooms}
-                    onChange={handleInputChange}
-                    className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
-                    placeholder="Ex: 2"
+                    maxLength={255}
                   />
                 </div>
                 
@@ -224,28 +316,66 @@ export const PropertyRequest = (): JSX.Element => {
                   <input
                     id="surface"
                     name="surface"
-                    type="text"
+                    type="number"
+                    min="0"
                     value={formData.surface}
                     onChange={handleInputChange}
                     className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
                     placeholder="Ex: 120"
                   />
                 </div>
+                
+                <div>
+                  <label htmlFor="property_status" className="block text-sm text-[#59e0c5] mb-1">
+                    Statut
+                  </label>
+                  <select
+                    id="property_status"
+                    name="property_status"
+                    value={formData.property_status}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white"
+                  >
+                    <option value="Disponible">Disponible</option>
+                    <option value="Réservé">Réservé</option>
+                    <option value="Vendu">Vendu</option>
+                    <option value="Loué">Loué</option>
+                  </select>
+                </div>
               </div>
               
               <div>
                 <label htmlFor="description" className="block text-sm text-[#59e0c5] mb-1">
-                  Description détaillée*
+                  Description détaillée
                 </label>
                 <textarea
                   id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white min-h-[120px]"
+                  className={`w-full bg-[#0f172a] border ${getFieldError('description') ? 'border-red-500' : 'border-[#59e0c5]'} rounded-lg px-4 py-2 text-white min-h-[120px]`}
                   placeholder="Décrivez votre bien immobilier en détail..."
-                  required
                 />
+                {getFieldError('description') && (
+                  <p className="text-red-500 text-xs mt-1">{getFieldError('description')}</p>
+                )}
+              </div>
+              
+              <div>
+                <label htmlFor="additional_details" className="block text-sm text-[#59e0c5] mb-1">
+                  Détails supplémentaires
+                </label>
+                <textarea
+                  id="additional_details"
+                  name="additional_details"
+                  value={formData.additional_details}
+                  onChange={handleInputChange}
+                  className={`w-full bg-[#0f172a] border ${getFieldError('additional_details') ? 'border-red-500' : 'border-[#59e0c5]'} rounded-lg px-4 py-2 text-white min-h-[80px]`}
+                  placeholder="Autres informations importantes..."
+                />
+                {getFieldError('additional_details') && (
+                  <p className="text-red-500 text-xs mt-1">{getFieldError('additional_details')}</p>
+                )}
               </div>
               
               <div>
@@ -273,7 +403,7 @@ export const PropertyRequest = (): JSX.Element => {
                   
                   {previewUrls.length < 6 && (
                     <label className="h-24 sm:h-32 border-2 border-dashed border-[#59e0c5] rounded-lg flex flex-col items-center justify-center cursor-pointer bg-[#0f172a]">
-                      <PlusIcon className="w-8 h-8 text-[#59e0c5] mb-1" />
+                      <ImagePlusIcon className="w-8 h-8 text-[#59e0c5] mb-1" />
                       <span className="text-xs text-[#59e0c5]">Ajouter</span>
                       <input
                         type="file"
@@ -286,27 +416,28 @@ export const PropertyRequest = (): JSX.Element => {
                 </div>
               </div>
               
-              <div>
-                <label htmlFor="additionalDetails" className="block text-sm text-[#59e0c5] mb-1">
-                  Détails supplémentaires
-                </label>
-                <textarea
-                  id="additionalDetails"
-                  name="additionalDetails"
-                  value={formData.additionalDetails}
-                  onChange={handleInputChange}
-                  className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white min-h-[80px]"
-                  placeholder="Autres informations importantes..."
-                />
-              </div>
-              
               <div className="pt-4">
                 <button
                   type="submit"
-                  className="w-full bg-[#59e0c5] text-[#0f172a] font-bold py-3 rounded-lg hover:bg-[#59e0c5]/80 transition-colors flex items-center justify-center gap-2"
+                  disabled={isLoading}
+                  className={`w-full bg-[#59e0c5] text-[#0f172a] font-bold py-3 rounded-lg flex items-center justify-center gap-2 ${
+                    isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#59e0c5]/80 transition-colors'
+                  }`}
                 >
-                  <UploadIcon size={20} />
-                  <span>Soumettre ma demande</span>
+                  {isLoading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-[#0f172a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Envoi en cours...</span>
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlusIcon size={20} />
+                      <span>Soumettre ma demande</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

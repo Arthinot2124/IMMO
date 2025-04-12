@@ -140,4 +140,40 @@ class PropertyMediaController extends Controller
             'message' => 'Media deleted successfully'
         ]);
     }
+
+    /**
+     * Copy media from a property request to a property.
+     */
+    public function copyFromRequest(Request $request, Property $property)
+    {
+        $validated = $request->validate([
+            'request_id' => 'required|exists:property_requests,request_id',
+        ]);
+
+        $requestId = $validated['request_id'];
+        $mediaItems = \App\Models\PropertyRequestMedia::where('request_id', $requestId)->get();
+        
+        $copiedMedia = [];
+        
+        foreach ($mediaItems as $mediaItem) {
+            // Ensure the URL is correct (doesn't already have the base URL)
+            $mediaUrl = $mediaItem->media_url;
+            
+            // Create new media entry
+            $newMedia = new PropertyMedia([
+                'property_id' => $property->property_id,
+                'media_type' => $mediaItem->media_type,
+                'media_url' => $mediaUrl,
+            ]);
+            
+            $newMedia->save();
+            $copiedMedia[] = $newMedia;
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => count($copiedMedia) . ' media items copied successfully',
+            'data' => $copiedMedia
+        ]);
+    }
 }

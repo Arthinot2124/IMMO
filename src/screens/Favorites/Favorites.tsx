@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BellIcon, HomeIcon, SettingsIcon, HeartIcon, TrashIcon, StarIcon } from "lucide-react";
+import { HomeIcon, SettingsIcon, HeartIcon, TrashIcon, AlertCircleIcon } from "lucide-react";
+import NotificationBadge from "../../components/NotificationBadge";
 
 // Mock data for favorites
 const mockFavorites = [
@@ -91,10 +92,7 @@ export const Favorites = (): JSX.Element => {
               className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
               onClick={() => navigate('/home')}
             />
-            <BellIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
-              onClick={() => navigate('/notifications')}
-            />
+            <NotificationBadge size="lg" />
             <SettingsIcon 
               className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
               onClick={() => navigate('/profile')}

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BellIcon, HomeIcon, SettingsIcon, BookOpenIcon, HelpCircleIcon, InfoIcon, HomeIcon as HouseIcon, UserIcon, HeartIcon, CalendarIcon, CreditCardIcon } from "lucide-react";
+import { HomeIcon, SettingsIcon, BookOpenIcon, HelpCircleIcon, InfoIcon, HomeIcon as HouseIcon, UserIcon, HeartIcon, CalendarIcon, CreditCardIcon, BellIcon } from "lucide-react";
+import NotificationBadge from "../../components/NotificationBadge";
 
 export const Guide = (): JSX.Element => {
   const navigate = useNavigate();
@@ -98,7 +99,7 @@ export const Guide = (): JSX.Element => {
                   <span className="text-gray-300">Cliquez sur l'icône Accueil pour revenir à la page d'accueil</span>
                 </div>
                 <div className="flex items-center gap-2 mb-3">
-                  <BellIcon className="w-6 h-6 text-[#59e0c5]" />
+                  <NotificationBadge size="lg" />
                   <span className="text-gray-300">Cliquez sur l'icône Notifications pour voir vos notifications</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -447,10 +448,7 @@ export const Guide = (): JSX.Element => {
               className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
               onClick={() => navigate('/home')}
             />
-            <BellIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
-              onClick={() => navigate('/notifications')}
-            />
+            <NotificationBadge size="lg" />
             <SettingsIcon 
               className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
               onClick={() => navigate('/profile')}

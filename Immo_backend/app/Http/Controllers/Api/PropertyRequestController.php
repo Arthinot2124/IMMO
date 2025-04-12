@@ -44,7 +44,13 @@ class PropertyRequestController extends Controller
             'user_id' => 'required|exists:users,user_id',
             'title' => 'required|string|max:150',
             'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'surface' => 'nullable|numeric|min:0',
+            'location' => 'nullable|string|max:255',
+            'category' => 'nullable|string|max:50',
+            'property_status' => 'nullable|string|max:50',
             'additional_details' => 'nullable|string',
+            'status' => 'nullable|string|in:En attente,Accepté,Refusé',
         ]);
 
         $propertyRequest = PropertyRequest::create($validated);
@@ -77,6 +83,11 @@ class PropertyRequestController extends Controller
         $validated = $request->validate([
             'title' => 'sometimes|required|string|max:150',
             'description' => 'nullable|string',
+            'price' => 'nullable|numeric|min:0',
+            'surface' => 'nullable|numeric|min:0',
+            'location' => 'nullable|string|max:255',
+            'category' => 'nullable|string|max:50',
+            'property_status' => 'nullable|string|max:50',
             'additional_details' => 'nullable|string',
             'status' => 'sometimes|required|in:En attente,Accepté,Refusé',
         ]);

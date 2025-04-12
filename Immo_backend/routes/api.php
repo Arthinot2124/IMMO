@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\PropertyMediaController;
 use App\Http\Controllers\Api\PropertyRequestController;
+use App\Http\Controllers\Api\PropertyRequestMediaController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\NotificationController;
@@ -52,6 +53,7 @@ Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
 
 // Property Media
 Route::post('/properties/{property}/media', [PropertyMediaController::class, 'store']);
+Route::post('/properties/{property}/copy-media-from-request', [PropertyMediaController::class, 'copyFromRequest']);
 Route::get('/properties/{property}/media/{media}', [PropertyMediaController::class, 'show']);
 Route::post('/properties/{property}/media/{media}', [PropertyMediaController::class, 'update']);
 Route::delete('/properties/{property}/media/{media}', [PropertyMediaController::class, 'destroy']);
@@ -59,6 +61,14 @@ Route::delete('/properties/{property}/media/{media}', [PropertyMediaController::
 // Property Requests
 Route::apiResource('property-requests', PropertyRequestController::class);
 Route::get('/users/{user}/property-requests', [PropertyRequestController::class, 'userRequests']);
+
+// Property Request Media
+Route::get('/property-requests/{propertyRequest}/media', [PropertyRequestMediaController::class, 'index']);
+Route::post('/property-requests/{propertyRequest}/media', [PropertyRequestMediaController::class, 'store']);
+Route::post('/property-requests/{propertyRequest}/images', [PropertyRequestMediaController::class, 'storeMultiple']);
+Route::get('/property-requests/{propertyRequest}/media/{media}', [PropertyRequestMediaController::class, 'show']);
+Route::post('/property-requests/{propertyRequest}/media/{media}', [PropertyRequestMediaController::class, 'update']);
+Route::delete('/property-requests/{propertyRequest}/media/{media}', [PropertyRequestMediaController::class, 'destroy']);
 
 // Orders
 Route::apiResource('orders', OrderController::class);

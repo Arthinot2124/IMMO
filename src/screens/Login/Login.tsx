@@ -1,17 +1,49 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import authService from "../../services/authService";
 
 export const Login = (): JSX.Element => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement actual login/signup logic here
-    navigate("/home");
+    
+    if (isSignUp) {
+      // Placeholder pour la fonctionnalité d'inscription - à implémenter plus tard
+      alert("La fonctionnalité d'inscription n'est pas encore implémentée");
+      return;
+    }
+    
+    // Connexion
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const user = await authService.login(email, password);
+      
+      // Refresh notification counter after login
+      await authService.refreshNotificationsCount();
+      
+      // Redirection basée sur le rôle
+      if (user.role_id === 1) {
+        // Admin - redirection vers le tableau de bord admin
+        navigate("/admin/dashboard");
+      } else {
+        // Client - redirection vers la page d'accueil
+        navigate("/home");
+      }
+    } catch (err: any) {
+      console.error("Erreur de connexion:", err);
+      setError(err.message || "Échec de la connexion. Veuillez vérifier vos identifiants.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -33,18 +65,24 @@ export const Login = (): JSX.Element => {
           {isSignUp ? "Créer un compte" : "Connexion"}
         </h2>
         
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 text-red-200 rounded-lg">
+            {error}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm text-[#59e0c5] mb-1">
-              Téléphone ou Email
+              Email
             </label>
             <input
               id="email"
-              type="text"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-[#0f172a] border border-[#59e0c5] rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#59e0c5]"
-              placeholder="Entrez votre téléphone ou email"
+              placeholder="Entrez votre email"
               required
             />
           </div>
@@ -89,16 +127,23 @@ export const Login = (): JSX.Element => {
           
           <button
             type="submit"
-            className="w-full bg-[#59e0c5] text-[#0f172a] font-bold py-3 rounded-lg hover:bg-[#59e0c5]/80 transition-colors"
+            className={`w-full bg-[#59e0c5] text-[#0f172a] font-bold py-3 rounded-lg transition-colors ${
+              isLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-[#59e0c5]/80'
+            }`}
+            disabled={isLoading}
           >
-            {isSignUp ? "S'inscrire" : "Se connecter"}
+            {isLoading ? 'Chargement...' : isSignUp ? "S'inscrire" : "Se connecter"}
           </button>
         </form>
         
         <div className="mt-6 text-center">
           <button
-            onClick={() => setIsSignUp(!isSignUp)}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError(null);
+            }}
             className="text-[#59e0c5] hover:underline"
+            disabled={isLoading}
           >
             {isSignUp ? "Déjà un compte ? Se connecter" : "Pas de compte ? S'inscrire"}
           </button>
