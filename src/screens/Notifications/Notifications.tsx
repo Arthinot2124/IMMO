@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BellIcon, HomeIcon, SettingsIcon, HomeIcon as HouseIcon, CalendarIcon, HeartIcon, CheckIcon, XIcon, AlertCircleIcon, RefreshCwIcon } from "lucide-react";
+import { BellIcon, HomeIcon, SettingsIcon, HomeIcon as HouseIcon, CalendarIcon, HeartIcon, CheckIcon, XIcon, AlertCircleIcon, RefreshCwIcon, SunIcon, MoonIcon } from "lucide-react";
 import notificationService, { Notification } from "../../services/notificationService";
 
 export const Notifications = (): JSX.Element => {
@@ -10,6 +10,65 @@ export const Notifications = (): JSX.Element => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    // Récupérer la préférence depuis localStorage
+    const savedMode = localStorage.getItem('isLightMode');
+    return savedMode !== null ? savedMode === 'true' : true;
+  });
+
+  // Couleurs qui changent en fonction du mode
+  const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
+  const bgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
+  const cardBgColor = isLightMode ? "bg-[#F8FAFC]" : "bg-[#1E2B47]";
+  const darkBgColor = isLightMode ? "bg-[#EFF6FF]" : "bg-[#0f172a]";
+  const textColor = isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]";
+  const textPrimaryColor = isLightMode ? "text-[#1E293B]" : "text-white";
+  const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
+  const buttonPrimaryBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
+  const buttonPrimaryText = isLightMode ? "text-white" : "text-[#0f172a]";
+  const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
+  const cardBorder = isLightMode ? "border border-[#0150BC]/30" : "border border-[#59e0c5]/30";
+  const itemBgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
+  const itemBorderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
+  const itemBorderColorRead = isLightMode ? "border-[#0150BC]/30" : "border-[#59e0c5]/30";
+  const iconBgColor = isLightMode ? "bg-[#F8FAFC]" : "bg-[#1E2B47]";
+  const errorBgColor = isLightMode ? "bg-red-100" : "bg-red-500/20";
+  const errorTextColor = isLightMode ? "text-red-700" : "text-red-100";
+  const loadingBorderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
+  const emptyTextColor = isLightMode ? "text-gray-500" : "text-gray-400";
+  const emptyIconColor = isLightMode ? "text-[#0150BC]/30" : "text-[#59e0c5]/30";
+
+  // Mettre à jour le mode quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedMode = localStorage.getItem('isLightMode');
+      if (savedMode !== null) {
+        setIsLightMode(savedMode === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si le mode a changé
+    const interval = setInterval(() => {
+      const savedMode = localStorage.getItem('isLightMode');
+      if (savedMode !== null && (savedMode === 'true') !== isLightMode) {
+        setIsLightMode(savedMode === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isLightMode]);
+
+  // Fonction pour basculer entre le mode clair et sombre
+  const toggleLightMode = () => {
+    const newMode = !isLightMode;
+    setIsLightMode(newMode);
+    localStorage.setItem('isLightMode', newMode.toString());
+  };
 
   // Chargement des notifications au chargement du composant
   useEffect(() => {
@@ -179,9 +238,18 @@ export const Notifications = (): JSX.Element => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0f172a] min-h-screen"
+      className={`${bgColor} min-h-screen`}
     >
-      <div className="max-w-[1440px] mx-auto px-4 xs:px-6 sm:px-8 md:px-12 lg:px-16 pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12">
+      <div 
+        className="absolute inset-0 opacity-50 z-0" 
+        style={{ 
+          backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          transition: 'background-image 0.5s ease-in-out'
+        }}
+      ></div>
+      <div className="max-w-[1440px] mx-auto px-4 xs:px-6 sm:px-8 md:px-12 lg:px-16 pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 relative z-10">
         {/* Navigation Bar */}
         <motion.header 
           initial={{ y: -20, opacity: 0 }}
@@ -191,12 +259,12 @@ export const Notifications = (): JSX.Element => {
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
+              className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`}
               onClick={() => navigate('/home')}
             />
             <div className="relative">
               <BellIcon 
-                className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] fill-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
+                className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} ${isLightMode ? '' : 'fill-[#59e0c5]'} cursor-pointer hover:opacity-80 transition-colors`}
                 onClick={() => navigate('/notifications')}
               />
               {unreadCount > 0 && (
@@ -206,10 +274,23 @@ export const Notifications = (): JSX.Element => {
               )}
             </div>
             <SettingsIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
+              className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`}
               onClick={() => navigate('/profile')}
             />
           </div>
+          
+          {/* Bouton pour basculer entre les modes */}
+          <button 
+            onClick={toggleLightMode}
+            className={`${buttonPrimaryBg} ${buttonPrimaryText} p-2 rounded-full flex items-center justify-center`}
+            aria-label={isLightMode ? "Passer au mode sombre" : "Passer au mode clair"}
+          >
+            {isLightMode ? (
+              <MoonIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+            ) : (
+              <SunIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+            )}
+          </button>
         </motion.header>
 
         {/* Notifications Container */}
@@ -217,14 +298,14 @@ export const Notifications = (): JSX.Element => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-[#1E2B47] rounded-2xl p-5 sm:p-8 mb-8"
+          className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-8 ${cardBorder}`}
         >
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-white">Notifications</h1>
+            <h1 className={`text-xl sm:text-2xl font-bold ${textPrimaryColor}`}>Notifications</h1>
             <div className="flex space-x-3">
               <button 
                 onClick={fetchNotifications}
-                className="text-sm text-gray-400 hover:text-[#59e0c5] flex items-center"
+                className={`text-sm ${textSecondaryColor} hover:${textColor} flex items-center`}
                 title="Rafraîchir"
               >
                 <RefreshCwIcon className="w-4 h-4 mr-1" />
@@ -234,7 +315,7 @@ export const Notifications = (): JSX.Element => {
               {notifications.some(n => !n.is_read) && (
                 <button 
                   onClick={markAllAsRead}
-                  className="text-sm text-[#59e0c5] hover:underline flex items-center"
+                  className={`text-sm ${textColor} hover:underline flex items-center`}
                 >
                   <CheckIcon className="w-4 h-4 mr-1" />
                 Tout marquer comme lu
@@ -245,12 +326,12 @@ export const Notifications = (): JSX.Element => {
 
           {/* Message d'erreur */}
           {error && (
-            <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6 flex items-center">
-              <AlertCircleIcon className="w-5 h-5 text-red-400 mr-2" />
-              <p className="text-sm text-red-100">{error}</p>
+            <div className={`${errorBgColor} border border-red-500 rounded-lg p-4 mb-6 flex items-center`}>
+              <AlertCircleIcon className={`w-5 h-5 ${isLightMode ? 'text-red-500' : 'text-red-400'} mr-2`} />
+              <p className={`text-sm ${errorTextColor}`}>{error}</p>
               <button 
                 onClick={fetchNotifications}
-                className="ml-auto flex items-center text-sm text-red-100 hover:text-white"
+                className={`ml-auto flex items-center text-sm ${errorTextColor} hover:${isLightMode ? 'text-red-900' : 'text-white'}`}
               >
                 <RefreshCwIcon size={14} className="mr-1" /> Réessayer
               </button>
@@ -260,13 +341,13 @@ export const Notifications = (): JSX.Element => {
           {/* État de chargement */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#59e0c5] mx-auto"></div>
-              <p className="mt-4 text-gray-400">Chargement des notifications...</p>
+              <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${loadingBorderColor} mx-auto`}></div>
+              <p className={`mt-4 ${emptyTextColor}`}>Chargement des notifications...</p>
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-12">
-              <BellIcon className="w-16 h-16 text-[#59e0c5]/30 mx-auto mb-4" />
-              <p className="text-gray-400">Aucune notification pour le moment</p>
+              <BellIcon className={`w-16 h-16 ${emptyIconColor} mx-auto mb-4`} />
+              <p className={emptyTextColor}>Aucune notification pour le moment</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -276,23 +357,23 @@ export const Notifications = (): JSX.Element => {
                   initial={{ x: -10, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ duration: 0.3 }}
-                  className={`relative bg-[#0f172a] rounded-lg p-4 border-l-4 ${notification.is_read ? 'border-[#59e0c5]/30' : 'border-[#59e0c5]'}`}
+                  className={`relative ${itemBgColor} rounded-lg p-4 border-l-4 ${notification.is_read ? itemBorderColorRead : itemBorderColor}`}
                 >
                   <div className="flex">
-                    <div className="w-10 h-10 flex-shrink-0 rounded-full bg-[#1E2B47] flex items-center justify-center mr-3">
+                    <div className={`w-10 h-10 flex-shrink-0 rounded-full ${iconBgColor} flex items-center justify-center mr-3`}>
                       {getIconForMessage(notification.message)}
                     </div>
                     <div className="flex-1">
-                      <p className={`text-sm sm:text-base ${notification.is_read ? 'text-gray-300' : 'text-white font-medium'}`}>
+                      <p className={`text-sm sm:text-base ${notification.is_read ? textSecondaryColor : `${textPrimaryColor} font-medium`}`}>
                         {notification.message}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">{formatRelativeDate(notification.created_at)}</p>
+                      <p className={`text-xs ${isLightMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>{formatRelativeDate(notification.created_at)}</p>
                     </div>
                     <div className="flex flex-col space-y-2 ml-2">
                       {!notification.is_read && (
                         <button 
                           onClick={() => markAsRead(notification.notification_id)}
-                          className="p-1 text-[#59e0c5] hover:bg-[#1E2B47] rounded-full"
+                          className={`p-1 ${textColor} hover:${iconBgColor} rounded-full`}
                           title="Marquer comme lu"
                         >
                           <CheckIcon className="w-4 h-4" />
@@ -300,7 +381,7 @@ export const Notifications = (): JSX.Element => {
                       )}
                       <button 
                         onClick={() => deleteNotification(notification.notification_id)}
-                        className="p-1 text-gray-400 hover:bg-[#1E2B47] rounded-full"
+                        className={`p-1 ${textSecondaryColor} hover:${iconBgColor} rounded-full`}
                         title="Supprimer"
                       >
                         <XIcon className="w-4 h-4" />

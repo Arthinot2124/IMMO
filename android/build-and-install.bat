@@ -1,34 +1,22 @@
 @echo off
-echo ========== Build APK (Debug) ==========
-cd /d %~dp0
+echo.
+echo === [1/5] Building React (Vite) app...
+npm run build
 
-REM Lance la compilation avec Gradle
-gradlew.bat assembleDebug
+echo.
+echo === [2/5] Copying files to Android with Capacitor...
+npx cap copy android
 
-IF %ERRORLEVEL% NEQ 0 (
-    echo ❌ Erreur pendant le build.
-    pause
-    exit /b %ERRORLEVEL%
-)
+echo.
+echo === [3/5] Building APK with Gradle...
+cd android
+call gradlew assembleDebug
+cd ..
 
-echo ✅ Build terminé.
+echo.
+echo === [4/5] Installing APK on connected Android device...
+adb install -r android\app\build\outputs\apk\debug\app-debug.apk
 
-REM Localisation de l'APK
-set APK_PATH=app\build\outputs\apk\debug\app-debug.apk
-
-IF NOT EXIST %APK_PATH% (
-    echo ❌ APK non trouvé : %APK_PATH%
-    pause
-    exit /b 1
-)
-
-echo ========== Installation de l'APK sur l'appareil ==========
-adb install -r %APK_PATH%
-
-IF %ERRORLEVEL% EQU 0 (
-    echo ✅ APK installé avec succès !
-) ELSE (
-    echo ❌ Erreur pendant l'installation. Vérifie que ton téléphone est connecté en USB et que le débogage USB est activé.
-)
-
+echo.
+echo ✅ APK installed successfully!
 pause

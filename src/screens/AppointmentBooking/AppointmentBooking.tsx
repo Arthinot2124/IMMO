@@ -71,6 +71,67 @@ export const AppointmentBooking = (): JSX.Element => {
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    // Récupérer la préférence depuis localStorage
+    const savedMode = localStorage.getItem('isLightMode');
+    return savedMode !== null ? savedMode === 'true' : true;
+  });
+
+  // Couleurs qui changent en fonction du mode
+  const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
+  const bgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
+  const cardBgColor = isLightMode ? "bg-[#F8FAFC]" : "bg-[#1E2B47]";
+  const darkBgColor = isLightMode ? "bg-[#EFF6FF]" : "bg-[#0f172a]";
+  const textColor = isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]";
+  const textPrimaryColor = isLightMode ? "text-[#1E293B]" : "text-white";
+  const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
+  const buttonPrimaryBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
+  const buttonPrimaryText = isLightMode ? "text-white" : "text-[#0f172a]";
+  const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
+  const modalBgColor = isLightMode ? "bg-white" : "bg-[#1e293b]";
+  const cardBorder = isLightMode ? "border border-[#0150BC]/30" : "border border-[#59e0c5]/30";
+  const inputBgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
+  const headerBgColor = isLightMode ? "bg-[#F8FAFC]" : "bg-[#0f172a]";
+  const calendarBgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
+  const calendarBorderColor = isLightMode ? "border-[#0150BC]/30" : "border-[#59e0c5]/30";
+  const successBgColor = isLightMode ? "bg-green-100" : "bg-green-500/20";
+  const successTextColor = isLightMode ? "text-green-700" : "text-green-400";
+  const errorBgColor = isLightMode ? "bg-red-100" : "bg-red-500/20";
+  const errorTextColor = isLightMode ? "text-red-700" : "text-white";
+  const disabledBgColor = isLightMode ? "bg-gray-200" : "bg-gray-700";
+  const disabledTextColor = isLightMode ? "text-gray-500" : "text-gray-400";
+
+  // Mettre à jour le mode quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedMode = localStorage.getItem('isLightMode');
+      if (savedMode !== null) {
+        setIsLightMode(savedMode === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si le mode a changé
+    const interval = setInterval(() => {
+      const savedMode = localStorage.getItem('isLightMode');
+      if (savedMode !== null && (savedMode === 'true') !== isLightMode) {
+        setIsLightMode(savedMode === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isLightMode]);
+
+  // Fonction pour basculer entre le mode clair et sombre
+  const toggleLightMode = () => {
+    const newMode = !isLightMode;
+    setIsLightMode(newMode);
+    localStorage.setItem('isLightMode', newMode.toString());
+  };
 
   // Charger les données de la propriété
   useEffect(() => {
@@ -219,9 +280,18 @@ export const AppointmentBooking = (): JSX.Element => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0f172a] min-h-screen"
+      className={`${bgColor} min-h-screen`}
     >
-      <div className="max-w-[1440px] mx-auto px-4 xs:px-6 sm:px-8 md:px-12 lg:px-16 pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-16">
+      <div 
+        className="absolute inset-0 opacity-50 z-0" 
+        style={{ 
+          backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          transition: 'background-image 0.5s ease-in-out'
+        }}
+      ></div>
+      <div className="max-w-[1440px] mx-auto px-4 xs:px-6 sm:px-8 md:px-12 lg:px-16 pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 pb-16 relative z-10">
         {/* Navigation Bar */}
         <motion.header 
           initial={{ y: -20, opacity: 0 }}
@@ -231,35 +301,38 @@ export const AppointmentBooking = (): JSX.Element => {
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
+              className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`}
               onClick={() => navigate('/home')}
             />
-            <NotificationBadge size="lg" />
+            <NotificationBadge size="lg" accentColor={accentColor} />
             <SettingsIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors"
+              className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`}
               onClick={() => navigate('/profile')}
             />
           </div>
-          <button
-            onClick={() => navigate(`/property/${id}`)}
-            className="text-[#59e0c5] hover:underline"
-          >
-            Retour à l'annonce
-          </button>
+          <div className="flex items-center gap-4">
+         
+            <button
+              onClick={() => navigate(`/property/${id}`)}
+              className={`${textColor} hover:underline`}
+            >
+              Retour à l'annonce
+            </button>
+          </div>
         </motion.header>
 
         {loading ? (
           // État de chargement
           <div className="flex justify-center items-center py-20">
-            <div className="w-12 h-12 border-4 border-[#59e0c5] border-t-transparent rounded-full animate-spin"></div>
+            <div className={`w-12 h-12 border-4 ${borderColor} border-t-transparent rounded-full animate-spin`}></div>
           </div>
         ) : error ? (
           // Message d'erreur
-          <div className="bg-red-500/20 text-white p-5 rounded-xl text-center">
+          <div className={`${errorBgColor} ${errorTextColor} p-5 rounded-xl text-center border border-red-500`}>
             <p>{error}</p>
             <button 
               onClick={() => navigate('/trano')}
-              className="mt-4 px-4 py-2 bg-[#59e0c5] text-[#0f172a] rounded-lg"
+              className={`mt-4 px-4 py-2 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg`}
             >
               Retour aux annonces
             </button>
@@ -270,10 +343,10 @@ export const AppointmentBooking = (): JSX.Element => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-[#1E2B47] rounded-2xl overflow-hidden"
+            className={`${cardBgColor} rounded-2xl overflow-hidden ${cardBorder}`}
           >
             {/* Property Info Header */}
-            <div className="flex items-center p-4 sm:p-6 border-b border-[#59e0c5]/30 bg-[#0f172a]">
+            <div className={`flex items-center p-4 sm:p-6 border-b ${isLightMode ? "border-[#0150BC]/30" : "border-[#59e0c5]/30"} ${headerBgColor}`}>
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden mr-4">
                 <img
                   src={getImageUrl()}
@@ -282,53 +355,53 @@ export const AppointmentBooking = (): JSX.Element => {
                 />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-white">{property.title}</h2>
-                <p className="text-[#59e0c5]">{formatPrice(property.price)}</p>
-                <p className="text-gray-400 text-sm">{property.location}</p>
+                <h2 className={`text-lg sm:text-xl font-bold ${textPrimaryColor}`}>{property.title}</h2>
+                <p className={textColor}>{formatPrice(property.price)}</p>
+                <p className={textSecondaryColor}>{property.location}</p>
               </div>
             </div>
 
             {/* Success Message */}
             {bookingSuccess ? (
               <div className="p-6 sm:p-8">
-                <div className="bg-green-500/20 border border-green-500 rounded-lg p-6 text-center">
-                  <CalendarIcon className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                  <h2 className="text-xl font-semibold text-white mb-2">Réservation confirmée !</h2>
-                  <p className="text-gray-300 mb-1">
+                <div className={`${successBgColor} border border-green-500 rounded-lg p-6 text-center`}>
+                  <CalendarIcon className={`w-16 h-16 ${successTextColor} mx-auto mb-4`} />
+                  <h2 className={`text-xl font-semibold ${textPrimaryColor} mb-2`}>Réservation confirmée !</h2>
+                  <p className={textSecondaryColor}>
                     Votre demande de visite a été enregistrée avec succès.
                   </p>
-                  <p className="text-gray-300">
+                  <p className={textSecondaryColor}>
                     Un conseiller vous contactera bientôt pour confirmer le rendez-vous.
                   </p>
                 </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-                <h1 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center">
-                  <CalendarIcon className="mr-2 text-[#59e0c5]" />
+                <h1 className={`text-xl sm:text-2xl font-bold ${textPrimaryColor} mb-6 flex items-center`}>
+                  <CalendarIcon className={`mr-2 ${textColor}`} />
                   Réserver une visite
                 </h1>
                 
                 {submitError && (
-                  <div className="bg-red-500/20 border border-red-500 rounded-lg p-3 mb-4 text-white text-center">
+                  <div className={`${errorBgColor} border border-red-500 rounded-lg p-3 mb-4 ${errorTextColor} text-center`}>
                     {submitError}
                   </div>
                 )}
                 
                 {/* Date Selection with Calendar Icon */}
                 <div className="mb-6">
-                  <h3 className="text-[#59e0c5] font-semibold mb-3">Choisissez une date et heure</h3>
+                  <h3 className={`${textColor} font-semibold mb-3`}>Choisissez une date et heure</h3>
                   <div className="relative w-full">
                     <div className="flex flex-col md:flex-row md:items-center gap-3 mb-3">
                       <div 
-                        className="flex items-center gap-2 py-2 px-4 bg-[#0f172a] border border-[#59e0c5]/50 rounded-lg cursor-pointer"
+                        className={`flex items-center gap-2 py-2 px-4 ${inputBgColor} border ${borderColor}/50 rounded-lg cursor-pointer`}
                         onClick={() => {
                           setIsCalendarOpen(!isCalendarOpen);
                           setIsTimePickerOpen(false);
                         }}
                       >
-                        <CalendarIcon className="text-[#59e0c5] w-5 h-5" />
-                        <span className="text-white">
+                        <CalendarIcon className={`${textColor} w-5 h-5`} />
+                        <span className={textPrimaryColor}>
                           {selectedDate 
                             ? selectedDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
                             : "Sélectionner une date"}
@@ -337,14 +410,14 @@ export const AppointmentBooking = (): JSX.Element => {
                       
                       {selectedDate && (
                         <div 
-                          className="flex items-center gap-2 py-2 px-4 bg-[#0f172a] border border-[#59e0c5]/50 rounded-lg cursor-pointer"
+                          className={`flex items-center gap-2 py-2 px-4 ${inputBgColor} border ${borderColor}/50 rounded-lg cursor-pointer`}
                           onClick={() => {
                             setIsTimePickerOpen(!isTimePickerOpen);
                             setIsCalendarOpen(false);
                           }}
                         >
-                          <ClockIcon className="text-[#59e0c5] w-5 h-5" />
-                          <span className="text-white">
+                          <ClockIcon className={`${textColor} w-5 h-5`} />
+                          <span className={textPrimaryColor}>
                             {selectedTime 
                               ? selectedTime
                               : "Sélectionner une heure"}
@@ -355,7 +428,7 @@ export const AppointmentBooking = (): JSX.Element => {
                       {(selectedDate || selectedTime) && (
                         <button 
                           type="button" 
-                          className="text-gray-400 hover:text-white text-sm"
+                          className={`${textSecondaryColor} hover:${textPrimaryColor} text-sm`}
                           onClick={() => {
                             setSelectedDate(null);
                             setSelectedTime(null);
@@ -380,18 +453,18 @@ export const AppointmentBooking = (): JSX.Element => {
                           maxDate={new Date(new Date().setMonth(new Date().getMonth() + 2))}
                           locale={fr}
                           inline
-                          calendarClassName="bg-[#0f172a] border border-[#59e0c5]/30 rounded-lg"
-                          dayClassName={() => "text-white hover:bg-[#1E2B47] rounded-lg"}
+                          calendarClassName={`${calendarBgColor} border ${calendarBorderColor} rounded-lg`}
+                          dayClassName={() => `${textPrimaryColor} hover:bg-[${isLightMode ? '#0150BC' : '#1E2B47'}]/20 rounded-lg`}
                           wrapperClassName="w-full"
-                          monthClassName={() => "text-[#59e0c5]"}
-                          weekDayClassName={() => "text-[#59e0c5]"}
+                          monthClassName={() => textColor}
+                          weekDayClassName={() => textColor}
                         />
                       </div>
                     )}
                     
                     {isTimePickerOpen && selectedDate && (
-                      <div className="absolute z-10 mt-1 bg-[#0f172a] border border-[#59e0c5]/30 rounded-lg p-4">
-                        <h4 className="text-[#59e0c5] font-semibold mb-3">Choisissez une heure</h4>
+                      <div className={`absolute z-10 mt-1 ${calendarBgColor} border ${calendarBorderColor} rounded-lg p-4`}>
+                        <h4 className={`${textColor} font-semibold mb-3`}>Choisissez une heure</h4>
                         <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                           {timeSlots.map((slot, index) => (
                             <button
@@ -404,10 +477,10 @@ export const AppointmentBooking = (): JSX.Element => {
                               }}
                               className={`p-3 text-center rounded-lg ${
                                 !slot.available
-                                  ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                                  ? `${disabledBgColor} ${disabledTextColor} cursor-not-allowed`
                                   : selectedTime === slot.time
-                                  ? "bg-[#59e0c5] text-[#0f172a]"
-                                  : "bg-[#0f172a] text-white hover:border-[#59e0c5] border border-[#59e0c5]/30"
+                                  ? `${buttonPrimaryBg} ${buttonPrimaryText}`
+                                  : `${inputBgColor} ${textPrimaryColor} hover:border-${borderColor} border ${borderColor}/30`
                               }`}
                             >
                               {slot.time}
@@ -421,10 +494,10 @@ export const AppointmentBooking = (): JSX.Element => {
                 
                 {/* Contact Info */}
                 <div className="mb-6">
-                  <h3 className="text-[#59e0c5] font-semibold mb-3">Vos coordonnées</h3>
+                  <h3 className={`${textColor} font-semibold mb-3`}>Vos coordonnées</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm text-gray-300 mb-1">
+                      <label htmlFor="name" className={`block text-sm ${textSecondaryColor} mb-1`}>
                         Nom complet*
                       </label>
                       <input
@@ -432,14 +505,14 @@ export const AppointmentBooking = (): JSX.Element => {
                         id="name"
                         value={contactName}
                         onChange={(e) => setContactName(e.target.value)}
-                        className="w-full bg-[#0f172a] border border-[#59e0c5]/50 rounded-lg px-4 py-2 text-white"
+                        className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor}`}
                         placeholder="Votre nom"
                         required
                       />
                     </div>
                     
                     <div>
-                      <label htmlFor="phone" className="block text-sm text-gray-300 mb-1">
+                      <label htmlFor="phone" className={`block text-sm ${textSecondaryColor} mb-1`}>
                         Téléphone*
                       </label>
                       <input
@@ -447,14 +520,14 @@ export const AppointmentBooking = (): JSX.Element => {
                         id="phone"
                         value={contactPhone}
                         onChange={(e) => setContactPhone(e.target.value)}
-                        className="w-full bg-[#0f172a] border border-[#59e0c5]/50 rounded-lg px-4 py-2 text-white"
+                        className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor}`}
                         placeholder="Votre numéro de téléphone"
                         required
                       />
                     </div>
                     
                     <div className="sm:col-span-2">
-                      <label htmlFor="email" className="block text-sm text-gray-300 mb-1">
+                      <label htmlFor="email" className={`block text-sm ${textSecondaryColor} mb-1`}>
                         Email
                       </label>
                       <input
@@ -462,7 +535,7 @@ export const AppointmentBooking = (): JSX.Element => {
                         id="email"
                         value={contactEmail}
                         onChange={(e) => setContactEmail(e.target.value)}
-                        className="w-full bg-[#0f172a] border border-[#59e0c5]/50 rounded-lg px-4 py-2 text-white"
+                        className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor}`}
                         placeholder="Votre email"
                       />
                     </div>
@@ -471,14 +544,14 @@ export const AppointmentBooking = (): JSX.Element => {
                 
                 {/* Notes */}
                 <div className="mb-6">
-                  <label htmlFor="notes" className="block text-sm text-gray-300 mb-1">
+                  <label htmlFor="notes" className={`block text-sm ${textSecondaryColor} mb-1`}>
                     Commentaires ou questions
                   </label>
                   <textarea
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full bg-[#0f172a] border border-[#59e0c5]/50 rounded-lg px-4 py-2 text-white min-h-[100px]"
+                    className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor} min-h-[100px]`}
                     placeholder="Informations complémentaires pour votre visite"
                   />
                 </div>
@@ -490,8 +563,8 @@ export const AppointmentBooking = (): JSX.Element => {
                     disabled={!selectedDate || !selectedTime || !contactName || !contactPhone || submitting}
                     className={`px-8 py-3 rounded-lg font-bold ${
                       !selectedDate || !selectedTime || !contactName || !contactPhone || submitting
-                        ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                        : "bg-[#59e0c5] text-[#0f172a] hover:bg-[#59e0c5]/80"
+                        ? `${disabledBgColor} ${disabledTextColor} cursor-not-allowed`
+                        : `${buttonPrimaryBg} ${buttonPrimaryText} hover:opacity-90`
                     }`}
                   >
                     {submitting ? "Traitement en cours..." : "Confirmer la réservation"}

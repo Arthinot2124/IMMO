@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:8000/api';
-
+//const API_URL = 'https://6aa3-129-222-109-77.ngrok-free.app/api';
 export interface UserData {
   user_id: number;
   role_id: number;
@@ -21,6 +21,13 @@ interface LoginResponse {
   token?: string;
   message?: string;
   user: UserData;
+}
+
+interface RegisterResponse {
+  status: string;
+  message?: string;
+  data?: UserData;
+  token?: string;
 }
 
 // Charger le compteur de notifications non lues pour l'utilisateur connecté
@@ -56,14 +63,67 @@ const loadUnreadNotificationsCount = async (userId: number, token: string) => {
 
 const authService = {
   /**
+   * Inscrit un nouvel utilisateur
+   * @param fullName Nom complet de l'utilisateur
+   * @param identifier Email ou numéro de téléphone (format: uniquement des chiffres)
+   * @param password Mot de passe de l'utilisateur
+   * @returns Les données de l'utilisateur créé
+   */
+  register: async (fullName: string, identifier: string, password: string): Promise<UserData> => {
+    try {
+      // Déterminer si l'identifiant est un email ou un numéro de téléphone
+      const isPhone = /^\d+$/.test(identifier);
+      
+      // Préparer les données d'inscription
+      const registerData = {
+        role_id: 2, // Par défaut, on attribue le rôle client (2)
+        full_name: fullName,
+        password: password,
+        // On ajoute soit email, soit phone selon le format de l'identifiant
+        ...(isPhone ? { phone: identifier } : { email: identifier })
+      };
+      
+      const response = await axios.post<RegisterResponse>(`${API_URL}/register`, registerData, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log("Réponse d'inscription:", response.data);
+      
+      if (response.data.status === 'success' && response.data.data) {
+        // Connexion automatique après inscription réussie
+        return await authService.login(identifier, password);
+      } else {
+        throw new Error(response.data.message || "Échec de l'inscription");
+      }
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        throw new Error(error.response.data.message || "Erreur lors de l'inscription");
+      }
+      throw error;
+    }
+  },
+
+  /**
    * Authentifie un utilisateur avec ses identifiants
-   * @param email Email de l'utilisateur
+   * @param identifier Email ou numéro de téléphone de l'utilisateur
    * @param password Mot de passe de l'utilisateur
    * @returns Les données de l'utilisateur et le statut de la connexion
    */
-  login: async (email: string, password: string): Promise<UserData> => {
+  login: async (identifier: string, password: string): Promise<UserData> => {
     try {
-      const response = await axios.post<LoginResponse>(`${API_URL}/login`, { email, password }, {
+      // Déterminer si l'identifiant est un email ou un numéro de téléphone
+      // Un numéro de téléphone ne contient que des chiffres
+      const isPhone = /^\d+$/.test(identifier);
+      
+      // Préparer les données à envoyer au serveur
+      const loginData = isPhone 
+        ? { phone: identifier, password } 
+        : { email: identifier, password };
+      
+      const response = await axios.post<LoginResponse>(`${API_URL}/login`, loginData, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'

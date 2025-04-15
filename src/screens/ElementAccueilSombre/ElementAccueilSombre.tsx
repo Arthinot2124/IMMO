@@ -36,9 +36,18 @@ const CountUp = ({ value }: { value: number }) => {
 export const ElementAccueilSombre = (): JSX.Element => {
   const navigate = useNavigate();
   const controls = useAnimation();
-  const [isLightMode, setIsLightMode] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    // Récupérer la préférence depuis localStorage au montage (ou true par défaut)
+    const savedMode = localStorage.getItem('isLightMode');
+    return savedMode !== null ? savedMode === 'true' : true;
+  });
   const [isEuro, setIsEuro] = useState(false);
   const [isSearch, setIsSearch] = useState(false);
+
+  // Sauvegarder le mode dans localStorage quand il change
+  useEffect(() => {
+    localStorage.setItem('isLightMode', isLightMode.toString());
+  }, [isLightMode]);
 
   // Couleur qui change en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -78,7 +87,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
 
   const settings = [
     { label: "Prix en", highlight: "euro", state: isEuro, setState: setIsEuro },
-    { label: "Ouverture sur", highlight: "Recherche", state: isSearch, setState: setIsSearch },
+    { label: "Ouverture sur", highlight: "Recherche", state: isSearch, setState: setIsSearch, newLine: true },
     { label: "Mode", highlight: "light", state: isLightMode, setState: setIsLightMode },
   ];
 
@@ -327,8 +336,18 @@ export const ElementAccueilSombre = (): JSX.Element => {
                 {settings.map((setting, index) => (
                   <div key={index} className="flex items-center justify-between py-1 sm:py-2">
                     <span style={{ color: textColor }} className="text-base sm:text-lg font-bold">
-                      {setting.label}{" "}
-                      <span style={{ color: accentColor }}>{setting.highlight}</span>
+                      {setting.newLine ? (
+                        <>
+                          <span>{setting.label}</span>
+                          <br />
+                          <span style={{ color: accentColor }}>{setting.highlight}</span>
+                        </>
+                      ) : (
+                        <>
+                          {setting.label}{" "}
+                          <span style={{ color: accentColor }}>{setting.highlight}</span>
+                        </>
+                      )}
                     </span>
                     <Switch 
                       checked={setting.state}

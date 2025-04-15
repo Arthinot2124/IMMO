@@ -39,6 +39,49 @@ export const TranoSombre = (): JSX.Element => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [imageErrors, setImageErrors] = useState<{[key: number]: boolean}>({});
+  const [isLightMode, setIsLightMode] = useState(() => {
+    // Récupérer la préférence depuis localStorage au montage (ou false par défaut)
+    const savedMode = localStorage.getItem('isLightMode');
+    return savedMode !== null ? savedMode === 'true' : true;
+  });
+
+  // Couleurs qui changent en fonction du mode
+  const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
+  const bgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
+  const cardBgColor = isLightMode ? "bg-[rgba(240,240,240,0.85)]" : "bg-[#1e293b]/50";
+  const textColor = isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]";
+  const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
+  const buttonHoverBg = isLightMode ? "hover:bg-[#0150BC]" : "hover:bg-[#59e0c5]";
+  const buttonBg = isLightMode ? "bg-[#EFF6FF]" : "bg-[#1e293b]";
+  const buttonBorder = isLightMode ? "border border-[#0150BC]" : "";
+  const buttonShadow = isLightMode ? "shadow-sm" : "";
+  const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
+  const borderColorLight = isLightMode ? "border-[#0150BC]/30" : "border-[#59e0c5]/30";
+
+  // Mettre à jour le mode quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedMode = localStorage.getItem('isLightMode');
+      if (savedMode !== null) {
+        setIsLightMode(savedMode === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si le mode a changé
+    const interval = setInterval(() => {
+      const savedMode = localStorage.getItem('isLightMode');
+      if (savedMode !== null && (savedMode === 'true') !== isLightMode) {
+        setIsLightMode(savedMode === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isLightMode]);
 
   // Fonction pour gérer les erreurs d'images
   const handleImageError = (propertyId: number) => {
@@ -321,9 +364,18 @@ export const TranoSombre = (): JSX.Element => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-[#0f172a] min-h-screen"
+      className={`${bgColor} min-h-screen`}
     >
-      <div className="max-w-[1440px] mx-auto px-4 xs:px-6 sm:px-8 md:px-12 lg:px-16 pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12">
+      <div 
+        className="absolute inset-0 opacity-50 z-0" 
+        style={{ 
+          backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          transition: 'background-image 0.5s ease-in-out'
+        }}
+      ></div>
+      <div className="max-w-[1440px] mx-auto px-4 xs:px-6 sm:px-8 md:px-12 lg:px-16 pt-4 xs:pt-6 sm:pt-8 md:pt-10 lg:pt-12 relative z-10">
         {/* Navigation Bar */}
         <motion.header 
           initial={{ y: -20, opacity: 0 }}
@@ -333,19 +385,19 @@ export const TranoSombre = (): JSX.Element => {
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
+              className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`} 
               onClick={() => navigate('/home')}
             />
-            <NotificationBadge size="lg" />
+            <NotificationBadge size="lg" accentColor={accentColor} />
             <SettingsIcon 
-              className="w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 text-[#59e0c5] cursor-pointer hover:text-[#59e0c5]/80 transition-colors" 
+              className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`} 
               onClick={() => navigate('/profile')}
             />
           </div>
           <div className="relative">
             <input
               type="search"
-              className="w-[140px] xs:w-[200px] sm:w-[300px] h-8 xs:h-10 bg-transparent rounded-full px-3 xs:px-4 text-xs xs:text-sm text-[#59e0c5] border border-[#59e0c5] outline-none"
+              className={`w-[140px] xs:w-[200px] sm:w-[300px] h-8 xs:h-10 bg-transparent rounded-full px-3 xs:px-4 text-xs xs:text-sm ${textColor} ${borderColor} border outline-none`}
               placeholder="Rechercher..."
             />
           </div>
@@ -381,11 +433,11 @@ export const TranoSombre = (): JSX.Element => {
           className="text-center mb-8 xs:mb-16"
         >
           <div className="inline-flex items-center gap-2 xs:gap-4 mb-2 xs:mb-4">
-            <span className="text-base xs:text-xl sm:text-2xl font-bold text-[#59e0c5]">TRANO</span>
-            <div className="w-0.5 h-4 xs:h-6 sm:h-8 bg-[#59e0c5]"></div>
-            <span className="text-base xs:text-xl sm:text-2xl font-bold text-[#59e0c5]">TANY</span>
+            <span className={`text-base xs:text-xl sm:text-2xl font-bold ${textColor}`}>TRANO</span>
+            <div className={`w-0.5 h-4 xs:h-6 sm:h-8 ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}`}></div>
+            <span className={`text-base xs:text-xl sm:text-2xl font-bold ${textColor}`}>TANY</span>
           </div>
-          <div className="border-t border-[#59e0c5] w-40 sm:w-58 md:w-70 mx-auto mb-1 sm:mb-2"></div>
+          <div className={`border-t ${borderColor} w-40 sm:w-58 md:w-70 mx-auto mb-1 sm:mb-2`}></div>
           <div className="flex justify-center gap-4 xs:gap-8 sm:gap-12">
             <div 
               className="flex items-center gap-2 cursor-pointer" 
@@ -393,14 +445,14 @@ export const TranoSombre = (): JSX.Element => {
             >
               <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                 activeFilter === "TOUS" 
-                  ? "bg-[#59e0c5] flex items-center justify-center" 
-                  : "border-2 border-[#59e0c5]"
+                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                  : `border-2 ${borderColor}`
               }`}>
                 {activeFilter === "TOUS" && (
-                  <div className="w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#0f172a]"></div>
+                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
                 )}
               </div>
-              <span className="text-sm xs:text-base sm:text-xl text-[#59e0c5]">TOUS</span>
+              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>TOUS</span>
             </div>
 
             <div 
@@ -409,14 +461,14 @@ export const TranoSombre = (): JSX.Element => {
             >
               <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                 activeFilter === "TERRAINS" 
-                  ? "bg-[#59e0c5] flex items-center justify-center" 
-                  : "border-2 border-[#59e0c5]"
+                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                  : `border-2 ${borderColor}`
               }`}>
                 {activeFilter === "TERRAINS" && (
-                  <div className="w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#0f172a]"></div>
+                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
                 )}
               </div>
-              <span className="text-sm xs:text-base sm:text-xl text-[#59e0c5]">TERRAINS</span>
+              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>TERRAINS</span>
             </div>
 
             <div 
@@ -425,14 +477,14 @@ export const TranoSombre = (): JSX.Element => {
             >
               <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                 activeFilter === "VILLAS" 
-                  ? "bg-[#59e0c5] flex items-center justify-center" 
-                  : "border-2 border-[#59e0c5]"
+                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                  : `border-2 ${borderColor}`
               }`}>
                 {activeFilter === "VILLAS" && (
-                  <div className="w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#0f172a]"></div>
+                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
                 )}
               </div>
-              <span className="text-sm xs:text-base sm:text-xl text-[#59e0c5]">VILLAS</span>
+              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>VILLAS</span>
             </div>
             
             <div 
@@ -441,14 +493,14 @@ export const TranoSombre = (): JSX.Element => {
             >
               <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                 priceFilter 
-                  ? "bg-[#59e0c5] flex items-center justify-center" 
-                  : "border-2 border-[#59e0c5]"
+                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                  : `border-2 ${borderColor}`
               }`}>
                 {priceFilter && (
-                  <div className="w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#0f172a]"></div>
+                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
                 )}
               </div>
-              <span className="text-sm xs:text-base sm:text-xl text-[#59e0c5] whitespace-nowrap">+ de 10 000 000 Ar</span>
+              <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>+ de 10 000 000 Ar</span>
             </div>
           </div>
         </motion.div>
@@ -456,17 +508,17 @@ export const TranoSombre = (): JSX.Element => {
         {/* État de chargement */}
         {loading && (
           <div className="flex justify-center items-center py-12">
-            <div className="w-12 h-12 border-4 border-[#59e0c5] border-t-transparent rounded-full animate-spin"></div>
+            <div className={`w-12 h-12 border-4 ${borderColor} border-t-transparent rounded-full animate-spin`}></div>
           </div>
         )}
 
         {/* Message d'erreur */}
         {error && (
           <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6 text-center">
-            <p className="text-white">{error}</p>
+            <p className={isLightMode ? "text-red-700" : "text-white"}>{error}</p>
             <button 
               onClick={fetchProperties}
-              className="mt-2 px-4 py-1 bg-[#59e0c5] text-[#0f172a] rounded-full text-sm"
+              className={`mt-2 px-4 py-1 ${isLightMode ? "bg-[#0150BC] text-white" : "bg-[#59e0c5] text-[#0f172a]"} rounded-full text-sm`}
             >
               Réessayer
             </button>
@@ -475,8 +527,8 @@ export const TranoSombre = (): JSX.Element => {
 
         {/* Pas de résultats */}
         {!loading && !error && properties.length === 0 && (
-          <div className="bg-[#1e293b]/50 rounded-lg p-6 text-center">
-            <p className="text-[#59e0c5]">Aucune propriété trouvée avec les filtres actuels.</p>
+          <div className={`${cardBgColor} rounded-lg p-6 text-center`}>
+            <p className={textColor}>Aucune propriété trouvée avec les filtres actuels.</p>
           </div>
         )}
 
@@ -492,10 +544,10 @@ export const TranoSombre = (): JSX.Element => {
               key={property.property_id}
               variants={itemVariants}
               whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-              className="bg-[#1e293b]/50 rounded-lg xs:rounded-xl overflow-hidden border border-[#59e0c5]/30"
+              className={`${cardBgColor} rounded-lg xs:rounded-xl overflow-hidden border ${borderColorLight}`}
             >
               <div className="flex">
-                <div className="w-[130px] xs:w-[150px] sm:w-[180px] h-[90px] xs:h-[100px] sm:h-[120px] flex-shrink-0 bg-[#1e293b] flex items-center justify-center">
+                <div className={`w-[130px] xs:w-[150px] sm:w-[180px] h-[90px] xs:h-[100px] sm:h-[120px] flex-shrink-0 ${buttonBg} flex items-center justify-center`}>
                   {imageErrors[property.property_id] ? (
                     <img
                       src={getDefaultImage(property.category)}
@@ -513,19 +565,19 @@ export const TranoSombre = (): JSX.Element => {
                 </div>
                 <div className="flex-1 p-2 xs:p-3 sm:p-4 flex flex-col justify-between h-[90px] xs:h-[100px] sm:h-[120px]">
                   <div>
-                    <h3 className="text-xs xs:text-sm sm:text-base font-semibold text-[#59e0c5] mb-1">
+                    <h3 className={`text-xs xs:text-sm sm:text-base font-semibold ${textColor} mb-1`}>
                       {property.title}
                     </h3>
-                    <p className="text-[10px] xs:text-xs sm:text-sm text-gray-300 line-clamp-2">
+                    <p className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor} line-clamp-2`}>
                       {property.description || `Située à ${property.location}, surface: ${property.surface}m²`}
                     </p>
                   </div>
                   <div className="flex justify-end gap-1.5 xs:gap-2 sm:gap-3">
-                    <button className="px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 bg-[#1e293b] text-[#59e0c5] rounded-full hover:bg-[#59e0c5] hover:text-[#1e293b] transition-colors text-[10px] xs:text-xs sm:text-sm">
+                    <button className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}>
                       Apérçu
                     </button>
                     <button 
-                      className="px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 bg-[#1e293b] text-[#59e0c5] rounded-full hover:bg-[#59e0c5] hover:text-[#1e293b] transition-colors text-[10px] xs:text-xs sm:text-sm"
+                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
                       onClick={() => navigate(`/property/${property.property_id}`)}
                     >
                       Détails
@@ -547,12 +599,14 @@ export const TranoSombre = (): JSX.Element => {
           >
             <button 
               className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${
-                currentPage > 1 ? "bg-[#59e0c5] cursor-pointer" : "bg-[#59e0c5]/50 cursor-not-allowed"
+                currentPage > 1 
+                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} cursor-pointer` 
+                  : `${isLightMode ? "bg-[#0150BC]/50" : "bg-[#59e0c5]/50"} cursor-not-allowed`
               } flex items-center justify-center`}
               onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
               disabled={currentPage <= 1}
             >
-              <span className="text-[#0f172a] text-xs xs:text-sm sm:text-base">←</span>
+              <span className={isLightMode ? "text-white" : "text-[#0f172a]"}>←</span>
             </button>
             
             <div className="flex items-center gap-1 xs:gap-2 sm:gap-4">
@@ -561,12 +615,14 @@ export const TranoSombre = (): JSX.Element => {
             
             <button 
               className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${
-                currentPage < totalPages ? "bg-[#59e0c5] cursor-pointer" : "bg-[#59e0c5]/50 cursor-not-allowed"
+                currentPage < totalPages 
+                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} cursor-pointer` 
+                  : `${isLightMode ? "bg-[#0150BC]/50" : "bg-[#59e0c5]/50"} cursor-not-allowed`
               } flex items-center justify-center`}
               onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
               disabled={currentPage >= totalPages}
             >
-              <span className="text-[#0f172a] text-xs xs:text-sm sm:text-base">→</span>
+              <span className={isLightMode ? "text-white" : "text-[#0f172a]"}>→</span>
             </button>
           </motion.div>
         )}
@@ -579,7 +635,7 @@ export const TranoSombre = (): JSX.Element => {
             transition={{ duration: 0.5, delay: 0.4 }}
             className="flex justify-center items-center my-8 xs:my-12 sm:my-16"
           >
-            <div className="px-6 py-2 bg-[#1e293b] rounded-full text-[#59e0c5] text-sm">
+            <div className={`px-6 py-2 ${buttonBg} rounded-full ${textColor} text-sm`}>
               Page 1 sur 1
             </div>
           </motion.div>

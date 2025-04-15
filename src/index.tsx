@@ -17,12 +17,14 @@ import { AdminDashboard } from "./screens/Admin/AdminDashboard";
 import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval";
 import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SplashScreen from "./components/SplashScreen";
 
 createRoot(document.getElementById("app") as HTMLElement).render(
   <StrictMode>
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<SplashScreen />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/home" element={<ElementAccueilSombre />} />
         <Route path="/trano" element={<TranoSombre />} />
         <Route path="/profile" element={<Profile />} />

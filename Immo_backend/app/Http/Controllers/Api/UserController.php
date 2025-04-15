@@ -29,19 +29,33 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'role_id' => 'required|exists:roles,role_id',
+                'role_id' => 'sometimes|exists:roles,role_id',
                 'full_name' => 'required|string|max:100',
                 'email' => 'nullable|email|unique:users',
-                'phone' => 'nullable|string|max:20',
+                'phone' => 'nullable|string|max:20|regex:/^\d+$/',
                 'address' => 'nullable|string|max:255',
-                'password' => 'required|string|min:8',
+                'password' => 'required|string',
             ]);
+
+            // Vérifier qu'au moins un des deux (email ou phone) est fourni
+            if (empty($validated['email']) && empty($validated['phone'])) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Un email ou un numéro de téléphone est requis'
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            // Définir le rôle client (2) par défaut si non spécifié
+            if (!isset($validated['role_id'])) {
+                $validated['role_id'] = 2; // Rôle client par défaut
+            }
 
             // Remplacer password par password_hash
             $validated['password_hash'] = Hash::make($validated['password']);
             unset($validated['password']);
 
             $user = User::create($validated);
+            $user->load('role');  // Charger le rôle pour la réponse
 
             return response()->json([
                 'status' => 'success',
@@ -78,9 +92,9 @@ class UserController extends Controller
                 'role_id' => 'sometimes|required|exists:roles,role_id',
                 'full_name' => 'sometimes|required|string|max:100',
                 'email' => 'nullable|email|unique:users,email,' . $user->user_id . ',user_id',
-                'phone' => 'nullable|string|max:20',
+                'phone' => 'nullable|string|max:20|regex:/^\d+$/',
                 'address' => 'nullable|string|max:255',
-                'password' => 'sometimes|required|string|min:8',
+                'password' => 'sometimes|required|string',
             ]);
 
             if (isset($validated['password'])) {
@@ -117,16 +131,33 @@ class UserController extends Controller
     }
 
     /**
-     * Login user - simplifié sans token
+     * Login user - with email or phone number
      */
     public function login(Request $request)
     {
+        // Validate that at least one of email or phone is provided
         $request->validate([
-            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Check if login is using email or phone
+        $credentials = [];
+        $user = null;
+
+        if ($request->has('email')) {
+            $request->validate(['email' => 'required|email']);
+            $user = User::where('email', $request->email)->first();
+            $credentials['type'] = 'email';
+        } elseif ($request->has('phone')) {
+            $request->validate(['phone' => 'required|string|regex:/^\d+$/']);
+            $user = User::where('phone', $request->phone)->first();
+            $credentials['type'] = 'phone';
+        } else {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Email or phone number is required.'
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         if (!$user || !Hash::check($request->password, $user->password_hash)) {
             return response()->json([
@@ -134,6 +165,9 @@ class UserController extends Controller
                 'message' => 'The provided credentials are incorrect.'
             ], Response::HTTP_UNAUTHORIZED);
         }
+
+        // Load user role for frontend use
+        $user->load('role');
 
         // Session login simplifié - pas de token
         return response()->json([
