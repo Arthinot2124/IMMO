@@ -1,7 +1,4 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:8000/api';
-//const API_URL = 'https://6aa3-129-222-109-77.ngrok-free.app/api';
+import apiService from './apiService';
 // Interface pour les notifications
 export interface Notification {
   notification_id: number;
@@ -9,6 +6,12 @@ export interface Notification {
   message: string;
   is_read: boolean;
   created_at: string;
+}
+
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
 }
 
 const notificationService = {
@@ -22,12 +25,7 @@ const notificationService = {
         throw new Error('Utilisateur non connecté');
       }
 
-      const response = await axios.get(`${API_URL}/users/${userId}/notifications`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        }
-      });
+      const response = await apiService.get<ApiResponse<Notification[]>>(`/users/${userId}/notifications`);
 
       if (response.data && response.data.status === 'success') {
         return response.data.data;
@@ -45,16 +43,7 @@ const notificationService = {
    */
   markAsRead: async (notificationId: number): Promise<void> => {
     try {
-      await axios.put(`${API_URL}/notifications/${notificationId}`, 
-        { is_read: true },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          }
-        }
-      );
+      await apiService.put(`/notifications/${notificationId}`, { is_read: true });
     } catch (error) {
       console.error('Erreur lors du marquage de la notification comme lue:', error);
       throw error;
@@ -71,12 +60,7 @@ const notificationService = {
         throw new Error('Utilisateur non connecté');
       }
 
-      await axios.post(`${API_URL}/users/${userId}/notifications/mark-all-read`, {}, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        }
-      });
+      await apiService.post(`/users/${userId}/notifications/mark-all-read`, {});
     } catch (error) {
       console.error('Erreur lors du marquage de toutes les notifications comme lues:', error);
       throw error;
@@ -88,12 +72,7 @@ const notificationService = {
    */
   deleteNotification: async (notificationId: number): Promise<void> => {
     try {
-      await axios.delete(`${API_URL}/notifications/${notificationId}`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        }
-      });
+      await apiService.delete(`/notifications/${notificationId}`);
     } catch (error) {
       console.error('Erreur lors de la suppression de la notification:', error);
       throw error;

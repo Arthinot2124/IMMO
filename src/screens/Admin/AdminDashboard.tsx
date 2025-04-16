@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { 
   BellIcon, HomeIcon, SettingsIcon, ClipboardListIcon, 
   CalendarIcon, BuildingIcon, UserIcon, ListIcon,
   CheckCircleIcon, XCircleIcon, RefreshCwIcon,
   SunIcon, MoonIcon
 } from "lucide-react";
-
-// Définir la base URL de l'API - à remplacer par l'URL de votre serveur ngrok
-// Par exemple : https://abcd1234.ngrok.io
-const API_BASE_URL = 'http://localhost:8000'; // REMPLACEZ CETTE URL par votre URL ngrok
+import apiService from "../../services/apiService";
+import { API_URL, getMediaUrl } from "../../config/api";
 
 // Types
 interface DashboardStats {
@@ -39,6 +36,12 @@ interface PropertyRequest {
     email: string;
     phone: string;
   };
+}
+
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
 }
 
 export const AdminDashboard = (): JSX.Element => {
@@ -124,24 +127,15 @@ export const AdminDashboard = (): JSX.Element => {
       
       try {
         // Charger les statistiques du tableau de bord
-        const statsResponse = await axios.get(`${API_BASE_URL}/api/dashboard/stats`, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        const statsResponse = await apiService.get<ApiResponse<DashboardStats>>('/dashboard/stats');
         
         if (statsResponse.data && statsResponse.data.data) {
           setStats(statsResponse.data.data);
         }
         
         // Charger les demandes de propriétés en attente
-        const requestsResponse = await axios.get(`${API_BASE_URL}/api/property-requests`, {
-          params: { status: 'En attente' },
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+        const requestsResponse = await apiService.get<ApiResponse<PropertyRequest[] | { data: PropertyRequest[] }>>('/property-requests', {
+          params: { status: 'En attente' }
         });
         
         if (requestsResponse.data && requestsResponse.data.data) {
@@ -164,14 +158,8 @@ export const AdminDashboard = (): JSX.Element => {
   const handleApproveRequest = async (requestId: number) => {
     try {
       // 1. Mettre à jour le statut de la demande à "Accepté"
-      await axios.put(`${API_BASE_URL}/api/property-requests/${requestId}`, {
+      await apiService.put(`/property-requests/${requestId}`, {
         status: 'Accepté'
-      }, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
       });
       
       // 2. Rediriger vers la page de création de propriété avec l'ID de la demande
@@ -186,14 +174,8 @@ export const AdminDashboard = (): JSX.Element => {
   const handleRejectRequest = async (requestId: number) => {
     try {
       // Mettre à jour le statut de la demande à "Refusé"
-      await axios.put(`${API_BASE_URL}/api/property-requests/${requestId}`, {
+      await apiService.put(`/property-requests/${requestId}`, {
         status: 'Refusé'
-      }, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
       });
       
       // Mettre à jour la liste des demandes en attente
@@ -241,8 +223,7 @@ export const AdminDashboard = (): JSX.Element => {
         style={{ 
           backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
+          backgroundPosition: 'fixed',
           transition: 'background-image 0.5s ease-in-out'
         }}
       ></div>

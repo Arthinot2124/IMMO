@@ -4,8 +4,9 @@ import { Button } from "../../components/ui/ComponentTrano/button";
 import { Card, CardContent } from "../../components/ui/ComponentTrano/card";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import axios from "axios";
+import apiService from "../../services/apiService";
 import NotificationBadge from "../../components/NotificationBadge";
+import { getMediaUrl } from "../../config/api";
 
 // Types pour les propriétés
 interface PropertyMedia {
@@ -25,8 +26,13 @@ interface Property {
   location: string;
   category: string;
   status: string;
-  media?: PropertyMedia[]; // Ajout du champ pour les médias
-  // Ajoutez ici d'autres champs de votre table 'properties' si nécessaire
+  media?: PropertyMedia[];
+}
+
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
 }
 
 export const TranoSombre = (): JSX.Element => {
@@ -40,7 +46,6 @@ export const TranoSombre = (): JSX.Element => {
   const [totalPages, setTotalPages] = useState<number>(1);
   const [imageErrors, setImageErrors] = useState<{[key: number]: boolean}>({});
   const [isLightMode, setIsLightMode] = useState(() => {
-    // Récupérer la préférence depuis localStorage au montage (ou false par défaut)
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
@@ -99,42 +104,33 @@ export const TranoSombre = (): JSX.Element => {
     try {
       console.log("Début du chargement des propriétés");
       // Construction des paramètres de requête
-      let url = 'http://localhost:8000/api/properties';
       let params: any = { 
         page: currentPage,
-        include: 'media' // Ajouter l'inclusion des médias
+        include: 'media'
       };
       
       // Ajouter la pagination seulement pour les filtres spécifiques, pas pour "TOUS"
       if (activeFilter !== "TOUS") {
-        params.per_page = 5; // 5 propriétés par page pour les filtres spécifiques
+        params.per_page = 5;
       } else {
-        params.per_page = 100; // Nombre élevé pour simuler "tous" sans désactiver la pagination
+        params.per_page = 100;
       }
       
       // Ajout des filtres si sélectionnés et si ce n'est pas "TOUS"
       if (activeFilter === "TERRAINS") {
-        params.category = "LITE"; // Ajustez selon la valeur correspondante dans votre DB
+        params.category = "LITE";
       } else if (activeFilter === "VILLAS") {
-        params.category = "PREMIUM"; // Ajustez selon la valeur correspondante dans votre DB
+        params.category = "PREMIUM";
       }
-      // Pas de filtre de catégorie si "TOUS" est sélectionné
       
       if (priceFilter) {
-        params.min_price = 10000000; // 10 millions Ar
+        params.min_price = 10000000;
       }
       
       console.log("Appel API avec params:", params);
       
-      // Exécution de la requête
-      const response = await axios.get(url, { 
-        params,
-        timeout: 10000,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
+      // Utilisation de apiService pour récupérer les propriétés
+      const response = await apiService.get<ApiResponse<{data: Property[], meta: {last_page: number}}>>('/properties', { params });
       
       console.log("Réponse API reçue:", response.data);
       
@@ -142,38 +138,14 @@ export const TranoSombre = (): JSX.Element => {
       let propertyArray: Property[] = [];
       
       if (response.data && response.data.data) {
-        // Structure: { status: "success", data: [...] }
         if (Array.isArray(response.data.data)) {
           propertyArray = response.data.data;
-        } 
-        // Structure: { status: "success", data: { data: [...], ... } } (pagination Laravel)
-        else if (response.data.data.data && Array.isArray(response.data.data.data)) {
+        } else if (response.data.data.data && Array.isArray(response.data.data.data)) {
           propertyArray = response.data.data.data;
-          // Gestion de la pagination
           if (response.data.data.meta) {
             setTotalPages(response.data.data.meta.last_page || 1);
-          } else if (response.data.data.last_page) {
-            setTotalPages(response.data.data.last_page || 1);
           }
         }
-        // Structure inconnue mais valide
-        else {
-          console.warn("Structure de données inattendue:", response.data);
-          propertyArray = [];
-        }
-      } else if (Array.isArray(response.data)) {
-        // L'API renvoie directement un tableau
-        propertyArray = response.data;
-      } else {
-        console.error("Format de réponse API inattendu:", response.data);
-        setError("Format de données inattendu");
-        propertyArray = [];
-      }
-      
-      // S'assurer que propertyArray est bien un tableau avant de le mettre dans l'état
-      if (!Array.isArray(propertyArray)) {
-        console.error("Les données ne sont pas un tableau:", propertyArray);
-        propertyArray = [];
       }
       
       setProperties(propertyArray);
@@ -267,29 +239,17 @@ export const TranoSombre = (): JSX.Element => {
 
   // Fonction pour obtenir l'image par défaut selon la catégorie
   const getDefaultImage = (category: string) => {
-    if (category === "LITE") return "/public_Trano/calque-3.png"; // Terrains
-    if (category === "PREMIUM") return "/public_Trano/maison-01.png"; // Villas
-    return "/public_Trano/calque-4.png"; // Autres
+    if (category === "LITE") return "/public_Trano/calque-3.png";
+    if (category === "PREMIUM") return "/public_Trano/maison-01.png";
+    return "/public_Trano/calque-4.png";
   };
 
   // Fonction pour obtenir l'image principale d'une propriété
   const getPropertyImage = (property: Property) => {
-    // Si la propriété a des médias, utilisez le premier
     if (property.media && property.media.length > 0) {
       const mediaUrl = property.media[0].media_url;
-      // Si l'URL commence par "/", ajoutez la base URL
-      if (mediaUrl.startsWith('/')) {
-        return `http://localhost:8000${mediaUrl}`;
-      }
-      // Si l'URL commence déjà par http://, utilisez-la telle quelle
-      if (mediaUrl.startsWith('http')) {
-        return mediaUrl;
-      }
-      // Sinon, supposez qu'il s'agit d'un chemin relatif et ajoutez la base URL
-      return `http://localhost:8000/${mediaUrl}`;
+      return getMediaUrl(mediaUrl);
     }
-    
-    // Si pas d'image, utilisez l'image par défaut selon la catégorie
     return getDefaultImage(property.category);
   };
 

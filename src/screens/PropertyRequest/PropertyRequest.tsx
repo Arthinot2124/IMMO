@@ -3,7 +3,15 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { HomeIcon, SettingsIcon, BuildingIcon, AlertCircleIcon, CheckCircleIcon, InfoIcon, XIcon, ImagePlusIcon, SunIcon, MoonIcon } from "lucide-react";
 import NotificationBadge from "../../components/NotificationBadge";
+import apiService from "../../services/apiService";
 import axios from "axios";
+import { API_URL } from "../../config/api";
+
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
+}
 
 export const PropertyRequest = (): JSX.Element => {
   const navigate = useNavigate();
@@ -165,31 +173,12 @@ export const PropertyRequest = (): JSX.Element => {
       
       console.log("Données envoyées:", requestData);
       
-      // Configuration Axios avec CSRF protection pour Laravel
-      const axiosInstance = axios.create({
-        baseURL: 'http://localhost:8000',
-        withCredentials: true
-      });
-      
-      // Récupérer le token CSRF si nécessaire
-      await axiosInstance.get('/sanctum/csrf-cookie');
-      
-      // Appel API
-      const response = await axiosInstance.post(
-        '/api/property-requests',
-        requestData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          }
-        }
-      );
+      // Utilisation de apiService pour créer la demande de propriété
+      const response = await apiService.post<ApiResponse<{request_id: number}>>('/property-requests', requestData);
       
       console.log("API Response:", response.data);
       
-      // Gestion des images (si votre API le supporte)
+      // Gestion des images avec FormData (nécessite une approche différente)
       if (images.length > 0 && response.data?.data?.request_id) {
         const formData = new FormData();
         
@@ -198,8 +187,10 @@ export const PropertyRequest = (): JSX.Element => {
         });
         
         try {
-          const uploadResponse = await axiosInstance.post(
-            `/api/property-requests/${response.data.data.request_id}/images`,
+          // Pour l'upload de fichiers, on utilise axios directement car apiService
+          // est configuré avec des headers spécifiques pour JSON
+          const uploadResponse = await axios.post(
+            `${API_URL}/api/property-requests/${response.data.data.request_id}/images`,
             formData,
             {
               headers: {

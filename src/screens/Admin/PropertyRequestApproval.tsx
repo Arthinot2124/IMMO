@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeftIcon, CheckCircleIcon, RefreshCwIcon, AlertTriangleIcon, InfoIcon, ImageIcon, FileIcon } from "lucide-react";
+import apiService from "../../services/apiService";
+import { getMediaUrl } from "../../config/api";
 
 // Type de la demande de propriété
 interface PropertyRequest {
@@ -49,6 +51,13 @@ interface PropertyRequestMedia {
   uploaded_at: string;
 }
 
+// Type pour les réponses API
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
+}
+
 export const PropertyRequestApproval = (): JSX.Element => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -88,17 +97,10 @@ export const PropertyRequestApproval = (): JSX.Element => {
       console.log(`Tentative de chargement de la demande #${id}...`);
       
       try {
-        const response = await fetch(`http://localhost:8000/api/property-requests/${id}`);
+        const response = await apiService.get<ApiResponse<PropertyRequest>>(`/property-requests/${id}`);
         
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log("Réponse API:", data);
-        
-        if (data && data.status === "success" && data.data) {
-          const requestData = data.data;
+        if (response.data && response.data.status === "success" && response.data.data) {
+          const requestData = response.data.data;
           console.log("Données de la demande:", requestData);
           setRequest(requestData);
           
@@ -134,17 +136,10 @@ export const PropertyRequestApproval = (): JSX.Element => {
       setLoadingImages(true);
       
       try {
-        const response = await fetch(`http://localhost:8000/api/property-requests/${id}/media`);
+        const response = await apiService.get<ApiResponse<PropertyRequestMedia[]>>(`/property-requests/${id}/media`);
         
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log("Images de la demande:", data);
-        
-        if (data && data.status === "success" && Array.isArray(data.data)) {
-          setRequestImages(data.data);
+        if (response.data && response.data.status === "success" && Array.isArray(response.data.data)) {
+          setRequestImages(response.data.data);
         }
       } catch (err: any) {
         console.error("Erreur lors du chargement des images:", err);
@@ -203,39 +198,19 @@ export const PropertyRequestApproval = (): JSX.Element => {
       console.log("Envoi des données vers l'API:", propertyData);
       
       // Créer la propriété
-      const response = await fetch('http://localhost:8000/api/properties', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(propertyData)
-      });
+      const response = await apiService.post<ApiResponse<CreatedProperty>>('/properties', propertyData);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erreur API (${response.status}): ${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log("Réponse création propriété:", data);
-      
-      if (data.status === "success" && data.data && data.data.property_id) {
+      if (response.data.status === "success" && response.data.data && response.data.data.property_id) {
         // Stocker la propriété créée
-        setCreatedProperty(data.data);
+        setCreatedProperty(response.data.data);
         
         // Transfer images from property request to the new property
         if (requestImages.length > 0) {
           try {
             // Use the dedicated endpoint to copy media from property request to property
-            await fetch(`http://localhost:8000/api/properties/${data.data.property_id}/copy-media-from-request`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              body: JSON.stringify({ request_id: request.request_id })
-            });
+            await apiService.post<ApiResponse<any>>(`/properties/${response.data.data.property_id}/copy-media-from-request`, 
+              { request_id: request.request_id }
+            );
             
             console.log("Images transférées avec succès");
           } catch (imageErr) {
@@ -245,14 +220,9 @@ export const PropertyRequestApproval = (): JSX.Element => {
         }
         
         // Mettre à jour le statut de la demande à "Accepté"
-        await fetch(`http://localhost:8000/api/property-requests/${request.request_id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ status: 'Accepté' })
-        });
+        await apiService.put<ApiResponse<any>>(`/property-requests/${request.request_id}`, 
+          { status: 'Accepté' }
+        );
         
         // Propriété créée avec succès
         setSuccess(true);
@@ -282,21 +252,7 @@ export const PropertyRequestApproval = (): JSX.Element => {
 
   // Helper function to get image URL with fallbacks
   const getImageUrl = (image: PropertyRequestMedia) => {
-    try {
-      // If the URL starts with "/", add the base URL
-      if (image.media_url.startsWith('/')) {
-        return `http://localhost:8000${image.media_url}`;
-      }
-      // If the URL already has http://, return as is
-      if (image.media_url.startsWith('http')) {
-        return image.media_url;
-      }
-      // Otherwise, assume it's a relative path and add the base URL
-      return `http://localhost:8000/${image.media_url}`;
-    } catch (e) {
-      console.error("Error formatting image URL:", e);
-      return ''; // Return empty string on error
-    }
+    return getMediaUrl(image.media_url);
   };
 
   return (

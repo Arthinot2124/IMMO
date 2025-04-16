@@ -3,8 +3,16 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BellIcon, HomeIcon, SettingsIcon, UserIcon, LogOutIcon, Edit2Icon, SaveIcon, AlertCircleIcon, XIcon, SunIcon, MoonIcon } from "lucide-react";
 import authService, { UserData } from "../../services/authService";
-import axios from "axios";
+import apiService from "../../services/apiService";
+import { getMediaUrl } from "../../config/api";
 import NotificationBadge from "../../components/NotificationBadge";
+
+// Type pour les réponses API
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
+}
 
 export const Profile = (): JSX.Element => {
   const navigate = useNavigate();
@@ -98,12 +106,7 @@ export const Profile = (): JSX.Element => {
       
       try {
         // Récupérer les données de l'utilisateur connecté depuis l'API
-        const response = await axios.get(`http://localhost:8000/api/users/${currentUser.user_id}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          }
-        });
+        const response = await apiService.get<ApiResponse<UserData>>(`/users/${currentUser.user_id}`);
         
         if (response.data && response.data.status === "success" && response.data.data) {
           const user = response.data.data;
@@ -160,13 +163,7 @@ export const Profile = (): JSX.Element => {
     
     try {
       // Envoyer les modifications au backend
-      const response = await axios.put(`http://localhost:8000/api/users/${userData.user_id}`, formData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        }
-      });
+      const response = await apiService.put<ApiResponse<UserData>>(`/users/${userData.user_id}`, formData);
       
       if (response.data && response.data.status === "success") {
         // Mettre à jour les données stockées localement

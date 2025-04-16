@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { HomeIcon, SettingsIcon } from "lucide-react";
 import NotificationBadge from "../../components/NotificationBadge";
-import axios from "axios";
+import apiService from "../../services/apiService";
+import { getMediaUrl } from "../../config/api";
 import { BellIcon, HeartIcon, CalendarIcon, StarIcon, MessageSquareIcon, ShareIcon, ImageIcon } from "lucide-react";
 
 // Types pour les propriétés
@@ -29,6 +30,12 @@ interface Property {
   rating?: number;
   reviews?: number;
   user_id: number;
+}
+
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
 }
 
 // Données de secours en cas d'erreur
@@ -115,11 +122,7 @@ export const PropertyDetail = (): JSX.Element => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8000/api/properties/${id}`, {
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
+        const response = await apiService.get<ApiResponse<Property>>(`/properties/${id}`);
 
         if (response.data && response.data.status === "success" && response.data.data) {
           console.log("Propriété chargée:", response.data.data);
@@ -155,15 +158,7 @@ export const PropertyDetail = (): JSX.Element => {
   const getImageUrls = (): string[] => {
     if (property && property.media && property.media.length > 0) {
       // Convertir les URLs des médias en URLs complètes
-      return property.media.map(media => {
-        if (media.media_url.startsWith('/')) {
-          return `http://localhost:8000${media.media_url}`;
-        }
-        if (media.media_url.startsWith('http')) {
-          return media.media_url;
-        }
-        return `http://localhost:8000/${media.media_url}`;
-      });
+      return property.media.map(media => getMediaUrl(media.media_url));
     }
     
     // Images par défaut selon la catégorie

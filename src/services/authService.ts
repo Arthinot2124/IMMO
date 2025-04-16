@@ -1,7 +1,6 @@
-import axios from 'axios';
+import apiService from './apiService';
 
-const API_URL = 'http://localhost:8000/api';
-//const API_URL = 'https://6aa3-129-222-109-77.ngrok-free.app/api';
+
 export interface UserData {
   user_id: number;
   role_id: number;
@@ -30,18 +29,25 @@ interface RegisterResponse {
   token?: string;
 }
 
+interface NotificationResponse {
+  status: string;
+  data: Array<{
+    is_read: boolean;
+    [key: string]: any;
+  }>;
+}
+
 // Charger le compteur de notifications non lues pour l'utilisateur connecté
 const loadUnreadNotificationsCount = async (userId: number, token: string) => {
   try {
-    const response = await axios.get(`${API_URL}/users/${userId}/notifications`, {
+    const response = await apiService.get<NotificationResponse>(`/users/${userId}/notifications`, {
       headers: {
-        'Accept': 'application/json',
         'Authorization': `Bearer ${token}`
       }
     });
 
     if (response.data?.status === 'success' && response.data?.data) {
-      const unreadCount = response.data.data.filter((notification: any) => !notification.is_read).length;
+      const unreadCount = response.data.data.filter((notification) => !notification.is_read).length;
       
       // Stocker le compteur dans localStorage
       localStorage.setItem('unreadNotificationsCount', unreadCount.toString());
@@ -83,12 +89,7 @@ const authService = {
         ...(isPhone ? { phone: identifier } : { email: identifier })
       };
       
-      const response = await axios.post<RegisterResponse>(`${API_URL}/register`, registerData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+      const response = await apiService.post<RegisterResponse>(`/register`, registerData);
       
       console.log("Réponse d'inscription:", response.data);
       
@@ -123,12 +124,7 @@ const authService = {
         ? { phone: identifier, password } 
         : { email: identifier, password };
       
-      const response = await axios.post<LoginResponse>(`${API_URL}/login`, loginData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+      const response = await apiService.post<LoginResponse>(`/login`, loginData);
       
       console.log("Réponse de connexion:", response.data);
       
@@ -178,12 +174,9 @@ const authService = {
     localStorage.removeItem('unreadNotificationsCount');
     
     // Appeler l'API de déconnexion si nécessaire
-    axios.post(`${API_URL}/logout`, {}, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-      }
-    }).catch(error => console.error('Erreur lors de la déconnexion:', error));
+    apiService.post(`/logout`, {}).catch(error => 
+      console.error('Erreur lors de la déconnexion:', error)
+    );
   },
   
   /**

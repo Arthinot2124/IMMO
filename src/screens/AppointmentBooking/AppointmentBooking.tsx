@@ -6,7 +6,8 @@ import NotificationBadge from "../../components/NotificationBadge";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { fr } from 'date-fns/locale';
-import axios from "axios";
+import apiService from "../../services/apiService";
+import { getMediaUrl } from "../../config/api";
 
 // Types pour les propriétés
 interface PropertyMedia {
@@ -27,6 +28,12 @@ interface Property {
   category: string;
   status: string;
   media?: PropertyMedia[];
+}
+
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
 }
 
 // Données de secours en cas d'erreur
@@ -143,11 +150,7 @@ export const AppointmentBooking = (): JSX.Element => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:8000/api/properties/${id}`, {
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
+        const response = await apiService.get<ApiResponse<Property>>(`/properties/${id}`);
 
         if (response.data && response.data.status === "success" && response.data.data) {
           console.log("Propriété chargée:", response.data.data);
@@ -218,13 +221,7 @@ export const AppointmentBooking = (): JSX.Element => {
       console.log("Envoi des données de rendez-vous:", appointmentData);
       
       // Envoi des données au backend
-      const response = await axios.post('http://localhost:8000/api/appointments', appointmentData, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        }
-      });
+      const response = await apiService.post<ApiResponse<any>>('/appointments', appointmentData);
       
       console.log("Réponse du serveur:", response.data);
       
@@ -247,16 +244,9 @@ export const AppointmentBooking = (): JSX.Element => {
   };
 
   // Obtenir l'URL de l'image principale
-  const getImageUrl = (): string => {
+  const getPropertyImageUrl = (): string => {
     if (property && property.media && property.media.length > 0) {
-      const mediaUrl = property.media[0].media_url;
-      if (mediaUrl.startsWith('/')) {
-        return `http://localhost:8000${mediaUrl}`;
-      }
-      if (mediaUrl.startsWith('http')) {
-        return mediaUrl;
-      }
-      return `http://localhost:8000/${mediaUrl}`;
+      return getMediaUrl(property.media[0].media_url);
     }
     
     // Images par défaut selon la catégorie
@@ -280,14 +270,14 @@ export const AppointmentBooking = (): JSX.Element => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`${bgColor} min-h-screen`}
+      className={`${bgColor} min-h-screen relative`}
     >
-      <div 
-        className="absolute inset-0 opacity-50 z-0" 
+       <div 
+        className="fixed inset-0 opacity-50 z-0" 
         style={{ 
           backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'fixed',
           transition: 'background-image 0.5s ease-in-out'
         }}
       ></div>
@@ -349,7 +339,7 @@ export const AppointmentBooking = (): JSX.Element => {
             <div className={`flex items-center p-4 sm:p-6 border-b ${isLightMode ? "border-[#0150BC]/30" : "border-[#59e0c5]/30"} ${headerBgColor}`}>
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden mr-4">
                 <img
-                  src={getImageUrl()}
+                  src={getPropertyImageUrl()}
                   alt={property.title}
                   className="w-full h-full object-cover"
                 />

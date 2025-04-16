@@ -6,7 +6,7 @@ import {
   CheckCircleIcon, XCircleIcon, RefreshCwIcon,
   CalendarIcon, ClockIcon, UserIcon, MapPinIcon, PhoneIcon, MailIcon
 } from "lucide-react";
-import axios from "axios";
+import apiService from "../../services/apiService";
 
 // Types pour les rendez-vous
 interface AppointmentUser {
@@ -39,6 +39,12 @@ interface Appointment {
   property?: AppointmentProperty;
 }
 
+interface ApiResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
+}
+
 export const AppointmentManagement = (): JSX.Element => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -57,12 +63,7 @@ export const AppointmentManagement = (): JSX.Element => {
       setError(null);
       
       try {
-        const response = await axios.get('http://localhost:8000/api/appointments', {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          }
-        });
+        const response = await apiService.get<ApiResponse<Appointment[] | { data: Appointment[] }>>('/appointments');
         
         console.log("Rendez-vous chargés:", response.data);
         
@@ -134,16 +135,8 @@ export const AppointmentManagement = (): JSX.Element => {
     
     try {
       // 1. Mettre à jour le statut du rendez-vous
-      const response = await axios.put(
-        `http://localhost:8000/api/appointments/${appointmentId}`,
-        { confirmation_status: newStatus },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          }
-        }
+      const response = await apiService.put<ApiResponse<any>>(`/appointments/${appointmentId}`, 
+        { confirmation_status: newStatus }
       );
       
       if (response.data && response.data.status === "success") {
@@ -175,17 +168,7 @@ export const AppointmentManagement = (): JSX.Element => {
             console.log("Données de notification à envoyer:", notificationData);
             
             // Effectuer la requête pour créer la notification
-            const notificationResponse = await axios.post(
-              'http://localhost:8000/api/notifications',
-              notificationData,
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-                }
-              }
-            );
+            const notificationResponse = await apiService.post<ApiResponse<any>>('/notifications', notificationData);
             
             console.log("Réponse de création de notification:", notificationResponse.data);
             console.log(`Notification envoyée avec succès à l'utilisateur ID: ${userId}`);
@@ -212,29 +195,6 @@ export const AppointmentManagement = (): JSX.Element => {
               console.error("Headers de l'erreur:", notifError.response.headers);
             } else {
               console.error("Message d'erreur:", notifError.message);
-            }
-            
-            // Essayons une méthode alternative pour créer une notification
-            try {
-              console.log("Tentative alternative de création de notification...");
-              const alternativeResponse = await fetch('http://localhost:8000/api/notifications', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-                },
-                body: JSON.stringify({
-                  user_id: parseInt(appointment.user_id.toString()),
-                  message: notificationMessage,
-                  is_read: false
-                })
-              });
-              
-              const alternativeData = await alternativeResponse.json();
-              console.log("Réponse alternative:", alternativeData);
-            } catch (altError) {
-              console.error("Échec de la méthode alternative:", altError);
             }
           }
           
