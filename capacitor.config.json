@@ -1,5 +1,8 @@
 {
   "appId": "com.origami.immo",
   "appName": "Immo",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "allowNavigation": ["192.168.43.33:*"]
+  }
 }

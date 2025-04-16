@@ -11,4 +11,9 @@ export default defineConfig({
       plugins: [tailwind()],
     },
   },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1600,
+  }
 });
