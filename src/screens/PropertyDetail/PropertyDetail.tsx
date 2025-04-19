@@ -198,14 +198,14 @@ export const PropertyDetail = (): JSX.Element => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`${bgColor} min-h-screen`}
+      className={`${bgColor} min-h-screen relative`}
     >
       <div 
-        className="absolute inset-0 opacity-50 z-0" 
+        className="fixed inset-0 opacity-50 z-0" 
         style={{ 
           backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'fixed',
           transition: 'background-image 0.5s ease-in-out'
         }}
       ></div>
@@ -374,7 +374,10 @@ export const PropertyDetail = (): JSX.Element => {
                 <span>Réserver une visite</span>
               </button>
               
-              <button className={`flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}>
+              <button 
+                className={`flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
+                onClick={() => navigate(`/property/${propertyId}/contact`)}
+              >
                 <MessageSquareIcon size={20} className={textColor} />
                 <span>Contacter l'agence</span>
               </button>

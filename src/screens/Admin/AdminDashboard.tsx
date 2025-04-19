@@ -290,6 +290,21 @@ export const AdminDashboard = (): JSX.Element => {
             )}
           </button>
           <button 
+            onClick={() => setActiveTab("appointments")}
+            className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
+              activeTab === "appointments" 
+                ? `${tabActiveBg} ${textColor}` 
+                : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+            }`}
+          >
+            Rendez-vous
+            {stats && stats.pending_appointments > 0 && (
+              <span className={`ml-2 px-2 py-0.5 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-full text-xs`}>
+                {stats.pending_appointments}
+              </span>
+            )}
+          </button>
+          <button 
             onClick={() => setActiveTab("properties")}
             className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
               activeTab === "properties" 
@@ -360,7 +375,7 @@ export const AdminDashboard = (): JSX.Element => {
                       <UserIcon className={`w-5 h-5 ${textColor} mr-2`} />
                       <h3 className={textSecondaryColor}>Utilisateurs</h3>
                     </div>
-                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.total_users}</p>
+                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.total_users || 0}</p>
                   </motion.div>
                   
                   <motion.div 
@@ -369,9 +384,10 @@ export const AdminDashboard = (): JSX.Element => {
                   >
                     <div className="flex items-center mb-2">
                       <ClipboardListIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                      <h3 className={textSecondaryColor}>Commandes</h3>
+                      <h3 className={textSecondaryColor}>Demandes en attente</h3>
                     </div>
-                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.total_orders}</p>
+                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.pending_property_requests || 0}</p>
+                    <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_property_requests} en attente</p>
                   </motion.div>
                   
                   <motion.div 
@@ -380,11 +396,56 @@ export const AdminDashboard = (): JSX.Element => {
                   >
                     <div className="flex items-center mb-2">
                       <CalendarIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                      <h3 className={textSecondaryColor}>Rendez-vous</h3>
+                      <h3 className={textSecondaryColor}>Rendez-vous en attente</h3>
                     </div>
                     <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.pending_appointments}</p>
                     <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_appointments} en attente</p>
                   </motion.div>
+                </div>
+                {/* Actions rapides */}
+                <div className={`${cardBgColor} p-4 rounded-lg mb-6 ${cardBorder}`}>
+                  <h2 className={`text-lg font-semibold mb-3 ${textPrimaryColor}`}>Actions rapides</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <button 
+                      onClick={() => navigate('/property-request')}
+                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                    >
+                      <span className="flex items-center">
+                        <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
+                        <span className={textPrimaryColor}>Ajouter une propriété</span>
+                      </span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => navigate('/admin/property-requests')}
+                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                    >
+                      <span className="flex items-center">
+                        <ClipboardListIcon className={`w-5 h-5 ${textColor} mr-2`} />
+                        <span className={textPrimaryColor}>Voir les demandes</span>
+                      </span>
+                      {stats?.pending_property_requests > 0 && (
+                        <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
+                          {stats.pending_property_requests}
+                        </span>
+                      )}
+                    </button>
+                    
+                    <button 
+                      onClick={() => navigate('/admin/appointments')}
+                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                    >
+                      <span className="flex items-center">
+                        <CalendarIcon className={`w-5 h-5 ${textColor} mr-2`} />
+                        <span className={textPrimaryColor}>Gérer les rendez-vous</span>
+                      </span>
+                      {stats?.pending_appointments > 0 && (
+                        <span className="bg-yellow-500 text-white px-2 py-0.5 rounded-full text-xs">
+                          {stats.pending_appointments}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Actions requises</h2>
@@ -433,95 +494,6 @@ export const AdminDashboard = (): JSX.Element => {
                   ) : (
                     <p className={`${textSecondaryColor} text-center py-3`}>Aucune demande en attente.</p>
                   )}
-                </div>
-
-                {/* Statistiques sommaires */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <div className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder}`}>
-                    <div className={`w-10 h-10 rounded-full ${iconBgColor} flex items-center justify-center mr-3`}>
-                      <BuildingIcon className={`w-5 h-5 ${textColor}`} />
-                    </div>
-                    <div>
-                      <p className={`text-sm ${textSecondaryColor}`}>Propriétés</p>
-                      <p className={`text-xl font-semibold ${textPrimaryColor}`}>{stats?.total_properties || 0}</p>
-                    </div>
-                  </div>
-                  
-                  <div className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder}`}>
-                    <div className={`w-10 h-10 rounded-full ${iconBgColor} flex items-center justify-center mr-3`}>
-                      <UserIcon className={`w-5 h-5 ${textColor}`} />
-                    </div>
-                    <div>
-                      <p className={`text-sm ${textSecondaryColor}`}>Utilisateurs</p>
-                      <p className={`text-xl font-semibold ${textPrimaryColor}`}>{stats?.total_users || 0}</p>
-                    </div>
-                  </div>
-                  
-                  <div className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder}`}>
-                    <div className={`w-10 h-10 rounded-full ${yellowIconBgColor} flex items-center justify-center mr-3`}>
-                      <CalendarIcon className={`w-5 h-5 ${isLightMode ? 'text-yellow-600' : 'text-yellow-500'}`} />
-                    </div>
-                    <div>
-                      <p className={`text-sm ${textSecondaryColor}`}>Rendez-vous en attente</p>
-                      <p className={`text-xl font-semibold ${textPrimaryColor}`}>{stats?.pending_appointments || 0}</p>
-                    </div>
-                  </div>
-                  
-                  <div className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder}`}>
-                    <div className={`w-10 h-10 rounded-full ${iconBgColor} flex items-center justify-center mr-3`}>
-                      <ClipboardListIcon className={`w-5 h-5 ${textColor}`} />
-                    </div>
-                    <div>
-                      <p className={`text-sm ${textSecondaryColor}`}>Demandes en attente</p>
-                      <p className={`text-xl font-semibold ${textPrimaryColor}`}>{stats?.pending_property_requests || 0}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Actions rapides */}
-                <div className={`${cardBgColor} p-4 rounded-lg mb-6 ${cardBorder}`}>
-                  <h2 className={`text-lg font-semibold mb-3 ${textPrimaryColor}`}>Actions rapides</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    <button 
-                      onClick={() => navigate('/property-request')}
-                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
-                    >
-                      <span className="flex items-center">
-                        <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <span className={textPrimaryColor}>Ajouter une propriété</span>
-                      </span>
-                    </button>
-                    
-                    <button 
-                      onClick={() => navigate('/admin/property-requests')}
-                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
-                    >
-                      <span className="flex items-center">
-                        <ClipboardListIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <span className={textPrimaryColor}>Voir les demandes</span>
-                      </span>
-                      {stats?.pending_property_requests > 0 && (
-                        <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
-                          {stats.pending_property_requests}
-                        </span>
-                      )}
-                    </button>
-                    
-                    <button 
-                      onClick={() => navigate('/admin/appointments')}
-                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
-                    >
-                      <span className="flex items-center">
-                        <CalendarIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <span className={textPrimaryColor}>Gérer les rendez-vous</span>
-                      </span>
-                      {stats?.pending_appointments > 0 && (
-                        <span className="bg-yellow-500 text-white px-2 py-0.5 rounded-full text-xs">
-                          {stats.pending_appointments}
-                        </span>
-                      )}
-                    </button>
-                  </div>
                 </div>
               </motion.div>
             )}
@@ -607,6 +579,23 @@ export const AdminDashboard = (): JSX.Element => {
                   </div>
                 )}
               </motion.div>
+            )}
+            
+            {/* Onglet Rendez-vous */}
+            {activeTab === "appointments" && (
+              <div className={`text-center py-12 ${cardBgColor} rounded-lg ${cardBorder}`}>
+                <CalendarIcon className={`w-16 h-16 ${textColor} opacity-30 mx-auto mb-4`} />
+                <h2 className={`text-xl font-semibold mb-2 ${textPrimaryColor}`}>Gestion des rendez-vous</h2>
+                <p className={`${textSecondaryColor} mb-6 max-w-lg mx-auto`}>
+                  Gérez tous les rendez-vous, consultez les demandes en attente et confirmez les visites.
+                </p>
+                <button 
+                  onClick={() => navigate('/admin/appointments')}
+                  className={`px-6 py-3 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg font-medium`}
+                >
+                  Accéder à la gestion des rendez-vous
+                </button>
+              </div>
             )}
             
             {/* Onglet Propriétés - Lien vers la page de gestion des propriétés */}

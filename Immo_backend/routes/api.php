@@ -115,3 +115,7 @@ Route::get('/dashboard/stats', function (Request $request) {
         'data' => $stats
     ]);
 });
+
+// Ajouter les routes d'authentification pour le mot de passe oublié
+Route::post('/auth/forgot-password', [UserController::class, 'forgotPassword']);
+Route::post('/auth/reset-password', [UserController::class, 'resetPassword']);

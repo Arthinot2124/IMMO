@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { 
   BellIcon, HomeIcon, SettingsIcon, ArrowLeftIcon, 
   CheckCircleIcon, XCircleIcon, RefreshCwIcon,
-  CalendarIcon, ClockIcon, UserIcon, MapPinIcon, PhoneIcon, MailIcon
+  CalendarIcon, ClockIcon, UserIcon, MapPinIcon, PhoneIcon, MailIcon,
+  CalendarDaysIcon, XIcon
 } from "lucide-react";
 import apiService from "../../services/apiService";
 
@@ -52,9 +53,46 @@ export const AppointmentManagement = (): JSX.Element => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'En attente' | 'Confirmé' | 'Annulé'>('all');
-  const [dateFilter, setDateFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
   const [processing, setProcessing] = useState<{[key: number]: boolean}>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    const savedMode = localStorage.getItem('isLightMode');
+    return savedMode !== null ? savedMode === 'true' : true;
+  });
+  
+  // États pour le filtre par date de création
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [datePickerMonth, setDatePickerMonth] = useState(() => new Date());
+
+  // Couleurs qui changent en fonction du mode
+  const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
+  const bgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
+  const cardBgColor = isLightMode ? "bg-[#F8FAFC]" : "bg-[#1E2B47]";
+  const textColor = isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]";
+  const textPrimaryColor = isLightMode ? "text-[#1E293B]" : "text-white";
+  const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
+  const buttonPrimaryBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
+  const buttonPrimaryText = isLightMode ? "text-white" : "text-[#0f172a]";
+  const buttonSecondaryBg = isLightMode ? "bg-[#EFF6FF]" : "bg-[#1e293b]";
+  const buttonSecondaryText = isLightMode ? "text-[#0150BC]" : "text-white";
+  const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
+  const cardBorder = isLightMode ? "border border-[#0150BC]/30" : "border border-[#59e0c5]/30";
+  const tableBgColor = isLightMode ? "bg-white" : "bg-[#1e293b]";
+  const tableHeaderBg = isLightMode ? "bg-[#EFF6FF]" : "bg-[#0f172a]";
+  const tableRowHoverBg = isLightMode ? "hover:bg-gray-50" : "hover:bg-[#1E2B47]/70";
+
+  // Synchroniser avec les changements de mode
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const savedMode = localStorage.getItem('isLightMode');
+      if (savedMode !== null && (savedMode === 'true') !== isLightMode) {
+        setIsLightMode(savedMode === 'true');
+      }
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [isLightMode]);
 
   // Charger les rendez-vous au chargement du composant
   useEffect(() => {
@@ -74,7 +112,7 @@ export const AppointmentManagement = (): JSX.Element => {
             : (response.data.data.data || []);
           
           setAppointments(appointmentsData);
-          applyFilters(appointmentsData, statusFilter, dateFilter);
+          applyFilters(appointmentsData, statusFilter);
         } else {
           throw new Error("Format de réponse inattendu");
         }
@@ -92,8 +130,7 @@ export const AppointmentManagement = (): JSX.Element => {
   // Appliquer les filtres
   const applyFilters = (
     data: Appointment[], 
-    status: 'all' | 'En attente' | 'Confirmé' | 'Annulé', 
-    date: 'upcoming' | 'past' | 'all'
+    status: 'all' | 'En attente' | 'Confirmé' | 'Annulé'
   ) => {
     if (!Array.isArray(data)) {
       console.error("Les données ne sont pas un tableau:", data);
@@ -108,24 +145,79 @@ export const AppointmentManagement = (): JSX.Element => {
       filtered = filtered.filter(app => app.confirmation_status === status);
     }
     
-    // Filtre par date
-    const now = new Date();
-    if (date === 'upcoming') {
-      filtered = filtered.filter(app => new Date(app.appointment_date) >= now);
-    } else if (date === 'past') {
-      filtered = filtered.filter(app => new Date(app.appointment_date) < now);
+    // Filtre par date de création (si une date est sélectionnée)
+    if (selectedDate) {
+      const startOfDay = new Date(selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      filtered = filtered.filter(app => {
+        const creationDate = new Date(app.created_at);
+        return creationDate >= startOfDay && creationDate <= endOfDay;
+      });
     }
     
-    // Tri par date (plus récent en premier)
-    filtered.sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
+    // Tri par date de création (plus récent en premier) lorsque le statut est "all"
+    if (status === 'all') {
+      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else {
+      // Pour les autres filtres de statut, conserver le tri par date de rendez-vous
+      filtered.sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
+    }
     
     setFilteredAppointments(filtered);
   };
 
   // Mettre à jour les filtres
   useEffect(() => {
-    applyFilters(appointments, statusFilter, dateFilter);
-  }, [statusFilter, dateFilter, appointments]);
+    applyFilters(appointments, statusFilter);
+  }, [statusFilter, appointments, selectedDate]);
+
+  // Fonction pour générer le calendrier du mois en cours
+  const generateCalendar = (month: Date) => {
+    const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
+    const lastDay = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay(); // 0 = dimanche, 1 = lundi, etc.
+    
+    // Ajuster le jour de début pour que la semaine commence le lundi (1)
+    const adjustedStartingDayOfWeek = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+    
+    const calendarDays = [];
+    
+    // Jours vides avant le premier jour du mois
+    for (let i = 0; i < adjustedStartingDayOfWeek; i++) {
+      calendarDays.push(null);
+    }
+    
+    // Jours du mois
+    for (let i = 1; i <= daysInMonth; i++) {
+      calendarDays.push(new Date(month.getFullYear(), month.getMonth(), i));
+    }
+    
+    return calendarDays;
+  };
+
+  // Formater la date pour l'affichage
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  };
+
+  // Vérifier si une date est égale à la date sélectionnée
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
+  };
+
+  // Changer de mois dans le sélecteur de date
+  const changeMonth = (amount: number) => {
+    const newDate = new Date(datePickerMonth);
+    newDate.setMonth(newDate.getMonth() + amount);
+    setDatePickerMonth(newDate);
+  };
 
   // Mettre à jour le statut d'un rendez-vous
   const updateAppointmentStatus = async (appointmentId: number, newStatus: 'Confirmé' | 'Annulé') => {
@@ -254,21 +346,30 @@ export const AppointmentManagement = (): JSX.Element => {
   };
 
   return (
-    <div className="bg-[#0f172a] min-h-screen text-white">
-      <div className="max-w-[1440px] mx-auto px-4 py-6">
+    <div className={`${isLightMode ? "bg-white text-[#1E293B]" : "bg-[#0f172a] text-white"} min-h-screen`}>
+      <div 
+        className="fixed inset-0 opacity-50 z-0" 
+        style={{ 
+          backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'fixed',
+          transition: 'background-image 0.5s ease-in-out'
+        }}
+      ></div>
+      <div className="max-w-[1440px] mx-auto px-4 py-6 relative z-10">
         {/* En-tête */}
         <div className="flex items-center mb-6">
           <button 
             onClick={() => navigate('/admin/dashboard')}
-            className="p-2 rounded-full bg-[#1e293b] text-[#59e0c5] mr-4"
+            className={`p-2 rounded-full ${isLightMode ? "bg-[#EFF6FF] text-[#0150BC]" : "bg-[#1e293b] text-[#59e0c5]"} mr-4`}
           >
             <ArrowLeftIcon size={20} />
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#59e0c5]">
+          <h1 className={`text-xl sm:text-2xl font-bold ${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"}`}>
             Gestion des rendez-vous
           </h1>
         </div>
-        
+         
         {/* Message de succès */}
         {successMessage && (
           <div className="bg-green-500/20 border border-green-500 rounded-lg p-4 mb-6 flex items-center">
@@ -276,7 +377,7 @@ export const AppointmentManagement = (): JSX.Element => {
             <p>{successMessage}</p>
           </div>
         )}
-        
+         
         {/* Message d'erreur */}
         {error && (
           <div className="bg-red-500/20 border border-red-500 rounded-lg p-4 mb-6 flex items-center">
@@ -290,9 +391,9 @@ export const AppointmentManagement = (): JSX.Element => {
             </button>
           </div>
         )}
-        
+         
         {/* Filtres */}
-        <div className="bg-[#1e293b] rounded-lg p-4 mb-6">
+        <div className={`${isLightMode ? "bg-[#F8FAFC]" : "bg-[#1e293b]"} rounded-lg p-4 mb-6 ${cardBorder}`}>
           <h2 className="text-lg font-semibold mb-4">Filtres</h2>
           <div className="flex flex-wrap gap-4">
             <div>
@@ -300,7 +401,7 @@ export const AppointmentManagement = (): JSX.Element => {
               <select 
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="bg-[#0f172a] border border-[#59e0c5]/30 rounded-lg px-3 py-2 text-white"
+                className={`${isLightMode ? "bg-white border-[#0150BC]/30" : "bg-[#0f172a] border-[#59e0c5]/30"} border rounded-lg px-3 py-2`}
               >
                 <option value="all">Tous les statuts</option>
                 <option value="En attente">En attente</option>
@@ -308,52 +409,158 @@ export const AppointmentManagement = (): JSX.Element => {
                 <option value="Annulé">Annulé</option>
               </select>
             </div>
-            
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Date</label>
-              <select 
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value as any)}
-                className="bg-[#0f172a] border border-[#59e0c5]/30 rounded-lg px-3 py-2 text-white"
-              >
-                <option value="all">Toutes les dates</option>
-                <option value="upcoming">À venir</option>
-                <option value="past">Passés</option>
-              </select>
+
+            <div className="relative">
+              <label className="block text-sm text-gray-400 mb-1">Filtrer par date</label>
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowDatePicker(!showDatePicker)}
+                  className={`flex items-center ${isLightMode ? "bg-white border-[#0150BC]/30" : "bg-[#0f172a] border-[#59e0c5]/30"} border rounded-lg px-3 py-2`}
+                >
+                  <CalendarDaysIcon className="w-4 h-4 mr-2" />
+                  {selectedDate ? formatDate(selectedDate) : "Choisir une date"}
+                </button>
+                {selectedDate && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDate(null);
+                      setShowDatePicker(false);
+                    }}
+                    className="ml-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    title="Effacer la sélection"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {showDatePicker && (
+                <div className={`absolute mt-1 z-10 ${isLightMode ? "bg-white" : "bg-[#1e293b]"} border ${isLightMode ? "border-gray-200" : "border-gray-700"} rounded-lg shadow-lg p-3 min-w-[280px]`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <button 
+                      onClick={() => changeMonth(-1)} 
+                      className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <div className="font-medium">
+                      {datePickerMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                    </div>
+                    <button 
+                      onClick={() => changeMonth(1)} 
+                      className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                    {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
+                      <div key={index} className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="grid grid-cols-7 gap-1">
+                    {generateCalendar(datePickerMonth).map((day, index) => (
+                      <div key={index} className="h-8 text-center">
+                        {day ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDate(day);
+                              setShowDatePicker(false);
+                            }}
+                            className={`w-8 h-8 rounded-full ${
+                              selectedDate && isSameDay(day, selectedDate)
+                                ? isLightMode 
+                                  ? 'bg-[#0150BC] text-white'
+                                  : 'bg-[#59e0c5] text-[#0f172a]'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                          >
+                            {day.getDate()}
+                          </button>
+                        ) : (
+                          <span className="w-8 h-8 block"></span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
-        
+         
         {/* Liste des rendez-vous */}
         {loading ? (
-          <div className="bg-[#1e293b] rounded-lg p-8 flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#59e0c5]"></div>
+          <div className={`${isLightMode ? "bg-[#F8FAFC]" : "bg-[#1e293b]"} rounded-lg p-8 flex justify-center ${cardBorder}`}>
+            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]"}`}></div>
           </div>
         ) : filteredAppointments.length === 0 ? (
-          <div className="bg-[#1e293b] rounded-lg p-8 text-center">
+          <div className={`${isLightMode ? "bg-[#F8FAFC]" : "bg-[#1e293b]"} rounded-lg p-8 text-center ${cardBorder}`}>
             <CalendarIcon className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">Aucun rendez-vous trouvé</h3>
+            <h3 className="text-xl font-semibold mb-2">Aucun rendez-vous trouvé</h3>
             <p className="text-gray-400">
-              {statusFilter !== 'all' || dateFilter !== 'all' 
-                ? "Essayez d'ajuster vos filtres pour voir plus de résultats." 
-                : "Aucun rendez-vous n'a été enregistré dans le système."}
+              {selectedDate
+                ? `Aucun rendez-vous créé le ${formatDate(selectedDate)}.`
+                : statusFilter !== 'all' 
+                  ? "Essayez d'ajuster vos filtres pour voir plus de résultats." 
+                  : "Aucun rendez-vous n'a été enregistré dans le système."}
             </p>
+            {selectedDate && (
+              <button
+                onClick={() => setSelectedDate(null)}
+                className={`mt-4 px-4 py-2 rounded-lg ${isLightMode ? "bg-[#0150BC] text-white" : "bg-[#59e0c5] text-[#0f172a]"}`}
+              >
+                Effacer le filtre de date
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Nombre de résultats et date sélectionnée */}
+            <div className="flex justify-between items-center mb-2">
+              <p className={`${isLightMode ? "text-gray-600" : "text-gray-300"}`}>
+                {filteredAppointments.length} rendez-vous trouvés
+              </p>
+              {selectedDate && (
+                <div className="flex items-center">
+                  <span className={`mr-2 ${isLightMode ? "text-gray-600" : "text-gray-300"}`}>
+                    Filtrés par date: {formatDate(selectedDate)}
+                  </span>
+                  <button
+                    onClick={() => setSelectedDate(null)}
+                    className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                    title="Effacer le filtre de date"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
             {filteredAppointments.map((appointment) => {
               const { date, time } = formatDateTime(appointment.appointment_date);
               const statusInfo = getStatusInfo(appointment.confirmation_status);
-              
+               
               return (
                 <div 
                   key={appointment.appointment_id} 
-                  className="bg-[#1e293b] rounded-lg p-4 hover:bg-[#1e293b]/80 transition-colors"
+                  className={`${isLightMode ? "bg-[#F8FAFC] hover:bg-[#F8FAFC]/80" : "bg-[#1e293b] hover:bg-[#1e293b]/80"} rounded-lg p-4 transition-colors ${cardBorder}`}
                 >
                   <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
                     <div className="flex items-center mb-2 md:mb-0">
-                      <div className="w-10 h-10 bg-[#59e0c5]/20 rounded-full flex items-center justify-center mr-3">
-                        <CalendarIcon className="w-5 h-5 text-[#59e0c5]" />
+                      <div className={`w-10 h-10 ${isLightMode ? "bg-[#0150BC]/20" : "bg-[#59e0c5]/20"} rounded-full flex items-center justify-center mr-3`}>
+                        <CalendarIcon className={`w-5 h-5 ${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"}`} />
                       </div>
                       <div>
                         <h3 className="font-semibold">Rendez-vous #{appointment.appointment_id}</h3>
@@ -363,16 +570,16 @@ export const AppointmentManagement = (): JSX.Element => {
                         </div>
                       </div>
                     </div>
-                    
+                     
                     <div className={`${statusInfo.bgColor} ${statusInfo.color} px-3 py-1 rounded-full flex items-center self-start md:self-center`}>
                       {statusInfo.icon}
                       <span className="ml-1 text-sm">{appointment.confirmation_status}</span>
                     </div>
                   </div>
-                  
+                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-[#0f172a] p-3 rounded-lg">
-                      <h4 className="text-[#59e0c5] text-sm font-medium mb-2">Détails du rendez-vous</h4>
+                    <div className={`${isLightMode ? "bg-white" : "bg-[#0f172a]"} p-3 rounded-lg ${cardBorder}`}>
+                      <h4 className={`${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"} text-sm font-medium mb-2`}>Détails du rendez-vous</h4>
                       <div className="space-y-2">
                         <div className="flex items-start">
                           <CalendarIcon className="w-4 h-4 text-gray-400 mt-1 mr-2" />
@@ -381,7 +588,7 @@ export const AppointmentManagement = (): JSX.Element => {
                             <p className="text-sm text-gray-400">{time}</p>
                           </div>
                         </div>
-                        
+                         
                         {appointment.property && (
                           <div className="flex items-start">
                             <HomeIcon className="w-4 h-4 text-gray-400 mt-1 mr-2" />
@@ -391,29 +598,29 @@ export const AppointmentManagement = (): JSX.Element => {
                             </div>
                           </div>
                         )}
-                        
+                         
                         {appointment.notes && (
-                          <div className="border-t border-gray-700 pt-2 mt-2">
+                          <div className={`border-t ${isLightMode ? "border-gray-200" : "border-gray-700"} pt-2 mt-2`}>
                             <p className="text-xs text-gray-400">Notes:</p>
                             <p className="text-sm">{appointment.notes}</p>
                           </div>
                         )}
                       </div>
                     </div>
-                    
-                    <div className="bg-[#0f172a] p-3 rounded-lg">
-                      <h4 className="text-[#59e0c5] text-sm font-medium mb-2">Informations de contact</h4>
+                     
+                    <div className={`${isLightMode ? "bg-white" : "bg-[#0f172a]"} p-3 rounded-lg ${cardBorder}`}>
+                      <h4 className={`${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"} text-sm font-medium mb-2`}>Informations de contact</h4>
                       <div className="space-y-2">
                         <div className="flex items-center">
                           <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
                           <p className="text-sm">{appointment.contact_name || appointment.user?.full_name || "Non spécifié"}</p>
                         </div>
-                        
+                         
                         <div className="flex items-center">
                           <PhoneIcon className="w-4 h-4 text-gray-400 mr-2" />
                           <p className="text-sm">{appointment.contact_phone || appointment.user?.phone || "Non spécifié"}</p>
                         </div>
-                        
+                         
                         <div className="flex items-center">
                           <MailIcon className="w-4 h-4 text-gray-400 mr-2" />
                           <p className="text-sm">{appointment.contact_email || appointment.user?.email || "Non spécifié"}</p>
@@ -421,7 +628,7 @@ export const AppointmentManagement = (): JSX.Element => {
                       </div>
                     </div>
                   </div>
-                  
+                   
                   {appointment.confirmation_status === 'En attente' && (
                     <div className="flex justify-end space-x-3">
                       <button 
@@ -439,10 +646,10 @@ export const AppointmentManagement = (): JSX.Element => {
                       <button 
                         onClick={() => updateAppointmentStatus(appointment.appointment_id, 'Confirmé')}
                         disabled={processing[appointment.appointment_id]}
-                        className="px-4 py-2 bg-[#59e0c5] text-[#0f172a] rounded-lg flex items-center hover:bg-[#59e0c5]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-4 py-2 ${isLightMode ? "bg-[#0150BC] text-white" : "bg-[#59e0c5] text-[#0f172a]"} rounded-lg flex items-center hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {processing[appointment.appointment_id] ? (
-                          <div className="w-4 h-4 border-2 border-[#0f172a] border-t-transparent rounded-full animate-spin mr-2"></div>
+                          <div className={`w-4 h-4 border-2 ${isLightMode ? "border-white" : "border-[#0f172a]"} border-t-transparent rounded-full animate-spin mr-2`}></div>
                         ) : (
                           <CheckCircleIcon className="w-4 h-4 mr-2" />
                         )}

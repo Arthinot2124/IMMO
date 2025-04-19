@@ -1,0 +1,255 @@
+/* Règles de mise à l'échelle globale pour les petits écrans */
+@media screen and (max-width: 410px) {
+  /* 
+   * Réduction du padding général du conteneur principal
+   * Vous pouvez augmenter cette valeur si les éléments semblent trop serrés,
+   * ou la diminuer s'ils débordent de l'écran.
+   */
+  .small-screen-container {
+    padding: 1rem !important;
+  }
+
+  /* 
+   * Ajustements de la section d'en-tête
+   * Réduction de la taille du titre principal et de l'espacement des lignes
+   * pour qu'il s'adapte mieux aux petits écrans.
+   */
+  .small-screen-header h1 {
+    font-size: 2.5rem !important; /* Taille de police réduite pour le titre principal */
+    line-height: 1.1 !important; /* Espacement des lignes plus serré */
+  }
+
+  .small-screen-header img {
+    width: 2.5rem !important; /* Réduction de la taille du logo */
+    height: 2.5rem !important;
+  }
+
+  /* 
+   * Ajustements de la carte de bienvenue
+   * Réduction de la hauteur et du padding pour s'adapter aux petits écrans
+   * tout en conservant la lisibilité du contenu.
+   */
+  .small-screen-welcome-card {
+    padding: 1rem !important; /* Padding réduit à l'intérieur de la carte */
+    height: 150px !important; /* Hauteur fixe réduite */
+  }
+
+  /* 
+   * Espacement entre les icônes dans la carte de bienvenue
+   * Vous pouvez ajuster cette valeur selon vos préférences visuelles.
+   */
+  .small-screen-welcome-card .icons {
+    gap: 0.5rem !important; /* Espace entre les icônes */
+  }
+
+  /* Taille des icônes SVG dans la carte de bienvenue */
+  .small-screen-welcome-card .icons svg {
+    width: 1.5rem !important; /* Largeur réduite des icônes */
+    height: 1.5rem !important; /* Hauteur réduite des icônes */
+  }
+
+  /* 
+   * Texte de bienvenue
+   * Ajustement de la taille de police et de la largeur maximale
+   * pour éviter les débordements de texte.
+   */
+  .small-screen-welcome-card p {
+    font-size: 1rem !important; /* Taille de police réduite */
+    max-width: 190px !important; /* Largeur maximale du texte */
+  }
+
+  /* 
+   * Image de personne dans la carte de bienvenue
+   * Ajustement de la hauteur et de la position pour qu'elle
+   * s'intègre bien dans la carte redimensionnée.
+   */
+  .small-screen-welcome-card img {
+    height: 210px !important; /* Hauteur réduite de l'image */
+    right: 1 !important; /* Position à droite ajustée */
+  }
+
+  /* 
+   * Ajustements de la section des statistiques
+   * Réduction de la taille des titres, valeurs et étiquettes
+   * pour une meilleure adaptation aux petits écrans.
+   */
+  .small-screen-stats h2 {
+    font-size: 0.9rem !important; /* Taille réduite pour les titres */
+  }
+
+  .small-screen-stats .border-line {
+    width: 9rem !important; /* Largeur réduite de la ligne de séparation */
+  }
+
+  .small-screen-stats .stats-container {
+    gap: 0.5rem !important; /* Espace réduit entre les statistiques */
+  }
+
+  .small-screen-stats .stat-value {
+    font-size: 1.75rem !important; /* Taille réduite pour les valeurs numériques */
+  }
+
+  .small-screen-stats .stat-label {
+    font-size: 0.5rem !important; /* Taille réduite pour les étiquettes */
+  }
+
+  /* 
+   * Ajustements des cartes de fonctionnalités
+   * Réduction de la taille des titres, images et textes
+   * pour une meilleure adaptation aux petits écrans.
+   */
+  .small-screen-feature-card h3 {
+    font-size: 0.7rem !important; /* Taille réduite pour les titres des cartes */
+  }
+
+  .small-screen-feature-card img {
+    width: 1.5rem !important; /* Largeur réduite des images */
+    height: 1.5rem !important; /* Hauteur réduite des images */
+  }
+
+  .small-screen-feature-card p {
+    font-size: 0.5rem !important; /* Taille réduite pour le texte des cartes */
+  }
+
+  /* 
+   * Spécifique à la carte Vendre/Louer
+   * Ajustement de la largeur pour maintenir les proportions
+   * par rapport aux autres cartes.
+   */
+  .small-screen-sell-card {
+    width: 125% !important; /* Largeur légèrement augmentée */
+  }
+
+  /* 
+   * Spécifique à la carte Trouver un logement
+   * Ajustement de la largeur pour maintenir les proportions
+   * par rapport aux autres cartes.
+   */
+  .small-screen-find-card {
+    width: 75% !important; /* Largeur réduite */
+  }
+
+  /* 
+   * Spécifique à la carte Guide
+   * Réduction de la hauteur pour s'adapter aux petits écrans.
+   */
+  .small-screen-guide-card {
+    height: 80px !important; /* Hauteur réduite */
+  }
+
+  /* 
+   * Ajustements du panneau de paramètres
+   * Réduction de la taille du texte et des interrupteurs
+   * pour une meilleure adaptation aux petits écrans.
+   */
+  .small-screen-settings {
+    height: 140px !important; /* Hauteur de la carte des paramètres */
+    padding: 0.2rem !important; /* Padding réduit */
+    margin-top: -1px !important;
+    display: flex !important; /* Disposition flexible */
+    flex-direction: column !important; /* En colonne */
+    justify-content: space-between !important; /* Répartir l'espace */
+    overflow-y: hidden !important; /* Pas de défilement */
+  }
+  
+  .small-screen-settings span {
+    font-size: 0.75rem !important; /* Taille encore plus réduite pour le texte */
+    white-space: nowrap !important; /* Empêche le retour à la ligne */
+    overflow: hidden !important; /* Cache le débordement */
+    text-overflow: ellipsis !important; /* Ajoute des points de suspension */
+  }
+
+  /* Réduit l'espacement entre les éléments de paramètres */
+  .small-screen-settings > div {
+    margin-bottom: 0.1rem !important; /* Marge encore plus réduite */
+  }
+  
+  /* Réduire la taille de l'image dans les paramètres */
+  .small-screen-settings img {
+    width: 1.2rem !important;
+    height: 1.2rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+  
+  .small-screen-settings .switch {
+    transform: scale(0.5) !important; /* Réduction encore plus forte de la taille des interrupteurs */
+    margin: 0 !important; /* Supprime les marges des interrupteurs */
+    min-width: 30px !important; /* Largeur minimale réduite */
+    position: relative !important;
+    z-index: 5 !important;
+    opacity: 1 !important;
+  }
+  
+  /* Cibler le conteneur direct des interrupteurs */
+  .small-screen-settings .flex {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 0.1rem 0 !important; /* Padding vertical réduit */
+    min-height: 20px !important; /* Hauteur minimale réduite */
+  }
+  
+  /* S'assurer que le thumb (partie mobile) de l'interrupteur est visible */
+  .small-screen-settings .switch [data-state] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Réduire la taille de l'espace dans CardContent */
+  .small-screen-settings .p-3 {
+    padding: 0.5rem !important;
+  }
+
+  /* 
+   * Ajustements de la carte de conseils
+   * Réduction de la hauteur, taille des images et du texte
+   * pour une meilleure adaptation aux petits écrans.
+   */
+  .small-screen-advice-card {
+    height: 230px !important; /* Hauteur réduite */
+  }
+
+  .small-screen-advice-card img {
+    width: 1.75rem !important; /* Largeur réduite de l'image */
+    height: 1.85rem !important; /* Hauteur réduite de l'image */
+  }
+
+  .small-screen-advice-card h3 {
+    font-size: 0.8rem !important; /* Taille réduite pour le titre */
+  }
+
+  .small-screen-advice-card p {
+    font-size: 0.7rem !important; /* Taille réduite pour le texte */
+  }
+
+  /* 
+   * Ajustement de la ligne du bas
+   * Réduction de la largeur maximale et de la marge supérieure
+   * pour une meilleure adaptation aux petits écrans.
+   */
+  .small-screen-bottom-line {
+    max-width: 10rem !important; /* Largeur maximale réduite */
+    margin-top: 0.75rem !important; /* Marge supérieure très réduite */
+    margin-bottom: 0.5rem !important; /* Marge inférieure réduite */
+    display: block !important; /* Forcer l'affichage */
+    height: 2px !important; /* Assurer la hauteur */
+    opacity: 1 !important; /* Forcer l'opacité */
+    position: relative !important; /* Position relative */
+    z-index: 5 !important; /* Augmenter le z-index */
+  }
+
+  /* 
+   * Ajustements de la grille
+   * Réduction de l'espacement entre les éléments de la grille
+   * pour une meilleure adaptation aux petits écrans.
+   */
+  .small-screen-grid {
+    gap: 0.5rem !important; /* Espace réduit entre les éléments de la grille */
+  }
+
+  .small-screen-grid-col {
+    gap: 0.5rem !important; /* Espace réduit entre les éléments de la colonne */
+  }
+}

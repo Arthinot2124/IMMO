@@ -67,6 +67,22 @@ const loadUnreadNotificationsCount = async (userId: number, token: string) => {
   }
 };
 
+// Fonction utilitaire pour gérer les erreurs d'API
+const handleApiError = (error: any): never => {
+  // En cas d'erreur de réseau
+  if (!error.response) {
+    throw new Error("Problème de connexion au serveur");
+  }
+
+  // Si le backend renvoie un message d'erreur
+  if (error.response.data && error.response.data.message) {
+    throw new Error(error.response.data.message);
+  }
+
+  // Message par défaut
+  throw new Error("Une erreur s'est produite");
+};
+
 const authService = {
   /**
    * Inscrit un nouvel utilisateur
@@ -228,6 +244,40 @@ const authService = {
     }
     
     return 0;
+  },
+
+  /**
+   * Request a password reset code
+   * @param identifier Email or phone number
+   */
+  async requestPasswordReset(identifier: string): Promise<any> {
+    try {
+      const response = await apiService.post('/auth/forgot-password', { identifier });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reset password with verification code
+   * @param identifier Email or phone number
+   * @param code Reset code
+   * @param password New password
+   */
+  async resetPassword(identifier: string, code: string, password: string): Promise<any> {
+    try {
+      const response = await apiService.post('/auth/reset-password', { 
+        identifier, 
+        code, 
+        password 
+      });
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
   }
 };
 

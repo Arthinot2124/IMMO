@@ -13,6 +13,7 @@ import { Favorites } from "./screens/Favorites";
 import { AppointmentBooking } from "./screens/AppointmentBooking";
 import { Checkout } from "./screens/Checkout";
 import { Guide } from "./screens/Guide";
+import { ContactAgency } from "./screens/ContactAgency/ContactAgency";
 import { AdminDashboard } from "./screens/Admin/AdminDashboard";
 import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval";
 import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
@@ -29,6 +30,7 @@ createRoot(document.getElementById("app") as HTMLElement).render(
         <Route path="/trano" element={<TranoSombre />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/property/:id" element={<PropertyDetail />} />
+        <Route path="/property/:id/contact" element={<ContactAgency />} />
         <Route path="/property-request" element={<PropertyRequest />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/dashboard" element={<Dashboard />} />

@@ -32,6 +32,7 @@ CREATE TABLE properties (
     price DECIMAL(15,2) NOT NULL,
     surface DECIMAL(10,2),
     location VARCHAR(255),
+    property_type ENUM('VILLA', 'TERRAIN', 'APPARTEMENT', 'MAISON', 'AUTRE') NOT NULL DEFAULT 'AUTRE',
     category ENUM('LITE', 'ESSENTIEL', 'PREMIUM') DEFAULT 'LITE',
     status ENUM('Disponible', 'Réservé', 'Vendu', 'Loué') DEFAULT 'Disponible',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +41,7 @@ CREATE TABLE properties (
     CONSTRAINT fk_property_user FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
 
 -- 4. Table pour stocker les médias liés aux propriétés
 CREATE TABLE property_media (

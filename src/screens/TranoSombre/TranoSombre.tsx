@@ -1,9 +1,9 @@
 import { BellIcon, HomeIcon, SettingsIcon } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "../../components/ui/ComponentTrano/button";
 import { Card, CardContent } from "../../components/ui/ComponentTrano/card";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import apiService from "../../services/apiService";
 import NotificationBadge from "../../components/NotificationBadge";
 import { getMediaUrl } from "../../config/api";
@@ -24,6 +24,7 @@ interface Property {
   price: number;
   surface: number;
   location: string;
+  property_type?: string;
   category: string;
   status: string;
   media?: PropertyMedia[];
@@ -40,11 +41,12 @@ export const TranoSombre = (): JSX.Element => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<string>("TOUS");
+  const [activeFilter, setActiveFilter] = useState<string>("VILLAS");
   const [priceFilter, setPriceFilter] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [imageErrors, setImageErrors] = useState<{[key: number]: boolean}>({});
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [isLightMode, setIsLightMode] = useState(() => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
@@ -106,28 +108,42 @@ export const TranoSombre = (): JSX.Element => {
       // Construction des paramètres de requête
       let params: any = { 
         page: currentPage,
-        include: 'media'
+        include: 'media',
+        per_page: 5
       };
       
-      // Ajouter la pagination seulement pour les filtres spécifiques, pas pour "TOUS"
-      if (activeFilter !== "TOUS") {
-        params.per_page = 5;
-      } else {
-        params.per_page = 100;
+      // Ajout des filtres selon le type de propriété
+      if (activeFilter === "TERRAINS") {
+        params.property_type = "TERRAIN";
+        // Format alternatif au cas où l'API attend une autre forme
+        params.filter = params.filter || {};
+        params.filter.property_type = "TERRAIN";
+      } else if (activeFilter === "VILLAS") {
+        params.property_type = "VILLA";
+        // Format alternatif au cas où l'API attend une autre forme
+        params.filter = params.filter || {};
+        params.filter.property_type = "VILLA";
       }
       
-      // Ajout des filtres si sélectionnés et si ce n'est pas "TOUS"
-      if (activeFilter === "TERRAINS") {
-        params.category = "LITE";
-      } else if (activeFilter === "VILLAS") {
-        params.category = "PREMIUM";
+      // Ajout du terme de recherche s'il existe
+      if (searchTerm && searchTerm.trim() !== "") {
+        params.search = searchTerm.trim();
+        // Format alternatif pour le backend
+        params.filter = params.filter || {};
+        params.filter.search = searchTerm.trim();
       }
       
       if (priceFilter) {
         params.min_price = 10000000;
+        // Format alternatif au cas où l'API attend une autre forme
+        params.filter = params.filter || {};
+        params.filter.min_price = 10000000;
       }
       
-      console.log("Appel API avec params:", params);
+      // Log détaillé pour vérifier les paramètres exactement tels qu'ils sont envoyés
+      console.log("Appel API avec params:", JSON.stringify(params, null, 2));
+      const url = `/properties?${new URLSearchParams(params).toString()}`;
+      console.log("URL complète de la requête:", url);
       
       // Utilisation de apiService pour récupérer les propriétés
       const response = await apiService.get<ApiResponse<{data: Property[], meta: {last_page: number}}>>('/properties', { params });
@@ -148,6 +164,51 @@ export const TranoSombre = (): JSX.Element => {
         }
       }
       
+      // Filtrage côté client (solution de secours si l'API ne filtre pas correctement)
+      if (propertyArray.length > 0) {
+        let needsClientSideFiltering = false;
+        
+        // Vérifier si le filtrage par type de propriété est nécessaire
+        if (activeFilter === "TERRAINS" || activeFilter === "VILLAS") {
+          // Vérifie si les données semblent déjà filtrées par le backend
+          const alreadyFiltered = propertyArray.every(p => {
+            if (activeFilter === "TERRAINS") return p.property_type === "TERRAIN";
+            if (activeFilter === "VILLAS") return p.property_type === "VILLA";
+            return true;
+          });
+          
+          if (!alreadyFiltered) {
+            console.log("Application d'un filtrage côté client pour property_type");
+            needsClientSideFiltering = true;
+            propertyArray = propertyArray.filter(p => {
+              if (activeFilter === "TERRAINS") return p.property_type === "TERRAIN";
+              if (activeFilter === "VILLAS") return p.property_type === "VILLA";
+              return true;
+            });
+          }
+        }
+        
+        // Filtrage côté client pour la recherche
+        if (searchTerm && searchTerm.trim() !== "") {
+          const term = searchTerm.trim().toLowerCase();
+          
+          // Vérifier si les résultats semblent déjà filtrés par la recherche
+          const searchTermFound = propertyArray.some(p => 
+            p.title.toLowerCase().includes(term) || 
+            (p.description && p.description.toLowerCase().includes(term))
+          );
+          
+          // Si aucun résultat ne contient le terme de recherche, on filtre côté client
+          if (!searchTermFound || propertyArray.length > 20) {
+            console.log("Application d'un filtrage côté client pour la recherche");
+            propertyArray = propertyArray.filter(p => 
+              p.title.toLowerCase().includes(term) || 
+              (p.description && p.description.toLowerCase().includes(term))
+            );
+          }
+        }
+      }
+      
       setProperties(propertyArray);
       console.log("Données traitées:", propertyArray);
     } catch (err: any) {
@@ -164,37 +225,70 @@ export const TranoSombre = (): JSX.Element => {
       }
       
       // Charger des données de test pour éviter une page blanche en cas d'erreur
-      setProperties([
-        {
+      const offlineData = [];
+      
+      // Ajouter une villa si le filtre est sur VILLAS ou s'il n'y a pas de filtre
+      if (activeFilter === "VILLAS") {
+        offlineData.push({
           property_id: 1,
           title: "Villa 4 pièces (Données hors ligne)",
           description: "Données de test en mode hors ligne",
           price: 45000000,
           surface: 120,
           location: "Tambohobe",
+          property_type: "VILLA",
           category: "PREMIUM",
           status: "Disponible"
-        },
-        {
+        });
+      }
+      
+      // Ajouter un terrain si le filtre est sur TERRAINS ou s'il n'y a pas de filtre
+      if (activeFilter === "TERRAINS") {
+        offlineData.push({
           property_id: 2,
           title: "Terrain 500m² (Données hors ligne)",
           description: "Données de test en mode hors ligne",
           price: 15000000,
           surface: 500,
           location: "Antarandolo",
+          property_type: "TERRAIN",
           category: "LITE",
           status: "Disponible"
-        }
-      ]);
+        });
+      }
+      
+      // Si aucune donnée n'a été ajoutée, ajouter au moins un élément
+      if (offlineData.length === 0) {
+        offlineData.push({
+          property_id: 3,
+          title: activeFilter === "TERRAINS" ? "Terrain (Hors ligne)" : "Villa (Hors ligne)",
+          description: "Données de test en mode hors ligne",
+          price: 25000000,
+          surface: 300,
+          location: "Fianarantsoa",
+          property_type: activeFilter === "TERRAINS" ? "TERRAIN" : "VILLA",
+          category: "ESSENTIEL",
+          status: "Disponible"
+        });
+      }
+      
+      setProperties(offlineData);
     } finally {
       setLoading(false);
       console.log("Chargement terminé");
     }
   };
 
-  // Charger les propriétés au montage du composant et lorsque les filtres changent
+  // Charger les propriétés au montage initial
   useEffect(() => {
     fetchProperties();
+  }, []);
+
+  // Charger les propriétés lorsque les filtres changent
+  useEffect(() => {
+    if (activeFilter || priceFilter) {
+      fetchProperties();
+    }
   }, [currentPage, activeFilter, priceFilter]);
 
   // Gérer le changement de filtre
@@ -319,19 +413,48 @@ export const TranoSombre = (): JSX.Element => {
     }
   };
 
+  // Utilitaire de debounce pour éviter trop d'appels API pendant la saisie
+  function useDebounce<T>(value: T, delay: number): T {
+    const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  
+    useEffect(() => {
+      // Mettre à jour la valeur debounced après le délai
+      const handler = setTimeout(() => {
+        setDebouncedValue(value);
+      }, delay);
+  
+      // Annuler le timeout si la valeur change ou si le composant est démonté
+      return () => {
+        clearTimeout(handler);
+      };
+    }, [value, delay]);
+  
+    return debouncedValue;
+  }
+
+  // Valeur de recherche avec debounce
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms de délai
+
+  // Déclencher la recherche quand le terme de recherche debounced change
+  useEffect(() => {
+    if (debouncedSearchTerm !== undefined) {
+      fetchProperties();
+    }
+  }, [debouncedSearchTerm]);
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`${bgColor} min-h-screen`}
+      className={`${bgColor} min-h-screen relative`}
     >
       <div 
-        className="absolute inset-0 opacity-50 z-0" 
+        className="fixed inset-0 opacity-50 z-0" 
         style={{ 
           backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'fixed',
           transition: 'background-image 0.5s ease-in-out'
         }}
       ></div>
@@ -357,9 +480,27 @@ export const TranoSombre = (): JSX.Element => {
           <div className="relative">
             <input
               type="search"
-              className={`w-[140px] xs:w-[200px] sm:w-[300px] h-8 xs:h-10 bg-transparent rounded-full px-3 xs:px-4 text-xs xs:text-sm ${textColor} ${borderColor} border outline-none`}
+              className={`w-[140px] xs:w-[200px] sm:w-[300px] h-8 xs:h-10 bg-transparent rounded-full px-3 xs:px-4 pr-8 text-xs xs:text-sm ${textColor} ${borderColor} border outline-none`}
               placeholder="Rechercher..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
+            <button 
+              className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${textColor}`}
+            >
+              {searchTerm ? (
+                <span 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearchTerm("");
+                  }}
+                >
+                  
+                </span>
+              ) : (
+                <span> </span>
+              )}
+            </button>
           </div>
         </motion.header>
 
@@ -370,11 +511,22 @@ export const TranoSombre = (): JSX.Element => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="relative mt-2 xs:mt-3 mb-3 xs:mb-6 rounded-[24px] xs:rounded-[32px] overflow-hidden"
         >
-          <img
-            src="/public_Trano/FIANARANTSOA.png"
-            alt="Hero"
-            className="w-full h-[150px] xs:h-[190px] sm:h-[230px] object-cover"
-          />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeFilter}
+              initial={{ opacity: 0, scale: 1.1 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="w-full h-full"
+            >
+              <img
+                src={activeFilter === "TERRAINS" ? "/public_Trano/tany.png" : "/public_Trano/FIANARANTSOA.png"}
+                alt="Hero"
+                className="w-full h-[150px] xs:h-[190px] sm:h-[230px] object-cover"
+              />
+            </motion.div>
+          </AnimatePresence>
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <img 
@@ -401,18 +553,18 @@ export const TranoSombre = (): JSX.Element => {
           <div className="flex justify-center gap-4 xs:gap-8 sm:gap-12">
             <div 
               className="flex items-center gap-2 cursor-pointer" 
-              onClick={() => handleFilterChange("TOUS")}
+              onClick={() => handleFilterChange("VILLAS")}
             >
               <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
-                activeFilter === "TOUS" 
+                activeFilter === "VILLAS" 
                   ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
                   : `border-2 ${borderColor}`
               }`}>
-                {activeFilter === "TOUS" && (
+                {activeFilter === "VILLAS" && (
                   <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
                 )}
               </div>
-              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>TOUS</span>
+              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>VILLAS</span>
             </div>
 
             <div 
@@ -429,22 +581,6 @@ export const TranoSombre = (): JSX.Element => {
                 )}
               </div>
               <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>TERRAINS</span>
-            </div>
-
-            <div 
-              className="flex items-center gap-2 cursor-pointer" 
-              onClick={() => handleFilterChange("VILLAS")}
-            >
-              <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
-                activeFilter === "VILLAS" 
-                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
-                  : `border-2 ${borderColor}`
-              }`}>
-                {activeFilter === "VILLAS" && (
-                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                )}
-              </div>
-              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>VILLAS</span>
             </div>
             
             <div 
@@ -555,7 +691,7 @@ export const TranoSombre = (): JSX.Element => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex justify-center items-center gap-1 xs:gap-2 sm:gap-4 my-8 xs:my-12 sm:my-16"
+            className="fixed bottom-0 left-0 right-0 flex justify-center items-center gap-1 xs:gap-2 sm:gap-4 py-4 bg-gradient-to-t from-[#0f172a] to-transparent z-50"
           >
             <button 
               className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${
@@ -593,7 +729,7 @@ export const TranoSombre = (): JSX.Element => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex justify-center items-center my-8 xs:my-12 sm:my-16"
+            className="fixed bottom-0 left-0 right-0 flex justify-center items-center py-4 bg-gradient-to-t from-[#0f172a] to-transparent z-50"
           >
             <div className={`px-6 py-2 ${buttonBg} rounded-full ${textColor} text-sm`}>
               Page 1 sur 1

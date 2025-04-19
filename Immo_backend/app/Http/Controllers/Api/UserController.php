@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -32,7 +33,7 @@ class UserController extends Controller
                 'role_id' => 'sometimes|exists:roles,role_id',
                 'full_name' => 'required|string|max:100',
                 'email' => 'nullable|email|unique:users',
-                'phone' => 'nullable|string|max:20|regex:/^\d+$/',
+                'phone' => 'nullable|string|max:20|regex:/^\d+$/|unique:users',
                 'address' => 'nullable|string|max:255',
                 'password' => 'required|string',
             ]);
@@ -92,7 +93,7 @@ class UserController extends Controller
                 'role_id' => 'sometimes|required|exists:roles,role_id',
                 'full_name' => 'sometimes|required|string|max:100',
                 'email' => 'nullable|email|unique:users,email,' . $user->user_id . ',user_id',
-                'phone' => 'nullable|string|max:20|regex:/^\d+$/',
+                'phone' => 'nullable|string|max:20|regex:/^\d+$/|unique:users,phone,' . $user->user_id . ',user_id',
                 'address' => 'nullable|string|max:255',
                 'password' => 'sometimes|required|string',
             ]);
@@ -199,6 +200,128 @@ class UserController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Authentication désactivée temporairement - Cette route retournerait normalement les données de l\'utilisateur connecté'
+        ]);
+    }
+
+    /**
+     * Request password reset - send reset link/code
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'identifier' => 'required|string',
+        ]);
+
+        $identifier = $request->input('identifier');
+        $user = null;
+
+        // Vérifier si l'identifier est un email ou un téléphone
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $user = User::where('email', $identifier)->first();
+        } else {
+            // Supposer que c'est un numéro de téléphone
+            $user = User::where('phone', $identifier)->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aucun compte trouvé avec cet identifiant.'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Générer un code de réinitialisation (6 chiffres)
+        $resetCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expiresAt = now()->addHours(1); // Expire dans 1 heure
+
+        // Stocker le code dans la base de données
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $user->email ?? $user->phone],
+            [
+                'token' => Hash::make($resetCode),
+                'created_at' => now(),
+                'expires_at' => $expiresAt
+            ]
+        );
+
+        // Pour la phase de développement, on retourne toujours le code dans la réponse
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Code de réinitialisation envoyé avec succès.',
+            'reset_code' => $resetCode,
+            'expires_at' => $expiresAt->toDateTimeString()
+        ]);
+    }
+
+    /**
+     * Reset password with code
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'identifier' => 'required|string',
+            'code' => 'required|string|size:6',
+            'password' => 'required|string|min:6',
+        ]);
+
+        $identifier = $request->input('identifier');
+        $user = null;
+
+        // Vérifier si l'identifier est un email ou un téléphone
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $user = User::where('email', $identifier)->first();
+        } else {
+            // Supposer que c'est un numéro de téléphone
+            $user = User::where('phone', $identifier)->first();
+        }
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aucun compte trouvé avec cet identifiant.'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Récupérer l'entrée de réinitialisation de mot de passe
+        $resetEntry = DB::table('password_resets')
+            ->where('email', $user->email ?? $user->phone)
+            ->first();
+
+        if (!$resetEntry) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Aucune demande de réinitialisation trouvée.'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Vérifier si le code a expiré
+        if (now()->gt(\Carbon\Carbon::parse($resetEntry->expires_at))) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Le code de réinitialisation a expiré. Veuillez faire une nouvelle demande.'
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Vérifier le code
+        if (!Hash::check($request->code, $resetEntry->token)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Code de réinitialisation invalide.'
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Mettre à jour le mot de passe
+        $user->password_hash = Hash::make($request->password);
+        $user->save();
+
+        // Supprimer l'entrée de réinitialisation
+        DB::table('password_resets')
+            ->where('email', $user->email ?? $user->phone)
+            ->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Mot de passe réinitialisé avec succès.'
         ]);
     }
 }

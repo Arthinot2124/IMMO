@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { motion, useAnimation } from "framer-motion";
 // @ts-ignore
 import "./animations.css";
+// @ts-ignore
+import "./accueil.css";
 import NotificationBadge from "../../components/NotificationBadge";
 import { UserIcon, Settings } from "lucide-react";
 
@@ -136,9 +138,9 @@ export const ElementAccueilSombre = (): JSX.Element => {
       />
 
       {/* Main Content Container */}
-      <div className="relative mx-auto px-6 sm:px-8 md:px-12 pt-10 sm:pt-12 md:pt-16 pb-6 sm:pb-8 md:pb-10">
+      <div className="relative mx-auto px-6 sm:px-8 md:px-12 pt-10 sm:pt-12 md:pt-16 pb-6 sm:pb-8 md:pb-10 small-screen-container">
         {/* Header Section */}
-        <div className="flex justify-between items-start mb-14 sm:mb-18 animate-on-mount">
+        <div className="flex justify-between items-start mb-14 sm:mb-18 animate-on-mount small-screen-header">
           <div>
             <h1 className={`text-6xl sm:text-7xl md:text-8xl lg:text-[80px] font-bold leading-tight`} style={{ color: titleStatsColor }}>
               Salut,
@@ -151,14 +153,14 @@ export const ElementAccueilSombre = (): JSX.Element => {
 
         {/* Welcome Card */}
         <div 
-          className="relative rounded-3xl p-6 sm:p-8 mb-8 sm:mb-12 animate-on-mount h-[180px] sm:h-[220px] md:h-[260px]"
+          className="relative rounded-3xl p-6 sm:p-8 mb-8 sm:mb-12 animate-on-mount h-[180px] sm:h-[220px] md:h-[260px] small-screen-welcome-card"
           style={{ 
             backgroundColor: cardBgColor, 
             animationDelay: '100ms',
             border: cardBorderStyle
           }}
         >
-          <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 icons">
             <UserIcon 
               className={`w-8 h-8 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
               onClick={() => navigate('/profile')} 
@@ -174,8 +176,8 @@ export const ElementAccueilSombre = (): JSX.Element => {
           <p style={{ color: textColor }} className="text-base sm:text-xl md:text-2xl lg:text-3xl max-w-[200px] sm:max-w-sm md:max-w-md lg:max-w-lg pr-2 sm:pr-8 md:pr-12 lg:pr-0 leading-tight sm:leading-snug md:leading-normal">
             Bienvenu ! En quelques 
             clics, achetez, vendez ou 
-            louez le bien idéal 
-            en toute simplicité
+            louez le bien idéal en toute simplicité
+            
           </p>
 
           
@@ -192,7 +194,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
         </div>
 
         {/* Stats Section */}
-        <div className="mb-8 sm:mb-12 animate-on-mount" style={{animationDelay: '200ms'}}>
+        <div className="mb-8 sm:mb-12 animate-on-mount small-screen-stats" style={{animationDelay: '200ms'}}>
           <div className="flex flex-row items-start">
             <div className="flex flex-col items-start">
               <h2 className={`text-lg sm:text-xl font-bold ${isLightMode ? "text-[#0150BC]" : "text-white"}`}>
@@ -203,12 +205,12 @@ export const ElementAccueilSombre = (): JSX.Element => {
               </h2>
             </div>
             <div className="flex flex-col mt-4" style={{marginLeft: 'auto'}}>
-              <div className={`border-t-2 ${isLightMode ? "border-[#0150BC]" : "border-white"} w-40 sm:w-56 md:w-64 mb-1 sm:mb-2`}></div>
+              <div className={`border-t-2 ${isLightMode ? "border-[#0150BC]" : "border-white"} w-40 sm:w-56 md:w-64 mb-1 sm:mb-2 border-line`}></div>
               <motion.div 
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="flex gap-3 sm:gap-6 justify-end" 
+                className="flex gap-3 sm:gap-6 justify-end stats-container" 
                 style={{marginLeft: 'auto', marginRight: '-0px'}}
               >
                 {stats.map((stat, index) => (
@@ -219,7 +221,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
                     onClick={stat.onClick}
                   >
                     <motion.div 
-                      className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-['Anton']`}
+                      className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-['Anton'] stat-value`}
                       style={{ color: titleStatsColor }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -234,7 +236,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
                       </motion.span>
                     </motion.div>
                     <motion.div 
-                      className={`text-[${accentColor}] text-[8px] sm:text-xs`}
+                      className={`text-[${accentColor}] text-[8px] sm:text-xs stat-label`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.5, delay: 0.3 }}
@@ -250,7 +252,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
         </div>
 
         {/* Feature Cards Grid */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-4 small-screen-grid">
           {/* Sell/Rent Card */}
           <Card 
             style={{ 
@@ -259,7 +261,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
               animationDelay: '300ms',
               border: cardBorderStyle
             }}
-            className={`rounded-xl overflow-hidden animate-on-mount cursor-pointer hover:opacity-90 transition-opacity`}
+            className={`rounded-xl overflow-hidden animate-on-mount cursor-pointer hover:opacity-90 transition-opacity small-screen-feature-card small-screen-sell-card`}
             onClick={() => navigate('/property-request')}
           >
             <CardContent className="p-2 sm:p-3 md:p-4">
@@ -282,7 +284,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
               animationDelay: '400ms',
               border: cardBorderStyle
             }}
-            className={`rounded-xl overflow-hidden ml-auto animate-on-mount cursor-pointer hover:opacity-90 transition-opacity`}
+            className={`rounded-xl overflow-hidden ml-auto animate-on-mount cursor-pointer hover:opacity-90 transition-opacity small-screen-feature-card small-screen-find-card`}
             onClick={() => navigate('/trano')}
           >
             <CardContent className="p-2 sm:p-3 md:p-4">
@@ -299,14 +301,14 @@ export const ElementAccueilSombre = (): JSX.Element => {
           </Card>
 
           {/* Left Column with Guide Card and Settings Panel */}
-          <div className="flex flex-col space-y-2 sm:space-y-3 md:space-y-4 animate-on-mount" style={{animationDelay: '500ms'}}>
+          <div className="flex flex-col space-y-2 sm:space-y-3 md:space-y-4 animate-on-mount small-screen-grid-col" style={{animationDelay: '500ms'}}>
             {/* Guide Card */}
             <Card 
               style={{ 
                 backgroundColor: cardBgColor,
                 border: cardBorderStyle
               }}
-              className={`rounded-xl overflow-hidden h-[100px] sm:h-[150px] md:h-[200px] cursor-pointer hover:opacity-90 transition-opacity`}
+              className={`rounded-xl overflow-hidden h-[100px] sm:h-[150px] md:h-[200px] cursor-pointer hover:opacity-90 transition-opacity small-screen-feature-card small-screen-guide-card`}
               onClick={() => navigate('/guide')}
             >
               <CardContent className="p-2 sm:p-3 md:p-4">
@@ -329,7 +331,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
                 backgroundColor: cardBgColor,
                 border: cardBorderStyle 
               }}
-              className={`rounded-xl overflow-hidden w-full`}
+              className={`rounded-xl overflow-hidden w-full small-screen-settings`}
             >
               <CardContent className="p-3 sm:p-4">
                 <img src="/public_Accueil_Sombre/calque-5.png" alt="Settings" className="w-6 h-6 sm:w-8 sm:h-8 mb-1 sm:mb-2" />
@@ -352,7 +354,10 @@ export const ElementAccueilSombre = (): JSX.Element => {
                     <Switch 
                       checked={setting.state}
                       onCheckedChange={setting.setState}
-                      className={`data-[state=checked]:bg-[${accentColor}] scale-75 sm:scale-100 border border-[${accentColor}] data-[state=unchecked]:bg-transparent`} 
+                      className={isLightMode 
+                        ? "data-[state=checked]:!bg-black scale-75 sm:scale-100 border border-[#0150BC] data-[state=unchecked]:bg-transparent"
+                        : "data-[state=checked]:!bg-[#59e0c5] scale-75 sm:scale-100 border border-[#59e0c5] data-[state=unchecked]:bg-transparent"
+                      }
                     />
                   </div>
                 ))}
@@ -367,7 +372,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
               animationDelay: '600ms',
               border: cardBorderStyle
             }}
-            className={`rounded-xl overflow-hidden h-[280px] sm:h-[350px] md:h-[400px] animate-on-mount`}
+            className={`rounded-xl overflow-hidden h-[280px] sm:h-[350px] md:h-[400px] animate-on-mount small-screen-advice-card`}
           >
             <CardContent className="p-2 sm:p-3 md:p-4 h-full flex flex-col justify-between">
               <div className="flex flex-col items-center h-full justify-between py-2">
@@ -393,7 +398,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
         </div>
 
         {/* Bottom Line */}
-        <div className={`w-full h-[2px] ${isLightMode ? "bg-[#0150BC]" : "bg-white"} mt-24 sm:mt-28 md:mt-36 mb-8 mx-auto max-w-[16rem] sm:max-w-[20rem] md:max-w-[26rem] animate-on-mount`} style={{animationDelay: '700ms'}}></div>
+        <div className={`w-full h-[2px] ${isLightMode ? "bg-[#0150BC]" : "bg-white"} mt-24 sm:mt-28 md:mt-36 mb-8 mx-auto max-w-[16rem] sm:max-w-[20rem] md:max-w-[26rem] animate-on-mount small-screen-bottom-line`} style={{animationDelay: '700ms'}}></div>
       </div>
     </div>
   );
