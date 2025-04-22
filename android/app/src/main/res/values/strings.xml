@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Immo</string>
-    <string name="title_activity_main">Immo</string>
-    <string name="package_name">com.origami.immo</string>
-    <string name="custom_url_scheme">com.origami.immo</string>
-</resources>

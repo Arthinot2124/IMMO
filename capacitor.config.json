@@ -1,8 +1,0 @@
-{
-  "appId": "com.origami.immo",
-  "appName": "Immo",
-  "webDir": "dist",
-  "server": {
-    "allowNavigation": ["localhost:*", "192.168.8.183:*"]
-  }
-}

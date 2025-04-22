@@ -398,7 +398,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
         </div>
 
         {/* Bottom Line */}
-        <div className={`w-full h-[2px] ${isLightMode ? "bg-[#0150BC]" : "bg-white"} mt-24 sm:mt-28 md:mt-36 mb-8 mx-auto max-w-[16rem] sm:max-w-[20rem] md:max-w-[26rem] animate-on-mount small-screen-bottom-line`} style={{animationDelay: '700ms'}}></div>
+        <div className={`w-full h-[2px] ${isLightMode ? "bg-[#0150BC]" : "bg-white"} mt-20 sm:mt-24 md:mt-32 mx-auto max-w-[16rem] sm:max-w-[20rem] md:max-w-[26rem] animate-on-mount small-screen-bottom-line`} style={{animationDelay: '700ms'}}></div>
       </div>
     </div>
   );
