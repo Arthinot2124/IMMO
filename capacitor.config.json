@@ -1,0 +1,13 @@
+{
+  "appId": "com.immo.app",
+  "appName": "immo",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http",
+    "allowNavigation": ["*"],
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

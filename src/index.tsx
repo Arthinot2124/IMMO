@@ -19,10 +19,12 @@ import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval
 import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
+import BackButtonHandler from "./components/BackButtonHandler";
 
 createRoot(document.getElementById("app") as HTMLElement).render(
   <StrictMode>
     <Router>
+      <BackButtonHandler />
       <Routes>
         <Route path="/" element={<SplashScreen />} />
         <Route path="/login" element={<Login />} />

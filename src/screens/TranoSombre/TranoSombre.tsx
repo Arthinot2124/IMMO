@@ -1,7 +1,5 @@
 import { BellIcon, HomeIcon, SettingsIcon } from "lucide-react";
 import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "../../components/ui/ComponentTrano/button";
-import { Card, CardContent } from "../../components/ui/ComponentTrano/card";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import apiService from "../../services/apiService";
@@ -22,7 +20,7 @@ interface Property {
   title: string;
   description: string;
   price: number;
-  surface: number;
+  surface: number; 
   location: string;
   property_type?: string;
   category: string;
@@ -224,55 +222,8 @@ export const TranoSombre = (): JSX.Element => {
         setError(`Erreur: ${err.message}`);
       }
       
-      // Charger des données de test pour éviter une page blanche en cas d'erreur
-      const offlineData = [];
-      
-      // Ajouter une villa si le filtre est sur VILLAS ou s'il n'y a pas de filtre
-      if (activeFilter === "VILLAS") {
-        offlineData.push({
-          property_id: 1,
-          title: "Villa 4 pièces (Données hors ligne)",
-          description: "Données de test en mode hors ligne",
-          price: 45000000,
-          surface: 120,
-          location: "Tambohobe",
-          property_type: "VILLA",
-          category: "PREMIUM",
-          status: "Disponible"
-        });
-      }
-      
-      // Ajouter un terrain si le filtre est sur TERRAINS ou s'il n'y a pas de filtre
-      if (activeFilter === "TERRAINS") {
-        offlineData.push({
-          property_id: 2,
-          title: "Terrain 500m² (Données hors ligne)",
-          description: "Données de test en mode hors ligne",
-          price: 15000000,
-          surface: 500,
-          location: "Antarandolo",
-          property_type: "TERRAIN",
-          category: "LITE",
-          status: "Disponible"
-        });
-      }
-      
-      // Si aucune donnée n'a été ajoutée, ajouter au moins un élément
-      if (offlineData.length === 0) {
-        offlineData.push({
-          property_id: 3,
-          title: activeFilter === "TERRAINS" ? "Terrain (Hors ligne)" : "Villa (Hors ligne)",
-          description: "Données de test en mode hors ligne",
-          price: 25000000,
-          surface: 300,
-          location: "Fianarantsoa",
-          property_type: activeFilter === "TERRAINS" ? "TERRAIN" : "VILLA",
-          category: "ESSENTIEL",
-          status: "Disponible"
-        });
-      }
-      
-      setProperties(offlineData);
+      // Définir un tableau vide au lieu des données de test
+      setProperties([]);
     } finally {
       setLoading(false);
       console.log("Chargement terminé");
@@ -331,20 +282,14 @@ export const TranoSombre = (): JSX.Element => {
     }
   };
 
-  // Fonction pour obtenir l'image par défaut selon la catégorie
-  const getDefaultImage = (category: string) => {
-    if (category === "LITE") return "/public_Trano/calque-3.png";
-    if (category === "PREMIUM") return "/public_Trano/maison-01.png";
-    return "/public_Trano/calque-4.png";
-  };
-
   // Fonction pour obtenir l'image principale d'une propriété
   const getPropertyImage = (property: Property) => {
     if (property.media && property.media.length > 0) {
       const mediaUrl = property.media[0].media_url;
       return getMediaUrl(mediaUrl);
     }
-    return getDefaultImage(property.category);
+    // Utiliser une image générique au lieu d'une image par catégorie
+    return "/public_Trano/maison-01.png";
   };
 
   // Afficher l'état actuel du composant pour debugging
@@ -646,7 +591,7 @@ export const TranoSombre = (): JSX.Element => {
                 <div className={`w-[130px] xs:w-[150px] sm:w-[180px] h-[90px] xs:h-[100px] sm:h-[120px] flex-shrink-0 ${buttonBg} flex items-center justify-center`}>
                   {imageErrors[property.property_id] ? (
                     <img
-                      src={getDefaultImage(property.category)}
+                      src="/public_Trano/maison-01.png"
                       alt={property.title}
                       className="w-full h-full object-contain"
                     />
