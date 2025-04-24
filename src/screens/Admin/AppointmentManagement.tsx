@@ -5,9 +5,10 @@ import {
   BellIcon, HomeIcon, SettingsIcon, ArrowLeftIcon, 
   CheckCircleIcon, XCircleIcon, RefreshCwIcon,
   CalendarIcon, ClockIcon, UserIcon, MapPinIcon, PhoneIcon, MailIcon,
-  CalendarDaysIcon, XIcon
+  CalendarDaysIcon, XIcon, ImageIcon, FileIcon
 } from "lucide-react";
 import apiService from "../../services/apiService";
+import { getMediaUrl } from "../../config/api";
 
 // Types pour les rendez-vous
 interface AppointmentUser {
@@ -17,12 +18,22 @@ interface AppointmentUser {
   phone?: string;
 }
 
+// Type pour les médias des propriétés
+interface PropertyMedia {
+  media_id: number;
+  property_id: number;
+  media_type: string;
+  media_url: string;
+  uploaded_at: string;
+}
+
 interface AppointmentProperty {
   property_id: number;
   title: string;
   location: string;
   price: number;
   category: string;
+  media?: PropertyMedia[];
 }
 
 interface Appointment {
@@ -64,6 +75,11 @@ export const AppointmentManagement = (): JSX.Element => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [datePickerMonth, setDatePickerMonth] = useState(() => new Date());
+  
+  // États pour la gestion des images
+  const [propertyImages, setPropertyImages] = useState<{[key: number]: PropertyMedia[]}>({});
+  const [loadingImages, setLoadingImages] = useState<{[key: number]: boolean}>({});
+  const [imageErrors, setImageErrors] = useState<{[key: number]: boolean}>({});
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -113,6 +129,13 @@ export const AppointmentManagement = (): JSX.Element => {
           
           setAppointments(appointmentsData);
           applyFilters(appointmentsData, statusFilter);
+          
+          // Pour chaque rendez-vous avec une propriété, charger les images
+          appointmentsData.forEach(appointment => {
+            if (appointment.property && appointment.property.property_id) {
+              fetchPropertyImages(appointment.property.property_id);
+            }
+          });
         } else {
           throw new Error("Format de réponse inattendu");
         }
@@ -159,11 +182,28 @@ export const AppointmentManagement = (): JSX.Element => {
       });
     }
     
-    // Tri par date de création (plus récent en premier) lorsque le statut est "all"
+    // Si on affiche tous les statuts, on trie d'abord par statut (En attente en premier)
     if (status === 'all') {
-      filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const getStatusPriority = (status: string) => {
+        switch (status) {
+          case 'En attente': return 0;
+          case 'Confirmé': return 1;
+          case 'Annulé': return 2;
+          default: return 3;
+        }
+      };
+      
+      // Tri principal par statut, tri secondaire par date
+      filtered.sort((a, b) => {
+        // D'abord par statut
+        const statusCompare = getStatusPriority(a.confirmation_status) - getStatusPriority(b.confirmation_status);
+        if (statusCompare !== 0) return statusCompare;
+        
+        // Ensuite par date (plus récent en premier)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
     } else {
-      // Pour les autres filtres de statut, conserver le tri par date de rendez-vous
+      // Pour les filtres spécifiques à un statut, conserver le tri par date de rendez-vous
       filtered.sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
     }
     
@@ -343,6 +383,40 @@ export const AppointmentManagement = (): JSX.Element => {
       default:
         return { color: 'text-yellow-400', bgColor: 'bg-yellow-400/20', icon: <ClockIcon className="w-4 h-4" /> };
     }
+  };
+
+  // Fonction pour charger les images d'une propriété
+  const fetchPropertyImages = async (propertyId: number) => {
+    if (loadingImages[propertyId]) return;
+    
+    setLoadingImages(prev => ({ ...prev, [propertyId]: true }));
+    
+    try {
+      const response = await apiService.get<ApiResponse<PropertyMedia[]>>(`/properties/${propertyId}/media`);
+      
+      if (response.data && response.data.status === "success" && Array.isArray(response.data.data)) {
+        setPropertyImages(prev => ({ ...prev, [propertyId]: response.data.data }));
+      }
+    } catch (err: any) {
+      console.error(`Erreur lors du chargement des images pour la propriété ${propertyId}:`, err);
+      // Ne pas afficher d'erreur car les images sont optionnelles
+    } finally {
+      setLoadingImages(prev => ({ ...prev, [propertyId]: false }));
+    }
+  };
+
+  // Gestion des erreurs d'images
+  const handleImageError = (imageId: number) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [imageId]: true
+    }));
+    console.error(`Failed to load image with ID: ${imageId}`);
+  };
+
+  // Récupération de l'URL de l'image
+  const getImageUrl = (image: PropertyMedia) => {
+    return getMediaUrl(image.media_url);
   };
 
   return (
@@ -551,6 +625,8 @@ export const AppointmentManagement = (): JSX.Element => {
             {filteredAppointments.map((appointment) => {
               const { date, time } = formatDateTime(appointment.appointment_date);
               const statusInfo = getStatusInfo(appointment.confirmation_status);
+              const propertyId = appointment.property?.property_id;
+              const propertyImagesArray = propertyId ? propertyImages[propertyId] || [] : [];
                
               return (
                 <div 
@@ -563,7 +639,7 @@ export const AppointmentManagement = (): JSX.Element => {
                         <CalendarIcon className={`w-5 h-5 ${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"}`} />
                       </div>
                       <div>
-                        <h3 className="font-semibold">Rendez-vous #{appointment.appointment_id}</h3>
+                        <h3 className="font-semibold">Rendez-vous #</h3>
                         <div className="flex items-center text-sm text-gray-400">
                           <ClockIcon className="w-3.5 h-3.5 mr-1" />
                           <span>Créé le {new Date(appointment.created_at).toLocaleDateString('fr-FR')}</span>
@@ -603,6 +679,49 @@ export const AppointmentManagement = (): JSX.Element => {
                           <div className={`border-t ${isLightMode ? "border-gray-200" : "border-gray-700"} pt-2 mt-2`}>
                             <p className="text-xs text-gray-400">Notes:</p>
                             <p className="text-sm">{appointment.notes}</p>
+                          </div>
+                        )}
+                        
+                        {/* Images de la propriété */}
+                        {propertyId && (
+                          <div className="mt-4">
+                            <p className={`${isLightMode ? "text-gray-500" : "text-gray-400"} text-xs mb-2 flex items-center`}>
+                              <ImageIcon size={12} className="mr-1" />
+                              Photos de la propriété
+                            </p>
+                            
+                            {loadingImages[propertyId] ? (
+                              <div className="flex justify-center py-2">
+                                <div className={`animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 ${isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]"}`}></div>
+                              </div>
+                            ) : propertyImagesArray.length > 0 ? (
+                              <div className="grid grid-cols-3 gap-1">
+                                {propertyImagesArray.slice(0, 3).map((image) => (
+                                  <div key={image.media_id} className={`h-16 ${isLightMode ? "bg-gray-100" : "bg-black/40"} rounded overflow-hidden`}>
+                                    {imageErrors[image.media_id] ? (
+                                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                                        <FileIcon size={12} />
+                                        <p className="text-[8px] mt-1">Image non disponible</p>
+                                      </div>
+                                    ) : (
+                                      <img 
+                                        src={getImageUrl(image)} 
+                                        alt={`Image ${image.media_id}`} 
+                                        className="w-full h-full object-cover"
+                                        onError={() => handleImageError(image.media_id)}
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                                {propertyImagesArray.length > 3 && (
+                                  <div className={`h-16 ${isLightMode ? "bg-gray-100" : "bg-black/40"} rounded flex items-center justify-center text-gray-500`}>
+                                    <span>+{propertyImagesArray.length - 3}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-gray-400 text-xs">Aucune image disponible</p>
+                            )}
                           </div>
                         )}
                       </div>

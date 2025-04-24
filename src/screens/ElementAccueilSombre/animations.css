@@ -9,3 +9,64 @@
   opacity: 1;
   transform: translateY(0);
 } 
+
+/* Animations pour les conseils */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.tip-enter-left {
+  animation: slideInLeft 0.5s forwards;
+}
+
+.tip-exit-left {
+  animation: slideOutLeft 0.5s forwards;
+}
+
+.tip-enter-right {
+  animation: slideInRight 0.5s forwards;
+}
+
+.tip-exit-right {
+  animation: slideOutRight 0.5s forwards;
+} 

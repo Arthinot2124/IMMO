@@ -16,6 +16,7 @@ interface PropertyRequest {
   location: string;
   category: string;
   property_status: string;
+  property_type: string;
   additional_details: string;
   status: string;
   submitted_at: string;
@@ -37,6 +38,7 @@ interface CreatedProperty {
   surface: string | null;
   location: string;
   category: string;
+  property_type: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -112,7 +114,8 @@ export const PropertyRequestApproval = (): JSX.Element => {
     surface: "",
     location: "",
     category: "LITE",
-    status: "Disponible"
+    status: "Disponible",
+    property_type: "VILLA"
   });
 
   // Charger les détails de la demande
@@ -144,7 +147,8 @@ export const PropertyRequestApproval = (): JSX.Element => {
             surface: requestData.surface ? requestData.surface.toString() : "",
             location: requestData.location || "",
             category: requestData.category || "LITE",
-            status: requestData.property_status || "Disponible"
+            status: requestData.property_status || "Disponible",
+            property_type: requestData.property_type || "VILLA"
           });
         } else {
           throw new Error("Format de réponse inattendu");
@@ -214,6 +218,10 @@ export const PropertyRequestApproval = (): JSX.Element => {
     setSubmitting(true);
     setError(null);
     
+    // Debug - Afficher les valeurs disponibles
+    console.log("request.property_type:", request.property_type);
+    console.log("formData.property_type:", formData.property_type);
+    
     try {
       // Créer la propriété en utilisant les données de la demande et du formulaire
       const propertyData = {
@@ -224,7 +232,8 @@ export const PropertyRequestApproval = (): JSX.Element => {
         surface: formData.surface ? parseFloat(formData.surface) : (request.surface || 100),
         location: formData.location || request.location || "Emplacement non spécifié",
         category: formData.category || request.category || "LITE",
-        status: formData.status || request.property_status || "Disponible"
+        status: formData.status || request.property_status || "Disponible",
+        property_type: request.property_type || "VILLA" // Utiliser UNIQUEMENT le type de la demande d'origine
       };
       
       console.log("Envoi des données vers l'API:", propertyData);
@@ -341,6 +350,9 @@ export const PropertyRequestApproval = (): JSX.Element => {
                   <span className={textSecondaryColor}>Emplacement:</span> {createdProperty.location || "Non spécifié"}
                 </div>
                 <div>
+                  <span className={textSecondaryColor}>Type:</span> {createdProperty.property_type}
+                </div>
+                <div>
                   <span className={textSecondaryColor}>Catégorie:</span> {createdProperty.category}
                 </div>
                 <div>
@@ -401,6 +413,9 @@ export const PropertyRequestApproval = (): JSX.Element => {
                   </div>
                   <div>
                     <span className={textSecondaryColor}>Emplacement:</span> {formData.location || "Non spécifié"}
+                  </div>
+                  <div>
+                    <span className={textSecondaryColor}>Type:</span> {formData.property_type}
                   </div>
                   <div>
                     <span className={textSecondaryColor}>Catégorie:</span> {formData.category}
@@ -620,6 +635,16 @@ export const PropertyRequestApproval = (): JSX.Element => {
                       className={`w-full ${inputBgColor} border ${inputBorderColor} rounded-lg px-4 py-2 ${textPrimaryColor}`}
                       placeholder="Ex: Tambohobe, Fianarantsoa"
                     />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="property_type" className={`block text-sm ${textColor} mb-1`}>
+                      Type de bien*
+                    </label>
+                    <div className={`w-full ${inputBgColor} border ${inputBorderColor} rounded-lg px-4 py-2 ${textPrimaryColor} flex items-center`}>
+                      {formData.property_type}
+                      <input type="hidden" id="property_type" name="property_type" value={formData.property_type} />
+                    </div>
                   </div>
                   
                   <div>

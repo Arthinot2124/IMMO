@@ -84,6 +84,7 @@ class PropertyController extends Controller
             'price' => 'required|numeric|min:0',
             'surface' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
+            'property_type' => 'required|in:VILLA,TERRAIN,APPARTEMENT',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
         ]);
@@ -126,6 +127,7 @@ class PropertyController extends Controller
             'price' => 'sometimes|required|numeric|min:0',
             'surface' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
+            'property_type' => 'sometimes|required|in:VILLA,TERRAIN,APPARTEMENT',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
         ]);

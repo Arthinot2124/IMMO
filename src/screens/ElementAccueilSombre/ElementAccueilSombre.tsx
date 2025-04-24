@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Card, CardContent, Separator, Switch } from "../../components/ui/ComponentAccueilSombre";
 import { useNavigate } from "react-router-dom";
 import { motion, useAnimation } from "framer-motion";
@@ -45,6 +45,64 @@ export const ElementAccueilSombre = (): JSX.Element => {
   });
   const [isEuro, setIsEuro] = useState(false);
   const [isSearch, setIsSearch] = useState(false);
+  const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
+  const [tipClass, setTipClass] = useState('');
+  const tipContainerRef = useRef<HTMLDivElement>(null);
+  const [userName, setUserName] = useState("Visiteur");
+
+  // Récupérer le nom de l'utilisateur connecté
+  useEffect(() => {
+    // Vérifier différentes possibilités de stockage du nom
+    const storedFullName = localStorage.getItem('full_name');
+    const storedUser = localStorage.getItem('user');
+    const storedUserData = localStorage.getItem('userData');
+    
+    console.log('LocalStorage - full_name:', storedFullName);
+    console.log('LocalStorage - user:', storedUser);
+    console.log('LocalStorage - userData:', storedUserData);
+    
+    if (storedFullName) {
+      // Extraire le dernier mot du nom complet (nom de famille)
+      const nameParts = storedFullName.split(' ');
+      const lastName = nameParts[nameParts.length - 1];
+      setUserName(lastName);
+      console.log('Nom utilisé (dernier mot):', lastName);
+    } else if (storedUser) {
+      // Essayer de parser les données utilisateur si elles sont au format JSON
+      try {
+        const userData = JSON.parse(storedUser);
+        if (userData.full_name) {
+          const nameParts = userData.full_name.split(' ');
+          const lastName = nameParts[nameParts.length - 1];
+          setUserName(lastName);
+          console.log('Nom utilisé depuis user (dernier mot):', lastName);
+        }
+      } catch (e) {
+        console.log('Erreur parsing user:', e);
+      }
+    } else if (storedUserData) {
+      // Essayer de parser les données utilisateur si elles sont au format JSON
+      try {
+        const userData = JSON.parse(storedUserData);
+        if (userData.full_name) {
+          const nameParts = userData.full_name.split(' ');
+          const lastName = nameParts[nameParts.length - 1];
+          setUserName(lastName);
+          console.log('Nom utilisé depuis userData (dernier mot):', lastName);
+        }
+      } catch (e) {
+        console.log('Erreur parsing userData:', e);
+      }
+    }
+    
+    // Si aucun nom trouvé, utiliser Rakoto comme fallback au lieu de Visiteur
+    if (!storedFullName && !storedUser && !storedUserData) {
+      setUserName("Rakoto");
+      console.log('Aucun nom trouvé, utilisation du nom par défaut');
+    }
+  }, []);
 
   // Sauvegarder le mode dans localStorage quand il change
   useEffect(() => {
@@ -124,6 +182,68 @@ export const ElementAccueilSombre = (): JSX.Element => {
     });
   }, []);
 
+  // Tableau de conseils
+  const tips = [
+    {
+      title: "Notre ptit' Conseil",
+      content: "Comparer plusieurs offres avant de prendre une décision. Aza maika eee !!!"
+    },
+    {
+      title: "Bon à savoir",
+      content: "Vérifiez toujours les documents de propriété avant de signer. Jereo tsara ny taratasy!"
+    },
+    {
+      title: "Astuce Pratique",
+      content: "Visitez le bien à différents moments de la journée. Tsara raha mitsidika amin'ny fotoana samihafa."
+    },
+    {
+      title: "Conseil Pro",
+      content: "N'hésitez pas à négocier le prix. Afaka miady varotra foana ianao!"
+    }
+  ];
+
+  // Effet pour le changement automatique des conseils
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isAnimating) {
+        changeTip('next');
+      }
+    }, 5000); // Changer toutes les 5 secondes
+
+    return () => clearInterval(interval);
+  }, [isAnimating]);
+
+  // Fonction pour changer manuellement de conseil
+  const changeTip = (direction: 'next' | 'prev') => {
+    if (isAnimating) return;
+    
+    // Mettre à jour la direction du slide
+    const newDirection = direction === 'next' ? 'left' : 'right';
+    setSlideDirection(newDirection);
+    setIsAnimating(true);
+    
+    // Appliquer la classe d'animation de sortie
+    setTipClass(direction === 'next' ? 'tip-exit-left' : 'tip-exit-right');
+    
+    // Après l'animation de sortie, changer le conseil et préparer l'animation d'entrée
+    setTimeout(() => {
+      if (direction === 'next') {
+        setCurrentTipIndex((prevIndex) => (prevIndex + 1) % tips.length);
+      } else {
+        setCurrentTipIndex((prevIndex) => (prevIndex - 1 + tips.length) % tips.length);
+      }
+      
+      // Appliquer la classe d'animation d'entrée
+      setTipClass(direction === 'next' ? 'tip-enter-left' : 'tip-enter-right');
+      
+      // Réinitialiser après l'animation complète
+      setTimeout(() => {
+        setTipClass('');
+        setIsAnimating(false);
+      }, 500);
+    }, 500);
+  };
+
   return (
     <div className={`w-full min-h-screen ${isLightMode ? "bg-white" : "bg-[#0150BC]"} relative overflow-hidden pt-4 sm:pt-6 md:pt-8`}>
       {/* Background Pattern */}
@@ -142,10 +262,10 @@ export const ElementAccueilSombre = (): JSX.Element => {
         {/* Header Section */}
         <div className="flex justify-between items-start mb-14 sm:mb-18 animate-on-mount small-screen-header">
           <div>
-            <h1 className={`text-6xl sm:text-7xl md:text-8xl lg:text-[80px] font-bold leading-tight`} style={{ color: titleStatsColor }}>
+            <h1 className={`text-5xl sm:text-4xl md:text-5xl lg:text-[80px] font-bold leading-tight`} style={{ color: titleStatsColor }}>
               Salut,
               <br />
-              Rakoto.
+              {userName}.
             </h1>
           </div>
           <img src="/public_Accueil_Sombre/logo-couleur.png" alt="Logo" className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20" />
@@ -376,18 +496,76 @@ export const ElementAccueilSombre = (): JSX.Element => {
           >
             <CardContent className="p-2 sm:p-3 md:p-4 h-full flex flex-col justify-between">
               <div className="flex flex-col items-center h-full justify-between py-2">
-                <div className="flex flex-col items-center">
-                  <img src="/public_Accueil_Sombre/ampoule-.png" alt="Tip" className="w-8 h-10 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 mb-2 sm:mb-3" />
-                  <h3 style={{ color: textColor }} className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-center mb-2 sm:mb-3">
-                    Notre ptit' <span style={{ color: accentColor }}>Conseil</span> :
-                  </h3>
-                  <p style={{ color: textColor }} className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-center mb-2 sm:mb-3">
-                    "Comparer plusieurs offres avant de prendre une décision. 
-                    <span style={{ color: accentColor }}> Aza maika</span> eee !!!"
-                  </p>
+                <div className="w-full relative overflow-hidden">
+                  <div 
+                    ref={tipContainerRef}
+                    className={`flex flex-col items-center w-full ${tipClass}`}
+                  >
+                    <img src="/public_Accueil_Sombre/ampoule-.png" alt="Tip" className="w-8 h-10 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 mb-2 sm:mb-3" />
+                    <h3 style={{ color: textColor }} className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-center mb-2 sm:mb-3">
+                      {tips[currentTipIndex].title.split(" ").map((word, index, array) => 
+                        index === array.length - 1 
+                          ? <span key={index}><span style={{ color: accentColor }}>{word}</span> :</span>
+                          : <span key={index}>{word} </span>
+                      )}
+                    </h3>
+                    <p style={{ color: textColor }} className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-center mb-2 sm:mb-3">
+                      "{tips[currentTipIndex].content.split(" ").map((word, i) => {
+                        // Mettre en accent les mots en malgache (supposés être les derniers mots)
+                        if (i >= tips[currentTipIndex].content.split(" ").length - 4) {
+                          return <span key={i} style={{ color: accentColor }}> {word}</span>;
+                        }
+                        return <span key={i}> {word}</span>;
+                      })}"
+                    </p>
+                  </div>
+                  
+                  {/* Boutons de navigation */}
+                  <div className="absolute left-0 top-[20%] transform -translate-y-1/2">
+                    <button 
+                      onClick={() => changeTip('prev')}
+                      className="p-1 rounded-full bg-transparent hover:bg-gray-200 hover:bg-opacity-20 transition-colors"
+                      aria-label="Conseil précédent"
+                      disabled={isAnimating}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 18L9 12L15 6" stroke={accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="absolute right-0 top-[20%] transform -translate-y-1/2">
+                    <button 
+                      onClick={() => changeTip('next')}
+                      className="p-1 rounded-full bg-transparent hover:bg-gray-200 hover:bg-opacity-20 transition-colors"
+                      aria-label="Conseil suivant"
+                      disabled={isAnimating}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 6L15 12L9 18" stroke={accentColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
+                
                 <div className="w-full">
-                  <Separator className={`my-2 sm:my-3 w-full`} style={{ backgroundColor: accentColor }} />
+                  {/* Indicateurs de position */}
+                  <div className="flex justify-center gap-2 my-2">
+                    {tips.map((_, index) => (
+                      <div 
+                        key={index}
+                        className="w-2 h-2 rounded-full transition-colors duration-300 cursor-pointer"
+                        style={{ 
+                          backgroundColor: currentTipIndex === index ? accentColor : 'rgba(150, 150, 150, 0.5)',
+                        }}
+                        onClick={() => {
+                          if (currentTipIndex === index || isAnimating) return;
+                          changeTip(index > currentTipIndex ? 'next' : 'prev');
+                        }}
+                      />
+                    ))}
+                  </div>
+                  
                   <p style={{ color: textColor }} className="text-xs sm:text-sm md:text-base text-center mt-2">
                     Voir d'autres Astuces et Tips Immobliers
                   </p>

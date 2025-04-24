@@ -417,6 +417,16 @@ export const AdminDashboard = (): JSX.Element => {
                     </button>
                     
                     <button 
+                      onClick={() => navigate('/admin/property-management')}
+                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                    >
+                      <span className="flex items-center">
+                        <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
+                        <span className={textPrimaryColor}>Gérer les propriétés</span>
+                      </span>
+                    </button>
+                    
+                    <button 
                       onClick={() => navigate('/admin/property-requests')}
                       className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
                     >
@@ -607,7 +617,7 @@ export const AdminDashboard = (): JSX.Element => {
                   Gérez toutes les propriétés, ajoutez de nouvelles propriétés ou modifiez les propriétés existantes.
                 </p>
                 <button 
-                  onClick={() => navigate('/admin/properties')}
+                  onClick={() => navigate('/admin/property-management')}
                   className={`px-6 py-3 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg font-medium`}
                 >
                   Accéder à la gestion des propriétés

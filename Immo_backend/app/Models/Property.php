@@ -35,6 +35,7 @@ class Property extends Model
         'price',
         'surface',
         'location',
+        'property_type',
         'category',
         'status',
     ];
@@ -47,6 +48,7 @@ class Property extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'surface' => 'decimal:2',
+        'property_type' => 'string',
         'category' => 'string',
         'status' => 'string',
         'created_at' => 'datetime',

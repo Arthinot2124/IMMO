@@ -17,6 +17,7 @@ import { ContactAgency } from "./screens/ContactAgency/ContactAgency";
 import { AdminDashboard } from "./screens/Admin/AdminDashboard";
 import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval";
 import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
+import PropertyManagement from "./screens/Admin/PropertyManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
 import BackButtonHandler from "./components/BackButtonHandler";
@@ -79,6 +80,14 @@ createRoot(document.getElementById("app") as HTMLElement).render(
           element={
             <ProtectedRoute requiredRole="admin">
               <AppointmentManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/property-management" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PropertyManagement />
             </ProtectedRoute>
           } 
         />

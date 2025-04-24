@@ -69,9 +69,6 @@ export const AppointmentBooking = (): JSX.Element => {
   const [timeSlots] = useState(generateTimeSlots());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [contactName, setContactName] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -184,8 +181,8 @@ export const AppointmentBooking = (): JSX.Element => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedDate || !selectedTime || !contactName || !contactPhone) {
-      setSubmitError("Veuillez remplir tous les champs obligatoires");
+    if (!selectedDate || !selectedTime) {
+      setSubmitError("Veuillez sélectionner une date et une heure pour la visite");
       return;
     }
     
@@ -199,7 +196,6 @@ export const AppointmentBooking = (): JSX.Element => {
     
     try {
       // Récupérer l'ID utilisateur du localStorage (utilisateur connecté)
-      // Si l'utilisateur n'est pas connecté, nous utilisons par défaut le client Rasoa (ID 2)
       const userId = localStorage.getItem('user_id');
       
       if (!userId) {
@@ -211,9 +207,6 @@ export const AppointmentBooking = (): JSX.Element => {
         property_id: property?.property_id,
         user_id: parseInt(userId),
         appointment_date: appointmentDate.toISOString(),
-        contact_name: contactName,
-        contact_phone: contactPhone,
-        contact_email: contactEmail,
         notes: notes,
         confirmation_status: 'En attente'
       };
@@ -482,77 +475,47 @@ export const AppointmentBooking = (): JSX.Element => {
                   </div>
                 </div>
                 
-                {/* Contact Info */}
-                <div className="mb-6">
-                  <h3 className={`${textColor} font-semibold mb-3`}>Vos coordonnées</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="name" className={`block text-sm ${textSecondaryColor} mb-1`}>
-                        Nom complet*
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        value={contactName}
-                        onChange={(e) => setContactName(e.target.value)}
-                        className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor}`}
-                        placeholder="Votre nom"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="phone" className={`block text-sm ${textSecondaryColor} mb-1`}>
-                        Téléphone*
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        value={contactPhone}
-                        onChange={(e) => setContactPhone(e.target.value)}
-                        className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor}`}
-                        placeholder="Votre numéro de téléphone"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="sm:col-span-2">
-                      <label htmlFor="email" className={`block text-sm ${textSecondaryColor} mb-1`}>
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        value={contactEmail}
-                        onChange={(e) => setContactEmail(e.target.value)}
-                        className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor}`}
-                        placeholder="Votre email"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
                 {/* Notes */}
                 <div className="mb-6">
+                  <h3 className={`${textColor} font-semibold mb-3`}>Informations supplémentaires</h3>
                   <label htmlFor="notes" className={`block text-sm ${textSecondaryColor} mb-1`}>
-                    Commentaires ou questions
+                    Commentaires ou questions pour votre visite
                   </label>
                   <textarea
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className={`w-full ${inputBgColor} border ${borderColor}/50 rounded-lg px-4 py-2 ${textPrimaryColor} min-h-[100px]`}
-                    placeholder="Informations complémentaires pour votre visite"
+                    placeholder="Détails particuliers, questions, ou informations utiles pour l'agent immobilier..."
                   />
+                </div>
+                
+                {/* Informations sur la visite */}
+                <div className={`mb-6 ${cardBgColor} border ${borderColor}/20 rounded-lg p-4`}>
+                  <h3 className={`${textColor} font-semibold mb-3`}>Informations importantes</h3>
+                  <ul className={`${textSecondaryColor} space-y-2 text-sm`}>
+                    <li className="flex items-start">
+                      <div className={`w-4 h-4 mt-0.5 mr-2 rounded-full ${buttonPrimaryBg} flex-shrink-0`}></div>
+                      Votre rendez-vous sera confirmé par un conseiller qui vous contactera.
+                    </li>
+                    <li className="flex items-start">
+                      <div className={`w-4 h-4 mt-0.5 mr-2 rounded-full ${buttonPrimaryBg} flex-shrink-0`}></div>
+                      Les visites durent environ 45 minutes.
+                    </li>
+                    <li className="flex items-start">
+                      <div className={`w-4 h-4 mt-0.5 mr-2 rounded-full ${buttonPrimaryBg} flex-shrink-0`}></div>
+                      Vos coordonnées enregistrées dans votre profil seront utilisées pour vous contacter.
+                    </li>
+                  </ul>
                 </div>
                 
                 {/* Submit Button */}
                 <div className="text-center">
                   <button
                     type="submit"
-                    disabled={!selectedDate || !selectedTime || !contactName || !contactPhone || submitting}
+                    disabled={!selectedDate || !selectedTime || submitting}
                     className={`px-8 py-3 rounded-lg font-bold ${
-                      !selectedDate || !selectedTime || !contactName || !contactPhone || submitting
+                      !selectedDate || !selectedTime || submitting
                         ? `${disabledBgColor} ${disabledTextColor} cursor-not-allowed`
                         : `${buttonPrimaryBg} ${buttonPrimaryText} hover:opacity-90`
                     }`}

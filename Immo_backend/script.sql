@@ -61,6 +61,7 @@ CREATE TABLE property_requests (
     title VARCHAR(150) NOT NULL,
     description TEXT,
     additional_details TEXT,
+    property_type ENUM('VILLA', 'TERRAIN', 'APPARTEMENT') NOT NULL DEFAULT 'VILLA',
     status ENUM('En attente', 'Accepté', 'Refusé') DEFAULT 'En attente',
     submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

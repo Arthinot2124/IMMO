@@ -42,6 +42,7 @@ class PropertyRequest extends Model
         'price',
         'surface',
         'location',
+        'property_type',
         'category',
         'property_status',
         'additional_details',
@@ -55,6 +56,7 @@ class PropertyRequest extends Model
      */
     protected $casts = [
         'status' => 'string',
+        'property_type' => 'string',
         'property_status' => 'string',
         'price' => 'decimal:2',
         'surface' => 'decimal:2',

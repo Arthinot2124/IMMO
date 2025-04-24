@@ -23,7 +23,8 @@ export const PropertyRequest = (): JSX.Element => {
     surface: "",
     location: "",
     category: "LITE",
-    property_status: "Disponible"
+    property_status: "Disponible",
+    property_type: "VILLA"
   });
   const [images, setImages] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -167,6 +168,7 @@ export const PropertyRequest = (): JSX.Element => {
         location: formData.location || "",
         category: formData.category || "LITE",
         property_status: formData.property_status || "Disponible",
+        property_type: formData.property_type || "VILLA",
         additional_details: formData.additional_details || "",
         status: "En attente"
       };
@@ -320,7 +322,7 @@ export const PropertyRequest = (): JSX.Element => {
                     value={formData.title}
                     onChange={handleInputChange}
                     className={`w-full ${inputBgColor} border ${getFieldError('title') ? 'border-red-500' : borderColor} rounded-lg px-4 py-2 ${textPrimaryColor}`}
-                    placeholder="Ex: Villa moderne à Tambohobe"
+                    placeholder="Ex: Villa moderne (ou Terrain)"
                     required
                     maxLength={150}
                   />
@@ -329,6 +331,24 @@ export const PropertyRequest = (): JSX.Element => {
                   )}
                 </div>
                 
+                <div>
+                  <label htmlFor="property_type" className={`block text-sm ${textColor} mb-1`}>
+                    Type de bien*
+                  </label>
+                  <select
+                    id="property_type"
+                    name="property_type"
+                    value={formData.property_type}
+                    onChange={handleInputChange}
+                    className={`w-full ${inputBgColor} border ${borderColor} rounded-lg px-4 py-2 ${textPrimaryColor}`}
+                    required
+                  >
+                    <option value="VILLA">Villa</option>
+                    <option value="TERRAIN">Terrain</option>
+                    <option value="APPARTEMENT">Appartement</option>
+                  </select>
+                </div>
+
                 <div>
                   <label htmlFor="category" className={`block text-sm ${textColor} mb-1`}>
                     Catégorie*
@@ -395,7 +415,7 @@ export const PropertyRequest = (): JSX.Element => {
                     placeholder="Ex: 120"
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="property_status" className={`block text-sm ${textColor} mb-1`}>
                     Statut
