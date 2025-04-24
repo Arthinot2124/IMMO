@@ -368,7 +368,7 @@ export const PropertyDetail = (): JSX.Element => {
             >
               <button 
                 className={`flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
-                onClick={() => window.location.href = `/property/${propertyId}/book`}
+                onClick={() => navigate(`/property/${propertyId}/book`)}
               >
                 <CalendarIcon size={20} />
                 <span>Réserver une visite</span>

@@ -56,7 +56,15 @@ class PropertyController extends Controller
             });
         }
 
-        $properties = $query->paginate(10);
+        // Filter by property_type
+        if ($request->has('property_type')) {
+            $query->where('property_type', $request->property_type);
+        }
+
+        // Get per_page parameter or use default 10
+        $perPage = $request->input('per_page', 10);
+
+        $properties = $query->paginate($perPage);
 
         return response()->json([
             'status' => 'success',

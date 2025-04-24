@@ -32,6 +32,19 @@ interface ApiResponse<T> {
   status: string;
   data: T;
   message?: string;
+  meta?: {
+    last_page: number;
+    current_page: number;
+    total: number;
+    per_page: number;
+  };
+  // Propriétés de pagination standard Laravel
+  current_page?: number;
+  last_page?: number;
+  total?: number;
+  per_page?: number;
+  from?: number;
+  to?: number;
 }
 
 export const TranoSombre = (): JSX.Element => {
@@ -103,11 +116,11 @@ export const TranoSombre = (): JSX.Element => {
     
     try {
       console.log("Début du chargement des propriétés");
-      // Construction des paramètres de requête
+      // Construction des paramètres de requête de pagination
       let params: any = { 
         page: currentPage,
         include: 'media',
-        per_page: 5
+        per_page: 4
       };
       
       // Ajout des filtres selon le type de propriété
@@ -148,18 +161,84 @@ export const TranoSombre = (): JSX.Element => {
       
       console.log("Réponse API reçue:", response.data);
       
+      // Analyse avancée de la structure de la réponse pour le débogage de pagination
+      const analyzeApiResponse = (data: any, prefix = "") => {
+        if (!data) return;
+        
+        if (typeof data === 'object') {
+          // Rechercher spécifiquement des propriétés relatives à la pagination
+          const paginationKeys = ['current_page', 'last_page', 'total', 'per_page'];
+          const hasPaginationInfo = paginationKeys.some(key => key in data);
+          
+          if (hasPaginationInfo) {
+            console.log(`${prefix}🔍 INFO PAGINATION TROUVÉE:`, 
+              paginationKeys.reduce((acc, key) => {
+                if (key in data) acc[key] = data[key];
+                return acc;
+              }, {} as any)
+            );
+          }
+          
+          // Explorer récursivement les propriétés
+          Object.keys(data).forEach(key => {
+            if (data[key] && typeof data[key] === 'object') {
+              analyzeApiResponse(data[key], `${prefix}${key}.`);
+            }
+          });
+        }
+      };
+      
+      // Analyser la réponse pour déboguer
+      console.log("🔎 Analyse de la structure de la réponse API:");
+      analyzeApiResponse(response.data);
+      
       // Vérifier la structure et extraire les données correctement
       let propertyArray: Property[] = [];
+      let lastPageFound = false;
       
-      if (response.data && response.data.data) {
+      if (response.data) {
+        // Cas 1: { status: "success", data: [...], meta: {...} }
+        if (response.data.meta && response.data.meta.last_page) {
+          setTotalPages(response.data.meta.last_page);
+          console.log("Pagination via meta:", response.data.meta);
+          lastPageFound = true;
+        }
+        
+        // Cas 2: { status: "success", data: { data: [...], meta: {...} } }
+        if (response.data.data && response.data.data.meta && response.data.data.meta.last_page) {
+          setTotalPages(response.data.data.meta.last_page);
+          console.log("Pagination via data.meta:", response.data.data.meta);
+          lastPageFound = true;
+        }
+        
+        // Cas 3: Format Laravel standard { data: [...], current_page: X, last_page: Y, ...}
+        if (response.data.last_page) {
+          setTotalPages(response.data.last_page);
+          console.log("Pagination via format Laravel standard:", { 
+            current_page: response.data.current_page,
+            last_page: response.data.last_page,
+            total: response.data.total
+          });
+          lastPageFound = true;
+        }
+        
+        // Extraire les données
         if (Array.isArray(response.data.data)) {
           propertyArray = response.data.data;
-        } else if (response.data.data.data && Array.isArray(response.data.data.data)) {
+        } else if (response.data.data && response.data.data.data && Array.isArray(response.data.data.data)) {
           propertyArray = response.data.data.data;
-          if (response.data.data.meta) {
-            setTotalPages(response.data.data.meta.last_page || 1);
-          }
+        } else if (Array.isArray(response.data)) {
+          propertyArray = response.data;
         }
+      }
+      
+      // Si aucune info de pagination n'a été trouvée mais nous avons des données
+      if (!lastPageFound && propertyArray.length > 0) {
+        // Estimer le nombre total de pages en fonction du nombre d'éléments retournés
+        // Assume une taille de page constante
+        const estimatedTotalPages = Math.max(2, Math.ceil(propertyArray.length / 4));
+        console.log(`Aucune information de pagination trouvée. Estimation: ${estimatedTotalPages} pages`);
+        setTotalPages(estimatedTotalPages);
       }
       
       // Filtrage côté client (solution de secours si l'API ne filtre pas correctement)
@@ -235,11 +314,9 @@ export const TranoSombre = (): JSX.Element => {
     fetchProperties();
   }, []);
 
-  // Charger les propriétés lorsque les filtres changent
+  // Charger les propriétés lorsque les filtres ou la page changent
   useEffect(() => {
-    if (activeFilter || priceFilter) {
-      fetchProperties();
-    }
+    fetchProperties();
   }, [currentPage, activeFilter, priceFilter]);
 
   // Gérer le changement de filtre
@@ -256,8 +333,12 @@ export const TranoSombre = (): JSX.Element => {
 
   // Pagination
   const handlePageChange = (page: number) => {
+    console.log(`Tentative de changement de page: ${currentPage} -> ${page}`);
     if (page > 0 && page <= totalPages) {
+      console.log(`Changement de page à: ${page}`);
       setCurrentPage(page);
+    } else {
+      console.log(`Page ${page} hors limites (1-${totalPages})`);
     }
   };
 
@@ -636,35 +717,55 @@ export const TranoSombre = (): JSX.Element => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="fixed bottom-0 left-0 right-0 flex justify-center items-center gap-1 xs:gap-2 sm:gap-4 py-4 bg-gradient-to-t from-[#0f172a] to-transparent z-50"
+            className="relative mt-2 mb-2 flex flex-col items-center gap-2"
           >
-            <button 
-              className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${
-                currentPage > 1 
-                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} cursor-pointer` 
-                  : `${isLightMode ? "bg-[#0150BC]/50" : "bg-[#59e0c5]/50"} cursor-not-allowed`
-              } flex items-center justify-center`}
-              onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-              disabled={currentPage <= 1}
-            >
-              <span className={isLightMode ? "text-white" : "text-[#0f172a]"}>←</span>
-            </button>
-            
-            <div className="flex items-center gap-1 xs:gap-2 sm:gap-4">
-              {renderPaginationNumbers()}
+            <div className="flex justify-center items-center gap-1 xs:gap-2 sm:gap-4 py-4">
+              <button 
+                className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${
+                  currentPage > 1 
+                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} cursor-pointer` 
+                    : `${isLightMode ? "bg-[#0150BC]/50" : "bg-[#59e0c5]/50"} cursor-not-allowed`
+                } flex items-center justify-center`}
+                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1}
+              >
+                <span className={isLightMode ? "text-white" : "text-[#0f172a]"}>←</span>
+              </button>
+              
+              <div className="flex items-center gap-1 xs:gap-2 sm:gap-4">
+                {totalPages > 0 ? (
+                  <>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <span 
+                        key={page}
+                        className={`${
+                          currentPage === page 
+                            ? `w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center ${isLightMode ? "text-white" : "text-[#0f172a]"}` 
+                            : `text-[${isLightMode ? "#0150BC" : "#59e0c5"}] hover:opacity-80`
+                        } text-sm xs:text-lg sm:text-2xl cursor-pointer`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </span>
+                    ))}
+                  </>
+                ) : renderPaginationNumbers()}
+              </div>
+              
+              <button 
+                className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${
+                  currentPage < totalPages 
+                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} cursor-pointer` 
+                    : `${isLightMode ? "bg-[#0150BC]/50" : "bg-[#59e0c5]/50"} cursor-not-allowed`
+                } flex items-center justify-center`}
+                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+              >
+                <span className={isLightMode ? "text-white" : "text-[#0f172a]"}>→</span>
+              </button>
             </div>
             
-            <button 
-              className={`w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${
-                currentPage < totalPages 
-                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} cursor-pointer` 
-                  : `${isLightMode ? "bg-[#0150BC]/50" : "bg-[#59e0c5]/50"} cursor-not-allowed`
-              } flex items-center justify-center`}
-              onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-              disabled={currentPage >= totalPages}
-            >
-              <span className={isLightMode ? "text-white" : "text-[#0f172a]"}>→</span>
-            </button>
+           
           </motion.div>
         )}
         
@@ -674,7 +775,7 @@ export const TranoSombre = (): JSX.Element => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="fixed bottom-0 left-0 right-0 flex justify-center items-center py-4 bg-gradient-to-t from-[#0f172a] to-transparent z-50"
+            className="relative mt-8 mb-12 flex justify-center items-center py-4"
           >
             <div className={`px-6 py-2 ${buttonBg} rounded-full ${textColor} text-sm`}>
               Page 1 sur 1
