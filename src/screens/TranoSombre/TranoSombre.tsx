@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import apiService from "../../services/apiService";
 import NotificationBadge from "../../components/NotificationBadge";
 import { getMediaUrl } from "../../config/api";
+import { formatCurrency } from "../../services/currencyService";
 
 // Types pour les propriétés
 interface PropertyMedia {
@@ -54,6 +55,8 @@ export const TranoSombre = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("VILLAS");
   const [priceFilter, setPriceFilter] = useState<boolean>(false);
+  const [ahofaFilter, setAhofaFilter] = useState<boolean>(false);
+  const [amidyFilter, setAmidyFilter] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [imageErrors, setImageErrors] = useState<{[key: number]: boolean}>({});
@@ -62,6 +65,29 @@ export const TranoSombre = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
+  const [isEuro, setIsEuro] = useState(() => {
+    const savedCurrency = localStorage.getItem('isEuro');
+    return savedCurrency !== null ? savedCurrency === 'true' : false;
+  });
+  const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+
+  // Images pour le carrousel avec leur type
+  const allCarouselImages = [
+    { url: "/public_Trano/FIANARANTSOA.png", type: "VILLAS" },
+    { url: "/public_Trano/tany.png", type: "TERRAINS" },
+    { url: "/public_Trano/pub.jpg", type: "BOTH" },
+    { url: "/public_Trano/pub2.jpg", type: "BOTH" },
+    { url: "/public_Trano/pub3.jpg", type: "BOTH" },
+    { url: "/public_Trano/pubTany1.png", type: "BOTH" },
+    { url: "/public_Trano/pubTany2.png", type: "BOTH" }
+  ];
+
+  // Filtrer les images selon le type actif
+  const filteredImages = allCarouselImages.filter(img => 
+    img.type === activeFilter || img.type === "BOTH"
+  );
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -120,7 +146,7 @@ export const TranoSombre = (): JSX.Element => {
       let params: any = { 
         page: currentPage,
         include: 'media',
-        per_page: 4
+        per_page: 5
       };
       
       // Ajout des filtres selon le type de propriété
@@ -236,7 +262,7 @@ export const TranoSombre = (): JSX.Element => {
       if (!lastPageFound && propertyArray.length > 0) {
         // Estimer le nombre total de pages en fonction du nombre d'éléments retournés
         // Assume une taille de page constante
-        const estimatedTotalPages = Math.max(2, Math.ceil(propertyArray.length / 4));
+        const estimatedTotalPages = Math.max(2, Math.ceil(propertyArray.length / 5));
         console.log(`Aucune information de pagination trouvée. Estimation: ${estimatedTotalPages} pages`);
         setTotalPages(estimatedTotalPages);
       }
@@ -322,12 +348,26 @@ export const TranoSombre = (): JSX.Element => {
   // Gérer le changement de filtre
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter);
-    setCurrentPage(1); // Réinitialiser à la première page lors du changement de filtre
+    // Réinitialiser le carrousel à 0 pour afficher la première image du type actif
+    setCurrentImageIndex(0);
+    setCurrentPage(1);
   };
 
   // Gérer le changement de filtre de prix
   const handlePriceFilterChange = () => {
     setPriceFilter(!priceFilter);
+    setCurrentPage(1);
+  };
+
+  // Gérer le changement de filtre AHOFA
+  const handleAhofaFilterChange = () => {
+    setAhofaFilter(!ahofaFilter);
+    setCurrentPage(1);
+  };
+
+  // Gérer le changement de filtre AMIDY
+  const handleAmidyFilterChange = () => {
+    setAmidyFilter(!amidyFilter);
     setCurrentPage(1);
   };
 
@@ -468,6 +508,45 @@ export const TranoSombre = (): JSX.Element => {
     }
   }, [debouncedSearchTerm]);
 
+  // Fonction pour gérer l'ouverture du modal d'aperçu
+  const handlePreviewClick = (property: Property) => {
+    setSelectedProperty(property);
+    setShowPreviewModal(true);
+    setCurrentImageIndex(0);
+  };
+
+  // Fonction pour fermer le modal
+  const handleCloseModal = () => {
+    setShowPreviewModal(false);
+    setSelectedProperty(null);
+    setCurrentImageIndex(0);
+  };
+
+  // Effet pour le défilement automatique du carrousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        prevIndex === filteredImages.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [filteredImages.length]);
+
+  // Fonction pour passer à l'image suivante
+  const nextImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === filteredImages.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  // Fonction pour revenir à l'image précédente
+  const prevImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === 0 ? filteredImages.length - 1 : prevIndex - 1
+    );
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -490,7 +569,7 @@ export const TranoSombre = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex justify-between items-center py-2 xs:py-4 mb-8 xs:mb-10"
+          className="flex justify-between items-center py-2 xs:py-4 mb-8 xs:mb-10 sticky top-0 z-20 bg-inherit"
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
@@ -500,7 +579,7 @@ export const TranoSombre = (): JSX.Element => {
             <NotificationBadge size="lg" accentColor={accentColor} />
             <SettingsIcon 
               className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`} 
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/parametres')}
             />
           </div>
           <div className="relative">
@@ -530,7 +609,7 @@ export const TranoSombre = (): JSX.Element => {
           </div>
         </motion.header>
 
-        {/* Hero Section */}
+        {/* Hero Section avec Carrousel */}
         <motion.div 
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -539,20 +618,22 @@ export const TranoSombre = (): JSX.Element => {
         >
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeFilter}
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1 }}
-              transition={{ duration: 0.4 }}
+              key={currentImageIndex}
+              initial={{ opacity: 0, x: 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -300 }}
+              transition={{ duration: 0.5 }}
               className="w-full h-full"
             >
               <img
-                src={activeFilter === "TERRAINS" ? "/public_Trano/tany.png" : "/public_Trano/FIANARANTSOA.png"}
+                src={filteredImages[currentImageIndex].url}
                 alt="Hero"
                 className="w-full h-[150px] xs:h-[190px] sm:h-[230px] object-cover"
               />
             </motion.div>
           </AnimatePresence>
+
+          {/* Overlay et Logo */}
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <img 
@@ -561,6 +642,21 @@ export const TranoSombre = (): JSX.Element => {
               className="h-7 xs:h-10 sm:h-14" 
             />
           </div>
+
+          {/* Indicateurs de position pour le carrousel */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+            {filteredImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  index === currentImageIndex 
+                    ? 'bg-white w-4' 
+                    : 'bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
         </motion.div>
 
         {/* Filter Section */}
@@ -568,47 +664,71 @@ export const TranoSombre = (): JSX.Element => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-center mb-8 xs:mb-16"
+          className="text-center mb-4 xs:mb-12 sticky top-[80px] z-20 bg-inherit"
         >
           <div className="inline-flex items-center gap-2 xs:gap-4 mb-2 xs:mb-4">
-            <span className={`text-base xs:text-xl sm:text-2xl font-bold ${textColor}`}>TRANO</span>
+            <button 
+              onClick={() => handleFilterChange("VILLAS")}
+              className={`text-base xs:text-xl sm:text-2xl font-bold transition-colors ${
+                activeFilter === "VILLAS" 
+                  ? textColor 
+                  : `${textColor} opacity-50 hover:opacity-70`
+              }`}
+            >
+              TRANO
+            </button>
             <div className={`w-0.5 h-4 xs:h-6 sm:h-8 ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}`}></div>
-            <span className={`text-base xs:text-xl sm:text-2xl font-bold ${textColor}`}>TANY</span>
+            <button 
+              onClick={() => handleFilterChange("TERRAINS")}
+              className={`text-base xs:text-xl sm:text-2xl font-bold transition-colors ${
+                activeFilter === "TERRAINS" 
+                  ? textColor 
+                  : `${textColor} opacity-50 hover:opacity-70`
+              }`}
+            >
+              TANY
+            </button>
           </div>
           <div className={`border-t ${borderColor} w-40 sm:w-58 md:w-70 mx-auto mb-1 sm:mb-2`}></div>
-          <div className="flex justify-center gap-4 xs:gap-8 sm:gap-12">
-            <div 
-              className="flex items-center gap-2 cursor-pointer" 
-              onClick={() => handleFilterChange("VILLAS")}
-            >
-              <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
-                activeFilter === "VILLAS" 
-                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
-                  : `border-2 ${borderColor}`
-              }`}>
-                {activeFilter === "VILLAS" && (
-                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                )}
+          <div className="flex justify-center items-center gap-4 xs:gap-8 sm:gap-12">
+            <div className="flex gap-4 xs:gap-8 sm:gap-12">
+              <div 
+                className="flex items-center gap-2 cursor-pointer" 
+                onClick={handleAhofaFilterChange}
+              >
+                <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
+                  ahofaFilter 
+                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                    : `border-2 ${borderColor}`
+                }`}>
+                  {ahofaFilter && (
+                    <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
+                  )}
+                </div>
+                <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+                  AHOFA
+                </span>
               </div>
-              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>VILLAS</span>
+
+              <div 
+                className="flex items-center gap-2 cursor-pointer" 
+                onClick={handleAmidyFilterChange}
+              >
+                <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
+                  amidyFilter 
+                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                    : `border-2 ${borderColor}`
+                }`}>
+                  {amidyFilter && (
+                    <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
+                  )}
+                </div>
+                <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+                  AMIDY
+                </span>
+              </div>
             </div>
 
-            <div 
-              className="flex items-center gap-2 cursor-pointer" 
-              onClick={() => handleFilterChange("TERRAINS")}
-            >
-              <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
-                activeFilter === "TERRAINS" 
-                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
-                  : `border-2 ${borderColor}`
-              }`}>
-                {activeFilter === "TERRAINS" && (
-                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                )}
-              </div>
-              <span className={`text-sm xs:text-base sm:text-xl ${textColor}`}>TERRAINS</span>
-            </div>
-            
             <div 
               className="flex items-center gap-2 cursor-pointer" 
               onClick={handlePriceFilterChange}
@@ -622,7 +742,9 @@ export const TranoSombre = (): JSX.Element => {
                   <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
                 )}
               </div>
-              <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>+ de 10 000 000 Ar</span>
+              <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+                + de {isEuro ? formatCurrency(10116000, true).replace('.00', '') : "10 116 000 Ar"}
+              </span>
             </div>
           </div>
         </motion.div>
@@ -659,7 +781,7 @@ export const TranoSombre = (): JSX.Element => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="space-y-5 xs:space-y-6 sm:space-y-8"
+          className="space-y-5 xs:space-y-6 sm:space-y-8 max-h-[calc(102vh-400px)] overflow-y-auto pr-2"
         >
           {!loading && properties.map((property) => (
             <motion.div
@@ -693,10 +815,21 @@ export const TranoSombre = (): JSX.Element => {
                     <p className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor} line-clamp-2`}>
                       {property.description || `Située à ${property.location}, surface: ${property.surface}m²`}
                     </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-[10px] xs:text-xs sm:text-sm ${textColor} font-medium`}>
+                        {formatCurrency(property.price, isEuro).replace('.00', '')}
+                      </span>
+                      <span className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor}`}>
+                        • {property.location}
+                      </span>
+                    </div>
                   </div>
                   <div className="flex justify-end gap-1.5 xs:gap-2 sm:gap-3">
-                    <button className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}>
-                      Apérçu
+                    <button 
+                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
+                      onClick={() => handlePreviewClick(property)}
+                    >
+                      Aperçu
                     </button>
                     <button 
                       className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
@@ -717,7 +850,7 @@ export const TranoSombre = (): JSX.Element => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="relative mt-2 mb-2 flex flex-col items-center gap-2"
+            className="relative mt-2 mb-2 flex flex-col items-center gap-2 sticky bottom-0 z-20 bg-inherit py-4"
           >
             <div className="flex justify-center items-center gap-1 xs:gap-2 sm:gap-4 py-4">
               <button 
@@ -782,6 +915,116 @@ export const TranoSombre = (): JSX.Element => {
             </div>
           </motion.div>
         )}
+
+        {/* Modal d'aperçu */}
+        <AnimatePresence>
+          {showPreviewModal && selectedProperty && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+              onClick={handleCloseModal}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className={`relative w-[90%] max-w-4xl ${cardBgColor} rounded-xl overflow-hidden`}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              >
+                {/* En-tête du modal */}
+                <div className={`p-4 border-b ${borderColorLight}`}>
+                  <h3 className={`text-lg font-semibold ${textColor}`}>{selectedProperty.title}</h3>
+                </div>
+
+                {/* Conteneur des images */}
+                <div className="relative h-[300px] overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    {selectedProperty.media && selectedProperty.media.length > 0 ? (
+                      <motion.img
+                        key={currentImageIndex}
+                        initial={{ opacity: 0, x: 100 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -100 }}
+                        transition={{ duration: 0.5 }}
+                        src={getMediaUrl(selectedProperty.media[currentImageIndex].media_url)}
+                        alt={`Image ${currentImageIndex + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <motion.img
+                        key="default"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        src="/public_Trano/maison-01.png"
+                        alt="Image par défaut"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  {/* Flèches de navigation */}
+                  {selectedProperty.media && selectedProperty.media.length > 1 && (
+                    <>
+                      <button
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex((prev) => 
+                            prev === 0 ? selectedProperty.media!.length - 1 : prev - 1
+                          );
+                        }}
+                        className={`absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full ${buttonBg} ${textColor} hover:opacity-80 transition-opacity`}
+                      >
+                        ←
+                      </button>
+                      <button
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          setCurrentImageIndex((prev) => 
+                            prev === selectedProperty.media!.length - 1 ? 0 : prev + 1
+                          );
+                        }}
+                        className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full ${buttonBg} ${textColor} hover:opacity-80 transition-opacity`}
+                      >
+                        →
+                      </button>
+                    </>
+                  )}
+
+                  {/* Indicateurs de navigation */}
+                  {selectedProperty.media && selectedProperty.media.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                      {selectedProperty.media.map((_, index) => (
+                        <button
+                          key={index}
+                          className={`w-2 h-2 rounded-full transition-all ${
+                            index === currentImageIndex 
+                              ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} w-4` 
+                              : "bg-white/50"
+                          }`}
+                          onClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            setCurrentImageIndex(index);
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bouton de fermeture */}
+                <button
+                  onClick={handleCloseModal}
+                  className={`absolute top-4 right-4 p-2 rounded-full ${buttonBg} ${textColor} hover:opacity-80 transition-opacity`}
+                >
+                  ✕
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

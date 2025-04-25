@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect} from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -98,35 +98,21 @@ const PropertyManagement = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : false; // Défaut: mode sombre
   });
+  const [mediaToDelete, setMediaToDelete] = useState<number[]>([]);
 
   // Couleurs qui changent en fonction du mode
-  const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
   const bgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
   const cardBgColor = isLightMode ? "bg-[#F8FAFC]" : "bg-[#1e293b]";
-  const darkBgColor = isLightMode ? "bg-[#EFF6FF]" : "bg-[#0f172a]";
   const textColor = isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]";
   const textPrimaryColor = isLightMode ? "text-[#1E293B]" : "text-white";
   const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
-  const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
   const buttonPrimaryBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
   const buttonPrimaryText = isLightMode ? "text-white" : "text-[#0f172a]";
-  const adminBadgeBg = isLightMode ? "bg-red-100" : "bg-red-500/20";
-  const adminBadgeText = isLightMode ? "text-red-700" : "text-red-300";
-  const borderLight = isLightMode ? "border-[#0150BC]/20" : "border-[#59e0c5]/20";
   const cardBorder = isLightMode ? "border border-[#0150BC]/30" : "";
   const errorBgColor = isLightMode ? "bg-red-100" : "bg-red-500/20";
   const errorTextColor = isLightMode ? "text-red-700" : "text-red-300";
-  const tabActiveBg = isLightMode ? "bg-[#F8FAFC]" : "bg-[#1e293b]";
-  const tabHoverBg = isLightMode ? "bg-[#F8FAFC]/80" : "bg-[#1e293b]/50";
-  const statCardBg = isLightMode ? "bg-[#F8FAFC]" : "bg-[#1e293b]";
-  const yellowTextColor = isLightMode ? "text-yellow-700" : "text-yellow-300";
-  const yellowBgColor = isLightMode ? "bg-yellow-100/50" : "bg-yellow-500/20";
-  const greenTextColor = isLightMode ? "text-green-700" : "text-green-300";
-  const blueTextColor = isLightMode ? "text-blue-700" : "text-blue-300";
-  const iconBgColor = isLightMode ? "bg-[#0150BC]/10" : "bg-[#59e0c5]/20";
-  const yellowIconBgColor = isLightMode ? "bg-yellow-100" : "bg-yellow-500/20";
   const actionButtonBg = isLightMode ? "bg-[#EFF6FF]" : "bg-[#0f172a]";
-  const actionButtonHoverBg = isLightMode ? "bg-[#EFF6FF]/80" : "bg-[#0f172a]/80";
+ 
   const spinnerBorderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
   const modalBgColor = isLightMode ? "bg-white" : "bg-[#1e293b]";
   const inputBgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
@@ -138,27 +124,7 @@ const PropertyManagement = (): JSX.Element => {
   const tableRowEvenBgColor = isLightMode ? "bg-white" : "bg-[#1e293b]";
   const tableRowOddBgColor = isLightMode ? "bg-gray-50" : "bg-[#0f172a]/50";
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.4
-      }
-    }
-  };
 
   // Mettre à jour le mode quand il change dans localStorage
   useEffect(() => {
@@ -356,6 +322,7 @@ const PropertyManagement = (): JSX.Element => {
     if (!selectedProperty) return;
     
     try {
+      setLoading(true);
       const formDataToSend = new FormData();
       
       // Ajouter les champs du formulaire
@@ -367,11 +334,24 @@ const PropertyManagement = (): JSX.Element => {
       
       // Ajouter les fichiers médias
       mediaFiles.forEach((file, index) => {
-        formDataToSend.append(`media[${index}]`, file);
+        formDataToSend.append(`new_media[${index}]`, file);
       });
+      
+      // Ajouter les IDs des médias à supprimer
+      if (mediaToDelete.length > 0) {
+        mediaToDelete.forEach((id, index) => {
+          formDataToSend.append(`delete_media[${index}]`, id.toString());
+        });
+      }
       
       // Ajouter la méthode PUT pour Laravel
       formDataToSend.append('_method', 'PUT');
+      
+      console.log("Envoi des données pour modification:", {
+        property_id: selectedProperty.property_id,
+        nouvelles_images: mediaFiles.length,
+        images_a_supprimer: mediaToDelete
+      });
       
       // Envoyer la requête
       const response = await apiService.post<ApiResponse<Property>>(`/properties/${selectedProperty.property_id}`, formDataToSend, {
@@ -380,11 +360,40 @@ const PropertyManagement = (): JSX.Element => {
         }
       });
       
+      console.log("Réponse de l'API après modification:", response.data);
+      
       if (response.data && response.data.status === 'success') {
-        // Mettre à jour la propriété dans la liste
-        setProperties(properties.map(property => 
-          property.property_id === selectedProperty.property_id ? response.data.data : property
-        ));
+        // Vérifier que la propriété mise à jour contient bien ses médias
+        const updatedProperty = response.data.data;
+        console.log("Propriété mise à jour:", updatedProperty);
+        console.log("Médias de la propriété mise à jour:", updatedProperty.media);
+        
+        if (!updatedProperty.media) {
+          console.warn("Attention: La propriété mise à jour ne contient pas de médias dans la réponse API");
+          
+          // Si l'API ne renvoie pas les médias, on peut récupérer les données actualisées
+          console.log("Tentative de récupération des données complètes...");
+          
+          try {
+            const refreshResponse = await apiService.get<ApiResponse<Property>>(`/properties/${selectedProperty.property_id}`);
+            if (refreshResponse.data && refreshResponse.data.status === 'success') {
+              const refreshedProperty = refreshResponse.data.data;
+              console.log("Propriété récupérée après refresh:", refreshedProperty);
+              
+              // Mettre à jour la propriété avec les données complètes
+              setProperties(properties.map(property => 
+                property.property_id === selectedProperty.property_id ? refreshedProperty : property
+              ));
+            }
+          } catch (refreshErr) {
+            console.error("Erreur lors de la récupération des données après modification:", refreshErr);
+          }
+        } else {
+          // Mettre à jour la propriété dans la liste avec les données reçues
+          setProperties(properties.map(property => 
+            property.property_id === selectedProperty.property_id ? updatedProperty : property
+          ));
+        }
         
         // Fermer le modal et réinitialiser le formulaire
         setShowEditModal(false);
@@ -401,10 +410,19 @@ const PropertyManagement = (): JSX.Element => {
           user_id: null
         });
         setMediaFiles([]);
+        setMediaToDelete([]);
+        
+        // Rafraîchir toutes les propriétés pour être sûr d'avoir des données à jour
+        fetchPropertiesFromAPI();
+      } else {
+        console.error("Échec de la modification:", response.data);
+        alert("La modification a échoué. " + (response.data?.message || "Veuillez réessayer."));
       }
     } catch (err) {
       console.error("Erreur lors de la modification de la propriété:", err);
       alert("Une erreur est survenue lors de la modification de la propriété. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -454,6 +472,9 @@ const PropertyManagement = (): JSX.Element => {
       status: property.status,
       user_id: property.user_id
     });
+    // Réinitialiser la liste des médias à supprimer
+    setMediaToDelete([]);
+    setMediaFiles([]);
     setShowEditModal(true);
   };
 
@@ -564,6 +585,20 @@ const PropertyManagement = (): JSX.Element => {
       property_type: ""
     });
     fetchPropertiesFromAPI();
+  };
+
+  // Ajouter cette fonction après fetchPropertiesFromAPI
+  const logMediaUrl = (mediaPath: string) => {
+    const url = getMediaUrl(mediaPath);
+    console.log("Chemin média original:", mediaPath);
+    console.log("URL complète générée:", url);
+    console.log("API_URL utilisé:", API_URL);
+    return url;
+  };
+
+  // Fonction pour supprimer une image existante
+  const removeExistingMedia = (mediaId: number) => {
+    setMediaToDelete([...mediaToDelete, mediaId]);
   };
 
   return (
@@ -994,6 +1029,7 @@ const PropertyManagement = (): JSX.Element => {
                           <button
                             onClick={() => removeFile(index)}
                             className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            type="button"
                           >
                             <XIcon size={14} />
                           </button>
@@ -1027,13 +1063,19 @@ const PropertyManagement = (): JSX.Element => {
         {showEditModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4">
-              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowEditModal(false)}></div>
+              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => {
+                setShowEditModal(false);
+                setMediaToDelete([]); // Réinitialiser les médias à supprimer quand on ferme sans sauvegarder
+              }}></div>
               
               <div className={`relative w-full max-w-3xl p-6 rounded-lg shadow-lg ${modalBgColor} ${textPrimaryColor}`}>
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold">Modifier la propriété</h2>
                   <button 
-                    onClick={() => setShowEditModal(false)}
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setMediaToDelete([]); // Réinitialiser les médias à supprimer quand on annule
+                    }}
                     className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
                   >
                     <XIcon size={20} />
@@ -1179,19 +1221,25 @@ const PropertyManagement = (): JSX.Element => {
                     <div className="mt-3">
                       <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>Images existantes</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {selectedProperty.media.map((media) => (
+                        {selectedProperty.media
+                          .filter(media => !mediaToDelete.includes(media.media_id))
+                          .map((media) => (
                           <div key={media.media_id} className="relative group">
                             <img 
-                              src={getMediaUrl(media.media_url)} 
+                              src={logMediaUrl(media.media_url)} 
                               alt={`Property ${selectedProperty.property_id}`} 
                               className="w-full h-24 object-cover rounded-lg"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                console.log("Erreur de chargement d'image:", media.media_url);
+                                target.src = '/img/default-property.jpg';
+                                target.onerror = null; // Éviter les boucles infinies
+                              }}
                             />
                             <button
-                              onClick={() => {
-                                // Implémenter la suppression de médias existants
-                                console.log("Supprimer média", media.media_id);
-                              }}
+                              onClick={() => removeExistingMedia(media.media_id)}
                               className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                              type="button"
                             >
                               <XIcon size={14} />
                             </button>
@@ -1207,7 +1255,7 @@ const PropertyManagement = (): JSX.Element => {
                       <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>Nouvelles images</h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {mediaFiles.map((file, index) => (
-                          <div key={index} className="relative group">
+                          <div key={`new-${index}`} className="relative group">
                             <img 
                               src={URL.createObjectURL(file)} 
                               alt={`Preview ${index}`} 
@@ -1216,6 +1264,7 @@ const PropertyManagement = (): JSX.Element => {
                             <button
                               onClick={() => removeFile(index)}
                               className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                              type="button"
                             >
                               <XIcon size={14} />
                             </button>
@@ -1228,7 +1277,10 @@ const PropertyManagement = (): JSX.Element => {
                 
                 <div className="flex justify-end gap-3">
                   <button
-                    onClick={() => setShowEditModal(false)}
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setMediaToDelete([]); // Réinitialiser les médias à supprimer quand on annule
+                    }}
                     className={`px-4 py-2 rounded-lg ${actionButtonBg} ${textSecondaryColor}`}
                   >
                     Annuler
@@ -1270,9 +1322,15 @@ const PropertyManagement = (): JSX.Element => {
                       {selectedProperty.media.map((media) => (
                         <div key={media.media_id} className="relative">
                           <img 
-                            src={getMediaUrl(media.media_url)} 
+                            src={logMediaUrl(media.media_url)} 
                             alt={`Property ${selectedProperty.property_id}`} 
                             className="w-full h-32 object-cover rounded-lg"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              console.log("Erreur de chargement d'image:", media.media_url);
+                              target.src = '/img/default-property.jpg';
+                              target.onerror = null; // Éviter les boucles infinies
+                            }}
                           />
                         </div>
                       ))}

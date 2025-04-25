@@ -43,7 +43,10 @@ export const ElementAccueilSombre = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
-  const [isEuro, setIsEuro] = useState(false);
+  const [isEuro, setIsEuro] = useState(() => {
+    const savedCurrency = localStorage.getItem('isEuro');
+    return savedCurrency !== null ? savedCurrency === 'true' : false;
+  });
   const [isSearch, setIsSearch] = useState(false);
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -51,6 +54,13 @@ export const ElementAccueilSombre = (): JSX.Element => {
   const [tipClass, setTipClass] = useState('');
   const tipContainerRef = useRef<HTMLDivElement>(null);
   const [userName, setUserName] = useState("Visiteur");
+
+  // Redirection vers TranoSombre lorsque isSearch est activé
+  useEffect(() => {
+    if (isSearch) {
+      navigate('/trano');
+    }
+  }, [isSearch, navigate]);
 
   // Récupérer le nom de l'utilisateur connecté
   useEffect(() => {
@@ -108,6 +118,11 @@ export const ElementAccueilSombre = (): JSX.Element => {
   useEffect(() => {
     localStorage.setItem('isLightMode', isLightMode.toString());
   }, [isLightMode]);
+
+  // Sauvegarder la préférence de devise dans localStorage
+  useEffect(() => {
+    localStorage.setItem('isEuro', isEuro.toString());
+  }, [isEuro]);
 
   // Couleur qui change en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -290,7 +305,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
             </div>
             <Settings 
               className={`w-8 h-8 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
-              onClick={() => navigate('/profile')} 
+              onClick={() => navigate('/parametres')} 
             />
           </div>
           <p style={{ color: textColor }} className="text-base sm:text-xl md:text-2xl lg:text-3xl max-w-[200px] sm:max-w-sm md:max-w-md lg:max-w-lg pr-2 sm:pr-8 md:pr-12 lg:pr-0 leading-tight sm:leading-snug md:leading-normal">
@@ -314,13 +329,13 @@ export const ElementAccueilSombre = (): JSX.Element => {
         </div>
 
         {/* Stats Section */}
-        <div className="mb-8 sm:mb-12 animate-on-mount small-screen-stats" style={{animationDelay: '200ms'}}>
+        <div className="mb-6 sm:mb-10 animate-on-mount small-screen-stats" style={{animationDelay: '200ms'}}>
           <div className="flex flex-row items-start">
             <div className="flex flex-col items-start">
               <h2 className={`text-lg sm:text-xl font-bold ${isLightMode ? "text-[#0150BC]" : "text-white"}`}>
                 Tafo Immo en quelques
               </h2>
-              <h2 className={`text-lg sm:text-xl font-bold ${isLightMode ? "text-[#0150BC]" : "text-white"}`}>
+              <h2 className={`text-xl sm:text-xl font-bold ${isLightMode ? "text-[#0150BC]" : "text-white"}`}>
                 chiffres
               </h2>
             </div>

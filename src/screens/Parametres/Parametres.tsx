@@ -14,7 +14,7 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-export const Profile = (): JSX.Element => {
+export const Parametres = (): JSX.Element => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -278,11 +278,21 @@ export const Profile = (): JSX.Element => {
               onClick={() => navigate('/home')}
             />
             <NotificationBadge size="lg" accentColor={accentColor} />
-            <SettingsIcon 
-              className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`} 
-              onClick={() => navigate('/parametres')}
-            />
+            <SettingsIcon className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor}`} />
           </div>
+          
+          {/* Bouton pour basculer entre les modes */}
+          <button 
+            onClick={toggleLightMode}
+            className={`${buttonPrimaryBg} ${buttonPrimaryText} p-2 rounded-full flex items-center justify-center`}
+            aria-label={isLightMode ? "Passer au mode sombre" : "Passer au mode clair"}
+          >
+            {isLightMode ? (
+              <MoonIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+            ) : (
+              <SunIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+            )}
+          </button>
         </motion.header>
 
         {/* Messages */}
@@ -364,11 +374,6 @@ export const Profile = (): JSX.Element => {
               </div>
 
               <div>
-                <label className={`block text-sm ${textColor} mb-1`}>Rôle</label>
-                <p className={textPrimaryColor}>Admin</p>
-              </div>
-
-              <div>
                 <label className={`block text-sm ${textColor} mb-1`}>Email</label>
                 {isEditing ? (
                   <input
@@ -394,7 +399,7 @@ export const Profile = (): JSX.Element => {
                     className={`w-full ${inputBgColor} border ${borderColor} rounded-lg px-4 py-2 ${textPrimaryColor}`}
                   />
                 ) : (
-                  <p className={textPrimaryColor}>{userData?.phone}</p>
+                  <p className={textPrimaryColor}>{userData?.phone || "Non spécifié"}</p>
                 )}
               </div>
 
@@ -409,15 +414,51 @@ export const Profile = (): JSX.Element => {
                     className={`w-full ${inputBgColor} border ${borderColor} rounded-lg px-4 py-2 ${textPrimaryColor}`}
                   />
                 ) : (
-                  <p className={textPrimaryColor}>{userData?.address}</p>
+                  <p className={textPrimaryColor}>{userData?.address || "Non spécifié"}</p>
                 )}
               </div>
             </div>
           </div>
+        </motion.div>
+
+        {/* Account Actions */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-8 ${cardBorder}`}
+        >
+          <h3 className={`text-lg sm:text-xl font-semibold ${textPrimaryColor} mb-4`}>Sécurité du compte</h3>
+          
+          <button 
+            className={`w-full flex items-center justify-between ${textPrimaryColor} ${darkBgColor} p-3 rounded-lg mb-3 hover:opacity-90`}
+            onClick={navigateToDashboard}
+          >
+            <span>Mon tableau de bord</span>
+            <span className={`${buttonPrimaryBg} ${buttonPrimaryText} px-2 py-0.5 rounded text-xs`}>Nouveau</span>
+          </button>
+          
+          <button className={`w-full flex items-center justify-between ${textPrimaryColor} ${darkBgColor} p-3 rounded-lg mb-3 hover:opacity-90`}>
+            <span>Changer le mot de passe</span>
+            <SettingsIcon size={20} className={textColor} />
+          </button>
+          
+          <button className={`w-full flex items-center justify-between ${textPrimaryColor} ${darkBgColor} p-3 rounded-lg mb-3 hover:opacity-90`}>
+            <span>Paramètres de notification</span>
+            <BellIcon size={20} className={textColor} />
+          </button>
+          
+          <button 
+            onClick={showLogoutConfirmation}
+            className={`w-full flex items-center justify-between text-red-500 ${darkBgColor} p-3 rounded-lg hover:opacity-90`}
+          >
+            <span>Se déconnecter</span>
+            <LogOutIcon size={20} />
+          </button>
         </motion.div>
       </div>
     </motion.div>
   );
 };
 
-export default Profile; 
+export default Parametres; 

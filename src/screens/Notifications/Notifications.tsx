@@ -275,7 +275,7 @@ export const Notifications = (): JSX.Element => {
             </div>
             <SettingsIcon 
               className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`}
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/parametres')}
             />
           </div>
           

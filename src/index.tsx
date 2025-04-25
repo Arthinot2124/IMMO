@@ -18,6 +18,7 @@ import { AdminDashboard } from "./screens/Admin/AdminDashboard";
 import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval";
 import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
 import PropertyManagement from "./screens/Admin/PropertyManagement";
+import { Parametres } from "./screens/Parametres";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
 import BackButtonHandler from "./components/BackButtonHandler";
@@ -32,6 +33,7 @@ createRoot(document.getElementById("app") as HTMLElement).render(
         <Route path="/home" element={<ElementAccueilSombre />} />
         <Route path="/trano" element={<TranoSombre />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/parametres" element={<Parametres />} />
         <Route path="/property/:id" element={<PropertyDetail />} />
         <Route path="/property/:id/contact" element={<ContactAgency />} />
         <Route path="/property-request" element={<PropertyRequest />} />

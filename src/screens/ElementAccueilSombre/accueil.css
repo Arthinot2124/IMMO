@@ -253,3 +253,25 @@
     gap: 0.5rem !important; /* Espace réduit entre les éléments de la colonne */
   }
 }
+
+/* Règles spécifiques pour les écrans de 392dp */
+@media screen and (max-width: 392px) {
+  .small-screen-stats h2 {
+    font-size: 1rem !important; /* Taille augmentée pour le titre "Tafo Immo en quelques chiffres" */
+  }
+
+  .small-screen-stats .border-line {
+    width: 10rem !important; /* Ligne plus large au-dessus des stats */
+  }
+
+  /* Fixation de la ligne du bas */
+  .small-screen-bottom-line {
+    position: fixed !important;
+    bottom: 1rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 10rem !important;
+    margin: 0 !important;
+    z-index: 100 !important;
+  }
+}
