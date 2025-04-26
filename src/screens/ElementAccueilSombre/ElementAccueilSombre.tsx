@@ -277,7 +277,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
         {/* Header Section */}
         <div className="flex justify-between items-start mb-14 sm:mb-18 animate-on-mount small-screen-header">
           <div>
-            <h1 className={`text-5xl sm:text-4xl md:text-5xl lg:text-[80px] font-bold leading-tight`} style={{ color: titleStatsColor }}>
+            <h1 className={`text-5xl sm:text-4xl md:text-5xl lg:text-[80px] font-bold leading-tight ml-4 sm:ml-6 md:ml-8`} style={{ color: titleStatsColor }}>
               Salut,
               <br />
               {userName}.
@@ -476,8 +476,9 @@ export const ElementAccueilSombre = (): JSX.Element => {
                       {setting.newLine ? (
                         <>
                           <span>{setting.label}</span>
-                          <br />
-                          <span style={{ color: accentColor }}>{setting.highlight}</span>
+                          <span className="block -mt-3 sm:-mt-1">{/* Ajout de marge négative pour réduire l'espace */}
+                            <span style={{ color: accentColor }}>{setting.highlight}</span>
+                          </span>
                         </>
                       ) : (
                         <>

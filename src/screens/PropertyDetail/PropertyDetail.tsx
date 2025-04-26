@@ -157,8 +157,10 @@ export const PropertyDetail = (): JSX.Element => {
   // Obtenir les URLs des images
   const getImageUrls = (): string[] => {
     if (property && property.media && property.media.length > 0) {
-      // Convertir les URLs des médias en URLs complètes
-      return property.media.map(media => getMediaUrl(media.media_url));
+      // Filtrer uniquement les médias de type Photo
+      return property.media
+        .filter(media => media.media_type === 'Photo')
+        .map(media => getMediaUrl(media.media_url));
     }
     
     // Images par défaut selon la catégorie
@@ -177,6 +179,17 @@ export const PropertyDetail = (): JSX.Element => {
     ];
   };
 
+  // Récupérer les vidéos
+  const getVideos = (): string[] => {
+    if (property && property.media && property.media.length > 0) {
+      // Filtrer uniquement les médias de type Vidéo
+      return property.media
+        .filter(media => media.media_type === 'Vidéo')
+        .map(media => getMediaUrl(media.media_url));
+    }
+    return [];
+  };
+
   // Formater le prix
   const formatPrice = (price?: number): string => {
     if (!price) return "Prix non spécifié";
@@ -191,6 +204,8 @@ export const PropertyDetail = (): JSX.Element => {
 
   // Propriétés extraites pour simplifier le template
   const images = getImageUrls();
+  const videos = getVideos();
+  const selectedVideo = selectedImage < videos.length ? selectedImage : 0;
   const propertyId = property?.property_id || 1;
 
   return (
@@ -263,17 +278,17 @@ export const PropertyDetail = (): JSX.Element => {
               className="mb-6 sm:mb-8"
             >
               <div className={`relative ${imageBgColor} rounded-2xl overflow-hidden h-[200px] xs:h-[250px] sm:h-[350px] md:h-[450px] ${imageBorder}`}>
-                {images.length > 0 ? (
-                  <img
-                    src={images[selectedImage]}
-                    alt={property.title}
+                {videos.length > 0 ? (
+                  <video 
+                    src={videos[selectedVideo]} 
                     className="w-full h-full object-contain"
-                    onError={() => handleImageError(selectedImage)}
+                    controls
+                    autoPlay={false}
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <ImageIcon size={48} />
-                    <p className="mt-4 text-xl">Aucune image disponible</p>
+                    <p className="mt-4 text-xl">Aucune vidéo disponible</p>
                   </div>
                 )}
                 <button 
@@ -286,27 +301,20 @@ export const PropertyDetail = (): JSX.Element => {
                 </button>
               </div>
               
-              {/* Thumbnail Gallery */}
-              {images.length > 1 && (
+              {/* Video Gallery */}
+              {videos.length > 1 && (
                 <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
-                  {images.map((image, index) => (
+                  {videos.map((video, index) => (
                     <div 
-                      key={index}
-                      className={`w-16 h-16 xs:w-20 xs:h-20 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === index ? borderColor : 'border-transparent'}`}
+                      key={`video-${index}`}
+                      className={`w-16 h-16 xs:w-20 xs:h-20 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer border-2 ${selectedVideo === index ? borderColor : 'border-transparent'}`}
                       onClick={() => setSelectedImage(index)}
                     >
-                      {imageErrors[index] ? (
-                        <div className={`w-full h-full ${imageBgColor} flex items-center justify-center`}>
-                          <ImageIcon size={20} className="text-gray-400" />
-                        </div>
-                      ) : (
-                        <img 
-                          src={image} 
-                          alt={`Miniature ${index + 1}`} 
-                          className="w-full h-full object-cover"
-                          onError={() => handleImageError(index)}
-                        />
-                      )}
+                      <div className={`w-full h-full ${imageBgColor} flex items-center justify-center`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-gray-400">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                      </div>
                     </div>
                   ))}
                 </div>

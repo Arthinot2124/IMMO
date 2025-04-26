@@ -1,6 +1,6 @@
 {
   "appId": "com.immo.app",
-  "appName": "immo",
+  "appName": "Immo",
   "webDir": "dist",
   "server": {
     "androidScheme": "http",
@@ -9,5 +9,18 @@
   },
   "android": {
     "allowMixedContent": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": true,
+      "backgroundColor": "#ffffff",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": false,
+      "splashImmersive": false,
+      "useDialog": false
+    }
   }
 }

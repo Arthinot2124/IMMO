@@ -942,16 +942,46 @@ export const TranoSombre = (): JSX.Element => {
                 <div className="relative h-[300px] overflow-hidden">
                   <AnimatePresence mode="wait">
                     {selectedProperty.media && selectedProperty.media.length > 0 ? (
-                      <motion.img
-                        key={currentImageIndex}
-                        initial={{ opacity: 0, x: 100 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -100 }}
-                        transition={{ duration: 0.5 }}
-                        src={getMediaUrl(selectedProperty.media[currentImageIndex].media_url)}
-                        alt={`Image ${currentImageIndex + 1}`}
-                        className="w-full h-full object-cover"
-                      />
+                      (() => {
+                        // Filtrer seulement les médias de type Photo
+                        const photoMedia = selectedProperty.media.filter(media => media.media_type === 'Photo');
+                        
+                        // Si aucune photo, utiliser l'image par défaut
+                        if (photoMedia.length === 0) {
+                          return (
+                            <motion.img
+                              key="default"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              src="/public_Trano/maison-01.png"
+                              alt="Image par défaut"
+                              className="w-full h-full object-cover"
+                            />
+                          );
+                        }
+                        
+                        // Utiliser l'index du carousel dans la limite des photos disponibles
+                        const photoIndex = currentImageIndex % photoMedia.length;
+                        
+                        return (
+                          <motion.img
+                            key={photoIndex}
+                            initial={{ opacity: 0, x: 100 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -100 }}
+                            transition={{ duration: 0.5 }}
+                            src={getMediaUrl(photoMedia[photoIndex].media_url)}
+                            alt={`Image ${photoIndex + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src = "/public_Trano/maison-01.png";
+                            }}
+                          />
+                        );
+                      })()
                     ) : (
                       <motion.img
                         key="default"
@@ -966,13 +996,14 @@ export const TranoSombre = (): JSX.Element => {
                   </AnimatePresence>
 
                   {/* Flèches de navigation */}
-                  {selectedProperty.media && selectedProperty.media.length > 1 && (
+                  {selectedProperty.media && selectedProperty.media.filter(media => media.media_type === 'Photo').length > 1 && (
                     <>
                       <button
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
+                          const photoMedia = selectedProperty.media!.filter(media => media.media_type === 'Photo');
                           setCurrentImageIndex((prev) => 
-                            prev === 0 ? selectedProperty.media!.length - 1 : prev - 1
+                            prev === 0 ? photoMedia.length - 1 : prev - 1
                           );
                         }}
                         className={`absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full ${buttonBg} ${textColor} hover:opacity-80 transition-opacity`}
@@ -982,8 +1013,9 @@ export const TranoSombre = (): JSX.Element => {
                       <button
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
+                          const photoMedia = selectedProperty.media!.filter(media => media.media_type === 'Photo');
                           setCurrentImageIndex((prev) => 
-                            prev === selectedProperty.media!.length - 1 ? 0 : prev + 1
+                            prev === photoMedia.length - 1 ? 0 : prev + 1
                           );
                         }}
                         className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full ${buttonBg} ${textColor} hover:opacity-80 transition-opacity`}
@@ -994,9 +1026,9 @@ export const TranoSombre = (): JSX.Element => {
                   )}
 
                   {/* Indicateurs de navigation */}
-                  {selectedProperty.media && selectedProperty.media.length > 1 && (
+                  {selectedProperty.media && selectedProperty.media.filter(media => media.media_type === 'Photo').length > 1 && (
                     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                      {selectedProperty.media.map((_, index) => (
+                      {selectedProperty.media.filter(media => media.media_type === 'Photo').map((_, index) => (
                         <button
                           key={index}
                           className={`w-2 h-2 rounded-full transition-all ${
