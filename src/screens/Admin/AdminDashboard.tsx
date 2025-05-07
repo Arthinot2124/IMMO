@@ -67,7 +67,8 @@ export const AdminDashboard = (): JSX.Element => {
   const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
   const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
   const buttonPrimaryBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
-  const buttonPrimaryText = isLightMode ? "text-white" : "text-[#0f172a]";
+  const buttonpending = isLightMode ? "bg-[#FF3030]" : "bg-[#FF5151]";
+  const buttonPrimaryText = isLightMode ? "text-white" : "text-white";
   const adminBadgeBg = isLightMode ? "bg-red-100" : "bg-red-500/20";
   const adminBadgeText = isLightMode ? "text-red-700" : "text-red-300";
   const borderLight = isLightMode ? "border-[#0150BC]/20" : "border-[#59e0c5]/20";
@@ -194,6 +195,19 @@ export const AdminDashboard = (): JSX.Element => {
     }
   };
 
+  // Navigation vers les différentes pages d'administration
+  const navigateToPropertyManagement = () => {
+    navigate('/admin/property-management');
+  };
+
+  const navigateToAppointmentManagement = () => {
+    navigate('/admin/appointments');
+  };
+
+  const navigateToUserManagement = () => {
+    navigate('/admin/users');
+  };
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -234,9 +248,9 @@ export const AdminDashboard = (): JSX.Element => {
             <h1 className={`text-2xl md:text-3xl font-bold ${textColor} mr-4`}>
               Admin Dashboard
             </h1>
-            <div className={`${adminBadgeBg} ${adminBadgeText} px-3 py-1 rounded-full text-xs font-medium`}>
+            {/* <div className={`${adminBadgeBg} ${adminBadgeText} px-3 py-1 rounded-full text-xs font-medium`}>
               Mode Administrateur
-            </div>
+            </div> */}
           </div>
           
           <div className="flex gap-3">
@@ -258,73 +272,76 @@ export const AdminDashboard = (): JSX.Element => {
             >
               <UserIcon size={20} />
             </button>
-         
           </div>
         </div>
 
         {/* Navigation des onglets */}
-        <div className={`flex overflow-x-auto pb-2 mb-6 border-b ${isLightMode ? "border-gray-200" : "border-[#1e293b]"}`}>
-          <button 
-            onClick={() => setActiveTab("overview")}
-            className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
-              activeTab === "overview" 
-                ? `${tabActiveBg} ${textColor}` 
-                : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
-            }`}
-          >
-            Vue d'ensemble
-          </button>
-          <button 
-            onClick={() => setActiveTab("requests")}
-            className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
-              activeTab === "requests" 
-                ? `${tabActiveBg} ${textColor}` 
-                : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
-            }`}
-          >
-            Demandes
-            {stats && stats.pending_property_requests > 0 && (
-              <span className={`ml-2 px-2 py-0.5 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-full text-xs`}>
-                {stats.pending_property_requests}
-              </span>
-            )}
-          </button>
-          <button 
-            onClick={() => setActiveTab("appointments")}
-            className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
-              activeTab === "appointments" 
-                ? `${tabActiveBg} ${textColor}` 
-                : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
-            }`}
-          >
-            Rendez-vous
-            {stats && stats.pending_appointments > 0 && (
-              <span className={`ml-2 px-2 py-0.5 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-full text-xs`}>
-                {stats.pending_appointments}
-              </span>
-            )}
-          </button>
-          <button 
-            onClick={() => setActiveTab("properties")}
-            className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
-              activeTab === "properties" 
-                ? `${tabActiveBg} ${textColor}` 
-                : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
-            }`}
-          >
-            Propriétés
-          </button>
-          <button 
-            onClick={() => setActiveTab("users")}
-            className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
-              activeTab === "users" 
-                ? `${tabActiveBg} ${textColor}` 
-                : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
-            }`}
-          >
-            Utilisateurs
-          </button>
+        <div className="relative">
+          <div className={`flex overflow-x-auto pb-2 mb-6 ${isLightMode ? "border-gray-400" : "border-[#1e293b]"} border-b`}>
+            <button 
+              onClick={() => setActiveTab("overview")}
+              className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
+                activeTab === "overview" 
+                  ? `${tabActiveBg} ${textColor}` 
+                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+              }`}
+            >
+              Vue d'ensemble
+            </button>
+            <button 
+              onClick={() => setActiveTab("requests")}
+              className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
+                activeTab === "requests" 
+                  ? `${tabActiveBg} ${textColor}` 
+                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+              }`}
+            >
+              Demandes
+              {stats && stats.pending_property_requests > 0 && (
+                <span className={`ml-2 px-2 py-0.5 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-full text-xs`}>
+                  {stats.pending_property_requests}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={navigateToAppointmentManagement}
+              className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
+                activeTab === "appointments" 
+                  ? `${tabActiveBg} ${textColor}` 
+                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+              }`}
+            >
+              Rendez-vous
+              {stats && stats.pending_appointments > 0 && (
+                <span className={`ml-2 px-2 py-0.5 ${buttonpending} ${buttonPrimaryText} rounded-full text-xs`}>
+                  {stats.pending_appointments}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={navigateToPropertyManagement}
+              className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
+                activeTab === "properties" 
+                  ? `${tabActiveBg} ${textColor}` 
+                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+              }`}
+            >
+              Propriétés
+            </button>
+            <button 
+              onClick={navigateToUserManagement}
+              className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
+                activeTab === "users" 
+                  ? `${tabActiveBg} ${textColor}` 
+                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+              }`}
+            >
+              Utilisateurs
+            </button>
+          </div>
+          <div className={`absolute bottom-0 left-0 right-0 h-px ${isLightMode ? "bg-gray-400" : "bg-[#1e293b]"}`}></div>
         </div>
+        
 
         {/* Contenu principal */}
         {loading ? (
@@ -349,297 +366,228 @@ export const AdminDashboard = (): JSX.Element => {
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
+                className="flex flex-col h-[calc(100vh-200px)]"
               >
-                <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Statistiques Générales</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                  <motion.div 
-                    variants={itemVariants}
-                    className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
-                  >
-                    <div className="flex items-center mb-2">
-                      <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                      <h3 className={textSecondaryColor}>Propriétés</h3>
-                    </div>
-                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.total_properties}</p>
-                    <div className="mt-2 flex justify-between text-sm">
-                      <span className={greenTextColor}>{stats.available_properties} disponibles</span>
-                      <span className={blueTextColor}>{stats.sold_properties} vendues</span>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    variants={itemVariants}
-                    className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
-                  >
-                    <div className="flex items-center mb-2">
-                      <UserIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                      <h3 className={textSecondaryColor}>Utilisateurs</h3>
-                    </div>
-                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.total_users || 0}</p>
-                  </motion.div>
-                  
-                  <motion.div 
-                    variants={itemVariants}
-                    className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
-                  >
-                    <div className="flex items-center mb-2">
-                      <ClipboardListIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                      <h3 className={textSecondaryColor}>Demandes en attente</h3>
-                    </div>
-                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.pending_property_requests || 0}</p>
-                    <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_property_requests} en attente</p>
-                  </motion.div>
-                  
-                  <motion.div 
-                    variants={itemVariants}
-                    className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
-                  >
-                    <div className="flex items-center mb-2">
-                      <CalendarIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                      <h3 className={textSecondaryColor}>Rendez-vous en attente</h3>
-                    </div>
-                    <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.pending_appointments}</p>
-                    <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_appointments} en attente</p>
-                  </motion.div>
+                <div className="flex-none">
+                  <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Statistiques Générales</h2>
                 </div>
-                {/* Actions rapides */}
-                <div className={`${cardBgColor} p-4 rounded-lg mb-6 ${cardBorder}`}>
-                  <h2 className={`text-lg font-semibold mb-3 ${textPrimaryColor}`}>Actions rapides</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    <button 
-                      onClick={() => navigate('/property-request')}
-                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                <div className="flex-1 overflow-y-auto pr-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <motion.div 
+                      variants={itemVariants}
+                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
                     >
-                      <span className="flex items-center">
+                      <div className="flex items-center mb-2">
                         <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <span className={textPrimaryColor}>Ajouter une propriété</span>
-                      </span>
-                    </button>
+                        <h3 className={textSecondaryColor}>Propriétés</h3>
+                      </div>
+                      <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.total_properties}</p>
+                      <div className="mt-2 flex justify-between text-sm">
+                        <span className={greenTextColor}>{stats.available_properties} disponibles</span>
+                        <span className={blueTextColor}>{stats.sold_properties} vendues</span>
+                      </div>
+                    </motion.div>
                     
-                    <button 
-                      onClick={() => navigate('/admin/property-management')}
-                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                    <motion.div 
+                      variants={itemVariants}
+                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
                     >
-                      <span className="flex items-center">
-                        <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <span className={textPrimaryColor}>Gérer les propriétés</span>
-                      </span>
-                    </button>
+                      <div className="flex items-center mb-2">
+                        <UserIcon className={`w-5 h-5 ${textColor} mr-2`} />
+                        <h3 className={textSecondaryColor}>Utilisateurs</h3>
+                      </div>
+                      <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.total_users || 0}</p>
+                    </motion.div>
                     
-                    <button 
-                      onClick={() => navigate('/admin/property-requests')}
-                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                    <motion.div 
+                      variants={itemVariants}
+                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
                     >
-                      <span className="flex items-center">
+                      <div className="flex items-center mb-2">
                         <ClipboardListIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <span className={textPrimaryColor}>Voir les demandes</span>
-                      </span>
-                      {stats?.pending_property_requests > 0 && (
-                        <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs">
-                          {stats.pending_property_requests}
-                        </span>
-                      )}
-                    </button>
+                        <h3 className={textSecondaryColor}>Demandes en attente</h3>
+                      </div>
+                      <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.pending_property_requests || 0}</p>
+                      <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_property_requests} en attente</p>
+                    </motion.div>
                     
-                    <button 
-                      onClick={() => navigate('/admin/appointments')}
-                      className={`flex items-center justify-between p-3 ${actionButtonBg} rounded-lg hover:${actionButtonHoverBg} transition-colors w-full`}
+                    <motion.div 
+                      variants={itemVariants}
+                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
                     >
-                      <span className="flex items-center">
+                      <div className="flex items-center mb-2">
                         <CalendarIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <span className={textPrimaryColor}>Gérer les rendez-vous</span>
-                      </span>
-                      {stats?.pending_appointments > 0 && (
-                        <span className="bg-yellow-500 text-white px-2 py-0.5 rounded-full text-xs">
-                          {stats.pending_appointments}
-                        </span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Actions requises</h2>
-                <div className={`${statCardBg} p-4 rounded-lg mb-8 ${cardBorder}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <ClipboardListIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                      <h3 className={textPrimaryColor + " font-medium"}>Demandes de propriétés en attente</h3>
-                    </div>
-                    <span className={`px-2 py-0.5 ${yellowBgColor} ${yellowTextColor} rounded-full text-sm`}>
-                      {stats.pending_property_requests} demandes
-                    </span>
+                        <h3 className={textSecondaryColor}>Rendez-vous en attente</h3>
+                      </div>
+                      <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.pending_appointments}</p>
+                      <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_appointments} en attente</p>
+                    </motion.div>
                   </div>
                   
-                  {pendingRequests.length > 0 ? (
-                    <div className="space-y-3">
-                      {pendingRequests.slice(0, 3).map((request) => (
-                        <div 
-                          key={request.request_id} 
-                          className={`border ${borderLight} rounded-lg p-3 flex justify-between items-center`}
-                        >
-                          <div>
-                            <h4 className={`font-medium ${textColor}`}>{request.title}</h4>
-                            <p className={`text-sm ${textSecondaryColor}`}>
-                              Soumis par {request.user?.full_name || `Utilisateur ${request.user_id}`} le {new Date(request.submitted_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <button 
-                            onClick={() => navigate(`/admin/property-requests/${request.request_id}`)}
-                            className={`px-3 py-1 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg text-sm font-medium`}
-                          >
-                            Voir détails
-                          </button>
-                        </div>
-                      ))}
-                      
-                      {pendingRequests.length > 3 && (
-                        <button 
-                          onClick={() => setActiveTab("requests")}
-                          className={`w-full text-center ${textColor} py-2 border border-dashed ${borderLight} rounded-lg hover:${isLightMode ? 'bg-[#0150BC]/10' : 'bg-[#59e0c5]/10'}`}
-                        >
-                          Voir toutes les demandes ({pendingRequests.length})
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <p className={`${textSecondaryColor} text-center py-3`}>Aucune demande en attente.</p>
-                  )}
+                  <div className="flex-none">
+                    <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Accès Rapides</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <motion.button
+                      variants={itemVariants}
+                      className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder} hover:shadow-md transition-all`}
+                      onClick={navigateToPropertyManagement}
+                    >
+                      <div className={`${iconBgColor} p-3 rounded-lg mr-4`}>
+                        <BuildingIcon className={`w-6 h-6 ${textColor}`} />
+                      </div>
+                      <div className="text-left">
+                        <h3 className={`font-medium ${textPrimaryColor}`}>Gestion des Propriétés</h3>
+                        <p className={`text-sm ${textSecondaryColor}`}>Gérer toutes les propriétés</p>
+                      </div>
+                    </motion.button>
+                    
+                    <motion.button
+                      variants={itemVariants}
+                      className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder} hover:shadow-md transition-all`}
+                      onClick={navigateToAppointmentManagement}
+                    >
+                      <div className={`${iconBgColor} p-3 rounded-lg mr-4`}>
+                        <CalendarIcon className={`w-6 h-6 ${textColor}`} />
+                      </div>
+                      <div className="text-left">
+                        <h3 className={`font-medium ${textPrimaryColor}`}>Gestion des Rendez-vous</h3>
+                        <p className={`text-sm ${textSecondaryColor}`}>Gérer les rendez-vous</p>
+                      </div>
+                    </motion.button>
+                    
+                    <motion.button
+                      variants={itemVariants}
+                      className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder} hover:shadow-md transition-all`}
+                      onClick={navigateToUserManagement}
+                    >
+                      <div className={`${iconBgColor} p-3 rounded-lg mr-4`}>
+                        <UserIcon className={`w-6 h-6 ${textColor}`} />
+                      </div>
+                      <div className="text-left">
+                        <h3 className={`font-medium ${textPrimaryColor}`}>Gestion des Utilisateurs</h3>
+                        <p className={`text-sm ${textSecondaryColor}`}>Gérer les utilisateurs</p>
+                      </div>
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
             )}
 
-            {/* Onglet Demandes de propriétés */}
+            {/* Onglet des demandes de propriété */}
             {activeTab === "requests" && (
               <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
+                className="space-y-6"
               >
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className={`text-xl font-semibold ${textPrimaryColor}`}>Demandes de propriétés</h2>
-                  <button 
-                    onClick={() => navigate('/admin/all-requests')}
-                    className={`px-3 py-1 ${cardBgColor} ${textColor} rounded-lg text-sm flex items-center ${borderColor}`}
-                  >
-                    Voir toutes <ListIcon size={16} className="ml-1" />
-                  </button>
+                <div className="flex justify-between items-center">
+                  <h2 className={`text-xl font-semibold ${textPrimaryColor}`}>Demandes de Propriété</h2>
                 </div>
                 
-                {pendingRequests.length > 0 ? (
+                {pendingRequests.length === 0 ? (
+                  <motion.div 
+                    variants={itemVariants}
+                    className={`${cardBgColor} p-6 rounded-lg text-center ${cardBorder}`}
+                  >
+                    <p className={textSecondaryColor}>Aucune demande en attente</p>
+                  </motion.div>
+                ) : (
                   <div className="space-y-4">
-                    {pendingRequests.map((request) => (
-                      <motion.div
+                    {pendingRequests.map(request => (
+                      <motion.div 
                         key={request.request_id}
                         variants={itemVariants}
-                        className={`${cardBgColor} rounded-lg p-4 border ${isLightMode ? 'border-[#0150BC]/30' : 'border-[#59e0c5]/20'}`}
+                        className={`${cardBgColor} p-4 rounded-lg ${cardBorder}`}
                       >
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-3">
-                          <div>
-                            <h3 className={`text-lg font-medium ${textColor}`}>{request.title}</h3>
-                            <p className={`text-sm ${textSecondaryColor}`}>
-                              Soumis par {request.user?.full_name || `Utilisateur ${request.user_id}`} • 
-                              {new Date(request.submitted_at).toLocaleDateString()}
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                          <div className="mb-4 md:mb-0">
+                            <h3 className={`font-medium ${textPrimaryColor}`}>{request.title}</h3>
+                            <p className={`text-sm ${textSecondaryColor} mt-1`}>
+                              {request.user?.full_name} - {new Date(request.submitted_at).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="flex mt-2 md:mt-0">
-                            <button 
+                          <div className="flex items-center space-x-2">
+                            <button
                               onClick={() => handleApproveRequest(request.request_id)}
-                              className={`px-3 py-1 ${isLightMode ? 'bg-green-100' : 'bg-green-500/20'} ${isLightMode ? 'text-green-700' : 'text-green-300'} rounded-lg text-sm font-medium flex items-center mr-2 ${isLightMode ? 'border border-green-200' : ''}`}
+                              className={`${buttonPrimaryBg} ${buttonPrimaryText} px-3 py-1 rounded-lg text-sm flex items-center`}
                             >
-                              <CheckCircleIcon size={16} className="mr-1" /> Approuver
+                              <CheckCircleIcon className="w-4 h-4 mr-1" /> Approuver
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleRejectRequest(request.request_id)}
-                              className={`px-3 py-1 ${isLightMode ? 'bg-red-100' : 'bg-red-500/20'} ${isLightMode ? 'text-red-700' : 'text-red-300'} rounded-lg text-sm font-medium flex items-center ${isLightMode ? 'border border-red-200' : ''}`}
+                              className={`bg-red-600 text-white px-3 py-1 rounded-lg text-sm flex items-center`}
                             >
-                              <XCircleIcon size={16} className="mr-1" /> Refuser
+                              <XCircleIcon className="w-4 h-4 mr-1" /> Refuser
                             </button>
                           </div>
-                        </div>
-                        
-                        <div className={`${darkBgColor} p-3 rounded-md mb-3 ${isLightMode ? 'border border-[#0150BC]/20' : ''}`}>
-                          <p className={`text-sm ${textSecondaryColor}`}>
-                            {request.description || "Aucune description fournie."}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <h4 className={`text-sm font-medium ${textColor} mb-1`}>Détails supplémentaires:</h4>
-                          <p className={`text-sm ${textSecondaryColor} ${darkBgColor} p-3 rounded-md ${isLightMode ? 'border border-[#0150BC]/20' : ''}`}>
-                            {request.additional_details || "Aucun détail supplémentaire fourni."}
-                          </p>
-                        </div>
-                        
-                        <div className="mt-4 flex justify-end">
-                          <button 
-                            onClick={() => navigate(`/admin/property-requests/${request.request_id}`)}
-                            className={`px-3 py-1 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg text-sm font-medium`}
-                          >
-                            Voir détails complets
-                          </button>
                         </div>
                       </motion.div>
                     ))}
                   </div>
-                ) : (
-                  <div className={`${cardBgColor} p-6 rounded-lg text-center ${cardBorder}`}>
-                    <ClipboardListIcon className={`w-12 h-12 ${textColor} opacity-30 mx-auto mb-3`} />
-                    <h3 className={`text-lg font-medium ${textPrimaryColor} mb-1`}>Aucune demande en attente</h3>
-                    <p className={textSecondaryColor}>Toutes les demandes ont été traitées.</p>
-                  </div>
                 )}
               </motion.div>
             )}
-            
-            {/* Onglet Rendez-vous */}
+
+            {/* Onglet des rendez-vous */}
             {activeTab === "appointments" && (
-              <div className={`text-center py-12 ${cardBgColor} rounded-lg ${cardBorder}`}>
-                <CalendarIcon className={`w-16 h-16 ${textColor} opacity-30 mx-auto mb-4`} />
-                <h2 className={`text-xl font-semibold mb-2 ${textPrimaryColor}`}>Gestion des rendez-vous</h2>
-                <p className={`${textSecondaryColor} mb-6 max-w-lg mx-auto`}>
-                  Gérez tous les rendez-vous, consultez les demandes en attente et confirmez les visites.
-                </p>
-                <button 
-                  onClick={() => navigate('/admin/appointments')}
-                  className={`px-6 py-3 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg font-medium`}
-                >
-                  Accéder à la gestion des rendez-vous
-                </button>
-              </div>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className={`text-xl font-semibold ${textPrimaryColor}`}>Gestion des Rendez-vous</h2>
+                  <button 
+                    onClick={navigateToAppointmentManagement}
+                    className={`${buttonPrimaryBg} ${buttonPrimaryText} px-4 py-2 rounded-lg text-sm flex items-center`}
+                  >
+                    Voir tous les rendez-vous
+                  </button>
+                </div>
+              </motion.div>
             )}
-            
-            {/* Onglet Propriétés - Lien vers la page de gestion des propriétés */}
+
+            {/* Onglet des propriétés */}
             {activeTab === "properties" && (
-              <div className={`text-center py-12 ${cardBgColor} rounded-lg ${cardBorder}`}>
-                <BuildingIcon className={`w-16 h-16 ${textColor} opacity-30 mx-auto mb-4`} />
-                <h2 className={`text-xl font-semibold mb-2 ${textPrimaryColor}`}>Gestion des propriétés</h2>
-                <p className={`${textSecondaryColor} mb-6 max-w-lg mx-auto`}>
-                  Gérez toutes les propriétés, ajoutez de nouvelles propriétés ou modifiez les propriétés existantes.
-                </p>
-                <button 
-                  onClick={() => navigate('/admin/property-management')}
-                  className={`px-6 py-3 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg font-medium`}
-                >
-                  Accéder à la gestion des propriétés
-                </button>
-              </div>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className={`text-xl font-semibold ${textPrimaryColor}`}>Gestion des Propriétés</h2>
+                  <button 
+                    onClick={navigateToPropertyManagement}
+                    className={`${buttonPrimaryBg} ${buttonPrimaryText} px-4 py-2 rounded-lg text-sm flex items-center`}
+                  >
+                    Gérer les propriétés
+                  </button>
+                </div>
+              </motion.div>
             )}
-            
-            {/* Onglet Utilisateurs - Lien vers la page de gestion des utilisateurs */}
+
+            {/* Onglet des utilisateurs */}
             {activeTab === "users" && (
-              <div className={`text-center py-12 ${cardBgColor} rounded-lg ${cardBorder}`}>
-                <UserIcon className={`w-16 h-16 ${textColor} opacity-30 mx-auto mb-4`} />
-                <h2 className={`text-xl font-semibold mb-2 ${textPrimaryColor}`}>Gestion des utilisateurs</h2>
-                <p className={`${textSecondaryColor} mb-6 max-w-lg mx-auto`}>
-                  Gérez tous les utilisateurs, consultez leurs profils et leurs historiques d'activité.
-                </p>
-                <button 
-                  onClick={() => navigate('/admin/users')}
-                  className={`px-6 py-3 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg font-medium`}
-                >
-                  Accéder à la gestion des utilisateurs
-                </button>
-              </div>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className={`text-xl font-semibold ${textPrimaryColor}`}>Gestion des Utilisateurs</h2>
+                  <button 
+                    onClick={navigateToUserManagement}
+                    className={`${buttonPrimaryBg} ${buttonPrimaryText} px-4 py-2 rounded-lg text-sm flex items-center`}
+                  >
+                    Gérer les utilisateurs
+                  </button>
+                </div>
+              </motion.div>
             )}
           </>
         )}

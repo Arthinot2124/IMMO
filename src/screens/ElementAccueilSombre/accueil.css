@@ -1,5 +1,5 @@
 /* Règles de mise à l'échelle globale pour les petits écrans */
-@media screen and (max-width: 410px) {
+@media screen and (max-width: 413px) {
   /* 
    * Réduction du padding général du conteneur principal
    * Vous pouvez augmenter cette valeur si les éléments semblent trop serrés,

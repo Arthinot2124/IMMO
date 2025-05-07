@@ -7,10 +7,11 @@ import {
   CheckIcon, SunIcon, MoonIcon, ArrowLeftIcon,
   ChevronLeftIcon, ChevronRightIcon, HomeIcon,
   BuildingIcon, ImageIcon, MapPinIcon, TagIcon,
-  DollarSignIcon, SquareIcon, UserIcon
+  DollarSignIcon, SquareIcon, UserIcon, InfoIcon
 } from "lucide-react";
 import apiService from "../../services/apiService";
 import { API_URL, getMediaUrl } from "../../config/api";
+import "./PropertyManagement.css";
 
 // Types
 interface Property {
@@ -64,6 +65,13 @@ interface FilterOptions {
   property_type: string;
 }
 
+// Ajouter cette interface pour les alertes
+interface AlertProps {
+  message: string;
+  type: 'success' | 'error' | 'info';
+  show: boolean;
+}
+
 const PropertyManagement = (): JSX.Element => {
   const navigate = useNavigate();
   const [properties, setProperties] = useState<Property[]>([]);
@@ -76,7 +84,7 @@ const PropertyManagement = (): JSX.Element => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // Variable showAddModal supprimée car le modal a été remplacé par une redirection
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -99,6 +107,16 @@ const PropertyManagement = (): JSX.Element => {
     return savedMode !== null ? savedMode === 'true' : false; // Défaut: mode sombre
   });
   const [mediaToDelete, setMediaToDelete] = useState<number[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const MAX_IMAGES = 6;
+  
+  // Ajouter l'état pour gérer les alertes
+  const [alert, setAlert] = useState<AlertProps>({
+    message: '',
+    type: 'success',
+    show: false
+  });
 
   // Couleurs qui changent en fonction du mode
   const bgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
@@ -109,22 +127,43 @@ const PropertyManagement = (): JSX.Element => {
   const buttonPrimaryBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
   const buttonPrimaryText = isLightMode ? "text-white" : "text-[#0f172a]";
   const cardBorder = isLightMode ? "border border-[#0150BC]/30" : "";
-  const errorBgColor = isLightMode ? "bg-red-100" : "bg-red-500/20";
-  const errorTextColor = isLightMode ? "text-red-700" : "text-red-300";
   const actionButtonBg = isLightMode ? "bg-[#EFF6FF]" : "bg-[#0f172a]";
  
-  const spinnerBorderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
+
   const modalBgColor = isLightMode ? "bg-white" : "bg-[#1e293b]";
   const inputBgColor = isLightMode ? "bg-white" : "bg-[#0f172a]";
   const inputBorderColor = isLightMode ? "border-gray-300" : "border-gray-600";
   const inputFocusBorderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
-  const tableBorderColor = isLightMode ? "border-gray-200" : "border-gray-700";
-  const tableHeaderBgColor = isLightMode ? "bg-gray-50" : "bg-[#0f172a]";
-  const tableRowHoverBgColor = isLightMode ? "hover:bg-gray-50" : "hover:bg-[#0f172a]/50";
-  const tableRowEvenBgColor = isLightMode ? "bg-white" : "bg-[#1e293b]";
-  const tableRowOddBgColor = isLightMode ? "bg-gray-50" : "bg-[#0f172a]/50";
 
 
+  // Ajouter ces variables après les autres variables de style
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5
+      }
+    }
+  };
+
+  // Variables de style supplémentaires
+  const borderColorLight = isLightMode ? "border-[#0150BC]/30" : "border-[#59e0c5]/30";
+  const buttonBg = isLightMode ? "bg-[#EFF6FF]" : "bg-[#1e293b]";
+  const buttonHoverBg = isLightMode ? "hover:bg-[#0150BC]" : "hover:bg-[#59e0c5]";
+  const buttonBorder = isLightMode ? "border border-[#0150BC]" : "";
+  const buttonShadow = isLightMode ? "shadow-sm" : "";
 
   // Mettre à jour le mode quand il change dans localStorage
   useEffect(() => {
@@ -262,59 +301,20 @@ const PropertyManagement = (): JSX.Element => {
     }
   };
 
-  // Ajouter une propriété
-  const handleAddProperty = async () => {
-    try {
-      setLoading(true);
-      const formDataToSend = new FormData();
-      
-      // Ajouter les champs du formulaire
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null) {
-          formDataToSend.append(key, value.toString());
-        }
-      });
-      
-      // Ajouter les fichiers médias
-      mediaFiles.forEach((file, index) => {
-        formDataToSend.append(`media[${index}]`, file);
-      });
-      
-      // Envoyer la requête
-      const response = await apiService.post<ApiResponse<Property>>('/properties', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      if (response && response.data && response.data.status === 'success' && response.data.data) {
-        // Ajouter la nouvelle propriété à la liste
-        setProperties([...properties, response.data.data]);
-        
-        // Fermer le modal et réinitialiser le formulaire
-        setShowAddModal(false);
-        setFormData({
-          title: "",
-          description: "",
-          price: 0,
-          surface: 0,
-          location: "",
-          property_type: "VILLA",
-          category: "LITE",
-          status: "Disponible",
-          user_id: null
-        });
-        setMediaFiles([]);
-      } else {
-        console.error("Réponse API invalide:", response);
-        alert("La réponse du serveur est invalide. Veuillez réessayer.");
-      }
-    } catch (err) {
-      console.error("Erreur lors de l'ajout de la propriété:", err);
-      alert("Une erreur est survenue lors de l'ajout de la propriété. Veuillez réessayer.");
-    } finally {
-      setLoading(false);
-    }
+  // La fonction handleAddProperty a été supprimée car le modal d'ajout a été remplacé par une redirection
+
+  // Ajouter cette fonction pour afficher une alerte pendant un temps donné
+  const showAlert = (message: string, type: 'success' | 'error' | 'info') => {
+    setAlert({
+      message,
+      type,
+      show: true
+    });
+    
+    // Masquer l'alerte après 3 secondes
+    setTimeout(() => {
+      setAlert(prev => ({ ...prev, show: false }));
+    }, 3000);
   };
 
   // Modifier une propriété
@@ -322,80 +322,87 @@ const PropertyManagement = (): JSX.Element => {
     if (!selectedProperty) return;
     
     try {
-      setLoading(true);
-      const formDataToSend = new FormData();
+      setIsSubmitting(true);
       
-      // Ajouter les champs du formulaire
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null) {
-          formDataToSend.append(key, value.toString());
-        }
-      });
+      // 1. D'abord mettre à jour les informations de base de la propriété
+      const propertyData = {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        surface: formData.surface,
+        location: formData.location,
+        property_type: formData.property_type,
+        category: formData.category,
+        status: formData.status,
+        user_id: formData.user_id
+      };
       
-      // Ajouter les fichiers médias
-      mediaFiles.forEach((file, index) => {
-        formDataToSend.append(`new_media[${index}]`, file);
-      });
+      console.log("Mise à jour des informations de base:", propertyData);
       
-      // Ajouter les IDs des médias à supprimer
-      if (mediaToDelete.length > 0) {
-        mediaToDelete.forEach((id, index) => {
-          formDataToSend.append(`delete_media[${index}]`, id.toString());
-        });
+      // Premier appel API pour mettre à jour les informations de base
+      const updateResponse = await apiService.put<ApiResponse<Property>>(
+        `/properties/${selectedProperty.property_id}`,
+        propertyData
+      );
+      
+      if (!updateResponse.data || updateResponse.data.status !== 'success') {
+        throw new Error("Échec de la mise à jour des informations de base");
       }
       
-      // Ajouter la méthode PUT pour Laravel
-      formDataToSend.append('_method', 'PUT');
+      console.log("Informations de base mises à jour avec succès");
       
-      console.log("Envoi des données pour modification:", {
-        property_id: selectedProperty.property_id,
-        nouvelles_images: mediaFiles.length,
-        images_a_supprimer: mediaToDelete
+      // 2. Ensuite, supprimer les médias sélectionnés
+      const deletePromises = mediaToDelete.map(async (mediaId) => {
+        console.log(`Suppression du média ${mediaId}`);
+        return apiService.delete(`/properties/${selectedProperty.property_id}/media/${mediaId}`);
       });
       
-      // Envoyer la requête
-      const response = await apiService.post<ApiResponse<Property>>(`/properties/${selectedProperty.property_id}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      if (deletePromises.length > 0) {
+        await Promise.all(deletePromises);
+        console.log(`${deletePromises.length} médias supprimés avec succès`);
+      }
       
-      console.log("Réponse de l'API après modification:", response.data);
-      
-      if (response.data && response.data.status === 'success') {
-        // Vérifier que la propriété mise à jour contient bien ses médias
-        const updatedProperty = response.data.data;
-        console.log("Propriété mise à jour:", updatedProperty);
-        console.log("Médias de la propriété mise à jour:", updatedProperty.media);
+      // 3. Enfin, télécharger les nouveaux médias
+      const uploadPromises = mediaFiles.map(async (file, index) => {
+        console.log(`Téléchargement du média ${index}: ${file.name}`);
+        const formData = new FormData();
+        formData.append('media_file', file);
+        formData.append('media_type', 'Photo'); // On définit le type par défaut comme 'Photo'
         
-        if (!updatedProperty.media) {
-          console.warn("Attention: La propriété mise à jour ne contient pas de médias dans la réponse API");
-          
-          // Si l'API ne renvoie pas les médias, on peut récupérer les données actualisées
-          console.log("Tentative de récupération des données complètes...");
-          
-          try {
-            const refreshResponse = await apiService.get<ApiResponse<Property>>(`/properties/${selectedProperty.property_id}`);
-            if (refreshResponse.data && refreshResponse.data.status === 'success') {
-              const refreshedProperty = refreshResponse.data.data;
-              console.log("Propriété récupérée après refresh:", refreshedProperty);
-              
-              // Mettre à jour la propriété avec les données complètes
-              setProperties(properties.map(property => 
-                property.property_id === selectedProperty.property_id ? refreshedProperty : property
-              ));
+        return apiService.post(
+          `/properties/${selectedProperty.property_id}/media`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
             }
-          } catch (refreshErr) {
-            console.error("Erreur lors de la récupération des données après modification:", refreshErr);
           }
-        } else {
-          // Mettre à jour la propriété dans la liste avec les données reçues
-          setProperties(properties.map(property => 
-            property.property_id === selectedProperty.property_id ? updatedProperty : property
-          ));
-        }
+        );
+      });
+      
+      if (uploadPromises.length > 0) {
+        await Promise.all(uploadPromises);
+        console.log(`${uploadPromises.length} nouveaux médias téléchargés avec succès`);
+      }
+      
+      // 4. Récupérer la propriété mise à jour avec tous ses médias
+      const refreshResponse = await apiService.get<ApiResponse<Property>>(
+        `/properties/${selectedProperty.property_id}`
+      );
+      
+      if (refreshResponse.data && refreshResponse.data.status === 'success') {
+        const refreshedProperty = refreshResponse.data.data;
+        console.log("Propriété mise à jour complète:", refreshedProperty);
         
-        // Fermer le modal et réinitialiser le formulaire
+        // Mettre à jour la liste des propriétés
+        setProperties(properties.map(property => 
+          property.property_id === selectedProperty.property_id ? refreshedProperty : property
+        ));
+        
+        // Utiliser l'alerte stylisée au lieu de alert()
+        showAlert("Propriété modifiée avec succès", "success");
+        
+        // Fermer le modal et réinitialiser
         setShowEditModal(false);
         setSelectedProperty(null);
         setFormData({
@@ -411,40 +418,51 @@ const PropertyManagement = (): JSX.Element => {
         });
         setMediaFiles([]);
         setMediaToDelete([]);
+        setImageError(null);
         
-        // Rafraîchir toutes les propriétés pour être sûr d'avoir des données à jour
+        // Rafraîchir toutes les propriétés
         fetchPropertiesFromAPI();
       } else {
-        console.error("Échec de la modification:", response.data);
-        alert("La modification a échoué. " + (response.data?.message || "Veuillez réessayer."));
+        throw new Error("Échec de la récupération des données mises à jour");
       }
     } catch (err) {
       console.error("Erreur lors de la modification de la propriété:", err);
-      alert("Une erreur est survenue lors de la modification de la propriété. Veuillez réessayer.");
+      // Utiliser l'alerte stylisée au lieu de alert()
+      showAlert("Une erreur est survenue lors de la modification de la propriété. Veuillez réessayer.", "error");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Supprimer une propriété
+  // Fonction pour supprimer une propriété
   const handleDeleteProperty = async () => {
     if (!selectedProperty) return;
     
     try {
-      // Envoyer la requête
+      setIsSubmitting(true);
+      
+      // Appel à l'API pour supprimer la propriété
       const response = await apiService.delete<ApiResponse<null>>(`/properties/${selectedProperty.property_id}`);
       
       if (response.data && response.data.status === 'success') {
-        // Supprimer la propriété de la liste
-        setProperties(properties.filter(property => property.property_id !== selectedProperty.property_id));
-        
-        // Fermer le modal et réinitialiser la sélection
+        // Fermer le modal
         setShowDeleteModal(false);
-        setSelectedProperty(null);
+        
+        // Mettre à jour la liste des propriétés
+        setProperties(properties.filter(p => p.property_id !== selectedProperty.property_id));
+        
+        // Utiliser l'alerte stylisée au lieu de alert()
+        showAlert("La propriété a été supprimée avec succès", "success");
+      } else {
+        throw new Error(response.data?.message || "Une erreur est survenue lors de la suppression");
       }
-    } catch (err) {
-      console.error("Erreur lors de la suppression de la propriété:", err);
-      alert("Une erreur est survenue lors de la suppression de la propriété. Veuillez réessayer.");
+    } catch (error: any) {
+      console.error("Erreur lors de la suppression:", error);
+      
+      // Utiliser l'alerte stylisée au lieu de alert()
+      showAlert(`Erreur: ${error.message || "Une erreur est survenue lors de la suppression"}`, "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -453,9 +471,9 @@ const PropertyManagement = (): JSX.Element => {
     setCurrentPage(page);
   };
 
-  // Ouvrir le modal d'ajout
-  const openAddModal = () => {
-    setShowAddModal(true);
+  // Rediriger vers la page de demande de propriété
+  const navigateToPropertyRequest = () => {
+    navigate('/property-request');
   };
 
   // Ouvrir le modal de modification
@@ -478,7 +496,7 @@ const PropertyManagement = (): JSX.Element => {
     setShowEditModal(true);
   };
 
-  // Ouvrir le modal de suppression
+  // Fonction pour ouvrir le modal de suppression
   const openDeleteModal = (property: Property) => {
     setSelectedProperty(property);
     setShowDeleteModal(true);
@@ -503,13 +521,36 @@ const PropertyManagement = (): JSX.Element => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
+      
+      // Calculer le nombre d'images actuelles (existantes non supprimées + nouvelles)
+      const existingImagesCount = selectedProperty?.media 
+        ? selectedProperty.media.filter(m => 
+            m.media_type === 'Photo' && !mediaToDelete.includes(m.media_id)
+          ).length 
+        : 0;
+      
+      const totalImagesAfterAdd = existingImagesCount + mediaFiles.length + filesArray.length;
+      
+      if (totalImagesAfterAdd > MAX_IMAGES) {
+        setImageError(`Vous ne pouvez pas ajouter plus de ${MAX_IMAGES} images au total`);
+        return;
+      }
+      
       setMediaFiles([...mediaFiles, ...filesArray]);
+      setImageError(null);
     }
   };
 
   // Supprimer un fichier média
   const removeFile = (index: number) => {
     setMediaFiles(mediaFiles.filter((_, i) => i !== index));
+    setImageError(null);
+  };
+
+  // Fonction pour supprimer une image existante
+  const removeExistingMedia = (mediaId: number) => {
+    setMediaToDelete([...mediaToDelete, mediaId]);
+    setImageError(null);
   };
 
   // Calculer les propriétés à afficher pour la pagination
@@ -596,13 +637,45 @@ const PropertyManagement = (): JSX.Element => {
     return url;
   };
 
-  // Fonction pour supprimer une image existante
-  const removeExistingMedia = (mediaId: number) => {
-    setMediaToDelete([...mediaToDelete, mediaId]);
-  };
-
   return (
     <div className={`${bgColor} min-h-screen ${textPrimaryColor} relative`}>
+      {/* Alerte stylisée */}
+      {alert.show && (
+        <div className="fixed top-5 right-5 z-50 shadow-lg rounded-lg overflow-hidden transition-all duration-300 max-w-md transform translate-y-0 opacity-100">
+          <div 
+            className={`p-4 ${
+              alert.type === 'success' 
+                ? 'bg-green-600 text-white' 
+                : alert.type === 'error' 
+                ? 'bg-red-600 text-white' 
+                : 'bg-blue-600 text-white'
+            } flex items-center justify-between`}
+          >
+            <div className="flex items-center">
+              {alert.type === 'success' && <CheckIcon size={20} className="mr-3" />}
+              {alert.type === 'error' && <XIcon size={20} className="mr-3" />}
+              {alert.type === 'info' && <InfoIcon size={20} className="mr-3" />}
+              <p className="font-medium">{alert.message}</p>
+            </div>
+            <button 
+              onClick={() => setAlert(prev => ({ ...prev, show: false }))}
+              className="text-white hover:text-gray-200 focus:outline-none"
+            >
+              <XIcon size={16} />
+            </button>
+          </div>
+          <div className="h-1 bg-white bg-opacity-20">
+            <div 
+              className="h-full bg-white bg-opacity-40" 
+              style={{ 
+                width: '100%', 
+                animation: 'countdown 3s linear forwards' 
+              }}
+            ></div>
+          </div>
+        </div>
+      )}
+
       <div 
         className="fixed inset-0 opacity-50 z-0" 
         style={{ 
@@ -627,20 +700,6 @@ const PropertyManagement = (): JSX.Element => {
             </h1>
           </div>
           
-          <div className="flex gap-3">
-            <button 
-              onClick={toggleLightMode}
-              className={`p-2 rounded-full ${cardBgColor} ${textColor}`}
-            >
-              {isLightMode ? <MoonIcon size={20} /> : <SunIcon size={20} />}
-            </button>
-            <button 
-              onClick={() => navigate('/home')}
-              className={`p-2 rounded-full ${cardBgColor} ${textColor}`}
-            >
-              <HomeIcon size={20} />
-            </button>
-          </div>
         </div>
 
         {/* Barre d'outils */}
@@ -668,7 +727,7 @@ const PropertyManagement = (): JSX.Element => {
             </button>
             
             <button
-              onClick={openAddModal}
+              onClick={navigateToPropertyRequest}
               className={`px-3 py-2 rounded-lg ${buttonPrimaryBg} ${buttonPrimaryText} flex items-center`}
             >
               <PlusIcon size={18} className="mr-2" />
@@ -723,111 +782,85 @@ const PropertyManagement = (): JSX.Element => {
           </motion.div>
         )}
 
-        {/* Tableau des propriétés */}
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${spinnerBorderColor}`}></div>
-          </div>
-        ) : error ? (
-          <div className={`${errorBgColor} ${errorTextColor} p-4 rounded-lg`}>
-            <p>{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="mt-2 flex items-center text-sm hover:underline"
+        {/* Property Listings */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-5 xs:space-y-6 sm:space-y-8 max-h-[calc(103vh-300px)] overflow-y-auto pr-2"
+        >
+          {!loading && properties.map((property) => (
+            <motion.div
+              key={property.property_id}
+              variants={itemVariants}
+              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+              className={`${cardBgColor} rounded-lg xs:rounded-xl overflow-hidden border ${borderColorLight}`}
             >
-              <RefreshCwIcon size={14} className="mr-1" /> Réessayer
-            </button>
-          </div>
-        ) : (
-          <div className="relative">
-            {/* Indicateurs de défilement horizontal améliorés */}
-            <div className="flex justify-between items-center mb-2">
-              <div className={`flex items-center ${textColor}`}>
-                <ChevronLeftIcon size={16} className="animate-pulse mr-1" />
-                <ChevronRightIcon size={16} className="animate-pulse" />
-                <span className="ml-2 text-sm">Faites défiler horizontalement</span>
+              <div className="flex">
+                <div className={`w-[130px] xs:w-[150px] sm:w-[180px] h-[90px] xs:h-[100px] sm:h-[120px] flex-shrink-0 ${buttonBg} property-image-container flex items-center justify-center`}>
+                  {property.media && property.media.length > 0 ? (
+                    <img
+                      src={getMediaUrl(property.media[0].media_url)}
+                      alt={property.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/public_Trano/maison-01.png";
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src="/public_Trano/maison-01.png"
+                      alt={property.title}
+                      className="w-full h-full object-contain"
+                    />
+                  )}
+                </div>
+                <div className="flex-1 p-2 xs:p-3 sm:p-4 flex flex-col justify-between h-[90px] xs:h-[100px] sm:h-[120px]">
+                  <div className="property-card">
+                    <h3 className={`text-xs xs:text-sm sm:text-base font-semibold ${textColor} mb-1`}>
+                      {property.title}
+                    </h3>
+                    <p className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor} line-clamp-2`}>
+                      {property.description || `Située à ${property.location}, surface: ${property.surface}m²`}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-[10px] xs:text-xs sm:text-sm ${textColor} font-medium`}>
+                        {property.price.toLocaleString()} Ar
+                      </span>
+                      <span className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor}`}>
+                        • {property.location}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="property-actions flex justify-end gap-1.5 xs:gap-2 sm:gap-3">
+                    <button 
+                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full hover:${buttonHoverBg} hover:text-white transition-all text-[10px] xs:text-xs sm:text-sm`}
+                      onClick={() => openViewModal(property)}
+                    >
+                      <EyeIcon size={14} className="inline-block mr-1" />
+                      Voir
+                    </button>
+                    <button 
+                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full hover:${buttonHoverBg} hover:text-white transition-all text-[10px] xs:text-xs sm:text-sm`}
+                      onClick={() => openEditModal(property)}
+                    >
+                      <EditIcon size={14} className="inline-block mr-1" />
+                      Modifier
+                    </button>
+                    <button 
+                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all text-[10px] xs:text-xs sm:text-sm`}
+                      onClick={() => openDeleteModal(property)}
+                    >
+                      <TrashIcon size={14} className="inline-block mr-1" />
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            {/* Effet de dégradé pour indiquer le défilement */}
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm relative">
-              <div className={`w-full min-w-max ${cardBgColor}`}>
-                <table className={`w-full border-collapse ${textPrimaryColor}`}>
-                  <thead>
-                    <tr className={`${tableHeaderBgColor} border-b ${tableBorderColor}`}>
-                      <th className="px-4 py-3 text-left">ID</th>
-                      <th className="px-4 py-3 text-left">Titre</th>
-                      <th className="px-4 py-3 text-left">Type</th>
-                      <th className="px-4 py-3 text-left">Prix</th>
-                      <th className="px-4 py-3 text-left">Surface</th>
-                      <th className="px-4 py-3 text-left">Emplacement</th>
-                      <th className="px-4 py-3 text-left">Statut</th>
-                      <th className="px-4 py-3 text-left">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {!displayedProperties || displayedProperties.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="px-4 py-8 text-center">
-                          Aucune propriété trouvée.
-                        </td>
-                      </tr>
-                    ) : (
-                      displayedProperties.map((property, index) => (
-                        <tr 
-                          key={property.property_id || index} 
-                          className={`${index % 2 === 0 ? tableRowEvenBgColor : tableRowOddBgColor} ${tableRowHoverBgColor} border-b ${tableBorderColor}`}
-                        >
-                          <td className="px-4 py-3">{property.property_id || 'N/A'}</td>
-                          <td className="px-4 py-3">{property.title || 'Sans titre'}</td>
-                          <td className="px-4 py-3">{property.property_type || 'N/A'}</td>
-                          <td className="px-4 py-3">{property.price ? property.price.toLocaleString() : '0'} Ar</td>
-                          <td className="px-4 py-3">{property.surface || '0'} m²</td>
-                          <td className="px-4 py-3">{property.location || 'Non spécifié'}</td>
-                          <td className="px-4 py-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              property.status === 'Disponible' ? 'bg-green-100 text-green-800' :
-                              property.status === 'Réservé' ? 'bg-yellow-100 text-yellow-800' :
-                              property.status === 'Vendu' ? 'bg-blue-100 text-blue-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}>
-                              {property.status || 'Non défini'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => openViewModal(property)}
-                                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                title="Voir les détails"
-                              >
-                                <EyeIcon size={16} className={textColor} />
-                              </button>
-                              <button
-                                onClick={() => openEditModal(property)}
-                                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                title="Modifier"
-                              >
-                                <EditIcon size={16} className={textColor} />
-                              </button>
-                              <button
-                                onClick={() => openDeleteModal(property)}
-                                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                title="Supprimer"
-                              >
-                                <TrashIcon size={16} className="text-red-500" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          ))}
+        </motion.div>
 
         {/* Pagination */}
         {!loading && !error && totalPages > 1 && (
@@ -866,192 +899,64 @@ const PropertyManagement = (): JSX.Element => {
           </div>
         )}
 
-        {/* Modal d'ajout de propriété */}
-        {showAddModal && (
+        {/* Le modal d'ajout a été supprimé et remplacé par une redirection vers la page PropertyRequest */}
+
+        {/* Modal de suppression de propriété */}
+        {showDeleteModal && selectedProperty && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4">
-              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowAddModal(false)}></div>
+              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowDeleteModal(false)}></div>
               
-              <div className={`relative w-full max-w-3xl p-6 rounded-lg shadow-lg ${modalBgColor} ${textPrimaryColor}`}>
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold">Ajouter une propriété</h2>
-                  <button 
-                    onClick={() => setShowAddModal(false)}
-                    className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                  >
-                    <XIcon size={20} />
-                  </button>
+              <div className={`relative w-full max-w-md p-6 rounded-lg shadow-lg ${modalBgColor} ${textPrimaryColor}`}>
+                <div className="text-center mb-4">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
+                    <TrashIcon size={24} className="text-red-600 dark:text-red-400" />
+                  </div>
+                  <h3 className="text-lg font-medium">Confirmation de suppression</h3>
+                  <p className={`mt-2 ${textSecondaryColor}`}>
+                    Êtes-vous sûr de vouloir supprimer cette propriété ? Cette action est irréversible.
+                  </p>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Titre</label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor}`}
-                      placeholder="Titre de la propriété"
-                      required
-                    />
+                <div className={`p-4 mb-4 rounded-lg ${cardBgColor}`}>
+                  <p className="font-medium">{selectedProperty.title}</p>
+                  <p className={`${textSecondaryColor} text-sm mt-1`}>{selectedProperty.location}</p>
+                  <div className="flex items-center mt-2">
+                    <span className={`inline-flex items-center ${textSecondaryColor} text-sm mr-3`}>
+                      <DollarSignIcon size={14} className="mr-1" />
+                      {selectedProperty.price.toLocaleString()} Ar
+                    </span>
+                    <span className={`inline-flex items-center ${textSecondaryColor} text-sm`}>
+                      <SquareIcon size={14} className="mr-1" />
+                      {selectedProperty.surface} m²
+                    </span>
                   </div>
-                  
-                  <div>
-                    <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Type de propriété</label>
-                    <select
-                      name="property_type"
-                      value={formData.property_type}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor}`}
-                      required
-                    >
-                      <option value="VILLA">Villa</option>
-                      <option value="TERRAIN">Terrain</option>
-                      <option value="APPARTEMENT">Appartement</option>
-                      <option value="MAISON">Maison</option>
-                      <option value="AUTRE">Autre</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Prix (Ar)</label>
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor}`}
-                      placeholder="Prix en Ariary"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Surface (m²)</label>
-                    <input
-                      type="number"
-                      name="surface"
-                      value={formData.surface}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor}`}
-                      placeholder="Surface en m²"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Emplacement</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor}`}
-                      placeholder="Adresse ou emplacement"
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Catégorie</label>
-                    <select
-                      name="category"
-                      value={formData.category}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor}`}
-                      required
-                    >
-                      <option value="LITE">Lite</option>
-                      <option value="ESSENTIEL">Essentiel</option>
-                      <option value="PREMIUM">Premium</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Statut</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleFormChange}
-                      className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor}`}
-                      required
-                    >
-                      <option value="Disponible">Disponible</option>
-                      <option value="Réservé">Réservé</option>
-                      <option value="Vendu">Vendu</option>
-                      <option value="Loué">Loué</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Description</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleFormChange}
-                    className={`w-full px-3 py-2 rounded-lg ${inputBgColor} ${inputBorderColor} border focus:outline-none focus:${inputFocusBorderColor} ${textPrimaryColor} min-h-[100px]`}
-                    placeholder="Description détaillée de la propriété"
-                    required
-                  ></textarea>
-                </div>
-                
-                <div className="mb-4">
-                  <label className={`block mb-1 text-sm ${textSecondaryColor}`}>Images</label>
-                  <div className="flex items-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleFileChange}
-                      className="hidden"
-                      id="property-images"
-                    />
-                    <label 
-                      htmlFor="property-images"
-                      className={`px-4 py-2 rounded-lg ${buttonPrimaryBg} ${buttonPrimaryText} cursor-pointer flex items-center`}
-                    >
-                      <ImageIcon size={16} className="mr-2" />
-                      Ajouter des images
-                    </label>
-                  </div>
-                  
-                  {mediaFiles.length > 0 && (
-                    <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {mediaFiles.map((file, index) => (
-                        <div key={index} className="relative group">
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            alt={`Preview ${index}`} 
-                            className="w-full h-24 object-cover rounded-lg"
-                          />
-                          <button
-                            onClick={() => removeFile(index)}
-                            className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                            type="button"
-                          >
-                            <XIcon size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 
                 <div className="flex justify-end gap-3">
                   <button
-                    onClick={() => setShowAddModal(false)}
+                    onClick={() => setShowDeleteModal(false)}
                     className={`px-4 py-2 rounded-lg ${actionButtonBg} ${textSecondaryColor}`}
+                    disabled={isSubmitting}
                   >
                     Annuler
                   </button>
                   <button
-                    onClick={handleAddProperty}
-                    className={`px-4 py-2 rounded-lg ${buttonPrimaryBg} ${buttonPrimaryText} flex items-center`}
+                    onClick={handleDeleteProperty}
+                    className="px-4 py-2 rounded-lg bg-red-600 text-white flex items-center"
+                    disabled={isSubmitting}
                   >
-                    <CheckIcon size={16} className="mr-2" />
-                    Ajouter
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Suppression...
+                      </>
+                    ) : (
+                      <>
+                        <TrashIcon size={16} className="mr-2" />
+                        Supprimer
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1066,6 +971,7 @@ const PropertyManagement = (): JSX.Element => {
               <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => {
                 setShowEditModal(false);
                 setMediaToDelete([]); // Réinitialiser les médias à supprimer quand on ferme sans sauvegarder
+                setImageError(null);
               }}></div>
               
               <div className={`relative w-full max-w-3xl p-6 rounded-lg shadow-lg ${modalBgColor} ${textPrimaryColor}`}>
@@ -1075,6 +981,7 @@ const PropertyManagement = (): JSX.Element => {
                     onClick={() => {
                       setShowEditModal(false);
                       setMediaToDelete([]); // Réinitialiser les médias à supprimer quand on annule
+                      setImageError(null);
                     }}
                     className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
                   >
@@ -1108,8 +1015,6 @@ const PropertyManagement = (): JSX.Element => {
                       <option value="VILLA">Villa</option>
                       <option value="TERRAIN">Terrain</option>
                       <option value="APPARTEMENT">Appartement</option>
-                      <option value="MAISON">Maison</option>
-                      <option value="AUTRE">Autre</option>
                     </select>
                   </div>
                   
@@ -1179,7 +1084,6 @@ const PropertyManagement = (): JSX.Element => {
                       <option value="Disponible">Disponible</option>
                       <option value="Réservé">Réservé</option>
                       <option value="Vendu">Vendu</option>
-                      <option value="Loué">Loué</option>
                     </select>
                   </div>
                 </div>
@@ -1214,15 +1118,27 @@ const PropertyManagement = (): JSX.Element => {
                       <ImageIcon size={16} className="mr-2" />
                       Ajouter des images
                     </label>
+                    <span className={`ml-3 text-sm ${textSecondaryColor}`}>
+                      Maximum {MAX_IMAGES} images
+                    </span>
                   </div>
                   
+                  {imageError && (
+                    <div className="mt-2 text-red-500 text-sm">
+                      {imageError}
+                    </div>
+                  )}
+                  
                   {/* Afficher les images existantes */}
-                  {selectedProperty?.media && selectedProperty.media.length > 0 && (
+                  {selectedProperty?.media && selectedProperty.media.filter(media => media.media_type === 'Photo').length > 0 && (
                     <div className="mt-3">
-                      <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>Images existantes</h3>
+                      <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>
+                        Images existantes 
+                        ({selectedProperty.media.filter(media => media.media_type === 'Photo' && !mediaToDelete.includes(media.media_id)).length})
+                      </h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {selectedProperty.media
-                          .filter(media => !mediaToDelete.includes(media.media_id))
+                          .filter(media => media.media_type === 'Photo' && !mediaToDelete.includes(media.media_id))
                           .map((media) => (
                           <div key={media.media_id} className="relative group">
                             <img 
@@ -1252,7 +1168,9 @@ const PropertyManagement = (): JSX.Element => {
                   {/* Afficher les nouvelles images */}
                   {mediaFiles.length > 0 && (
                     <div className="mt-3">
-                      <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>Nouvelles images</h3>
+                      <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>
+                        Nouvelles images ({mediaFiles.length})
+                      </h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {mediaFiles.map((file, index) => (
                           <div key={`new-${index}`} className="relative group">
@@ -1280,6 +1198,7 @@ const PropertyManagement = (): JSX.Element => {
                     onClick={() => {
                       setShowEditModal(false);
                       setMediaToDelete([]); // Réinitialiser les médias à supprimer quand on annule
+                      setImageError(null);
                     }}
                     className={`px-4 py-2 rounded-lg ${actionButtonBg} ${textSecondaryColor}`}
                   >
@@ -1288,9 +1207,19 @@ const PropertyManagement = (): JSX.Element => {
                   <button
                     onClick={handleEditProperty}
                     className={`px-4 py-2 rounded-lg ${buttonPrimaryBg} ${buttonPrimaryText} flex items-center`}
+                    disabled={isSubmitting || !!imageError}
                   >
-                    <CheckIcon size={16} className="mr-2" />
-                    Enregistrer les modifications
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <CheckIcon size={16} className="mr-2" />
+                        Enregistrer
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1316,10 +1245,12 @@ const PropertyManagement = (): JSX.Element => {
                 </div>
 
                 {/* Images de la propriété */}
-                {selectedProperty.media && selectedProperty.media.length > 0 ? (
+                {selectedProperty.media && selectedProperty.media.filter(media => media.media_type === 'Photo').length > 0 ? (
                   <div className="mb-6">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {selectedProperty.media.map((media) => (
+                      {selectedProperty.media
+                        .filter(media => media.media_type === 'Photo')
+                        .map((media) => (
                         <div key={media.media_id} className="relative">
                           <img 
                             src={logMediaUrl(media.media_url)} 
@@ -1455,58 +1386,6 @@ const PropertyManagement = (): JSX.Element => {
                   >
                     <EditIcon size={16} className="mr-2" />
                     Modifier
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal de suppression de propriété */}
-        {showDeleteModal && selectedProperty && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4">
-              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowDeleteModal(false)}></div>
-              
-              <div className={`relative w-full max-w-md p-6 rounded-lg shadow-lg ${modalBgColor} ${textPrimaryColor}`}>
-                <div className="text-center mb-4">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
-                    <TrashIcon size={24} className="text-red-600 dark:text-red-400" />
-                  </div>
-                  <h3 className="text-lg font-medium">Confirmation de suppression</h3>
-                  <p className={`mt-2 ${textSecondaryColor}`}>
-                    Êtes-vous sûr de vouloir supprimer cette propriété ? Cette action est irréversible.
-                  </p>
-                </div>
-                
-                <div className={`p-4 mb-4 rounded-lg ${cardBgColor}`}>
-                  <p className="font-medium">{selectedProperty.title}</p>
-                  <p className={`${textSecondaryColor} text-sm mt-1`}>{selectedProperty.location}</p>
-                  <div className="flex items-center mt-2">
-                    <span className={`inline-flex items-center ${textSecondaryColor} text-sm mr-3`}>
-                      <DollarSignIcon size={14} className="mr-1" />
-                      {selectedProperty.price.toLocaleString()} Ar
-                    </span>
-                    <span className={`inline-flex items-center ${textSecondaryColor} text-sm`}>
-                      <SquareIcon size={14} className="mr-1" />
-                      {selectedProperty.surface} m²
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    className={`px-4 py-2 rounded-lg ${actionButtonBg} ${textSecondaryColor}`}
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    onClick={handleDeleteProperty}
-                    className="px-4 py-2 rounded-lg bg-red-600 text-white flex items-center"
-                  >
-                    <TrashIcon size={16} className="mr-2" />
-                    Supprimer
                   </button>
                 </div>
               </div>

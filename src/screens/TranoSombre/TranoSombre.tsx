@@ -24,9 +24,20 @@ interface Property {
   surface: number; 
   location: string;
   property_type?: string;
+  transaction_type?: string;
   category: string;
   status: string;
   media?: PropertyMedia[];
+  views: number;
+}
+
+// Interface pour l'utilisateur connecté
+interface CurrentUser {
+  user_id: number;
+  email?: string;
+  full_name?: string;
+  role_id?: number;
+  [key: string]: any; // Pour les autres propriétés
 }
 
 interface ApiResponse<T> {
@@ -177,6 +188,20 @@ export const TranoSombre = (): JSX.Element => {
         params.filter.min_price = 10000000;
       }
       
+      // Ajout des filtres AHOFA et AMIDY
+      if (ahofaFilter && !amidyFilter) {
+        params.transaction_type = "AHOFA";
+        // Format alternatif au cas où l'API attend une autre forme
+        params.filter = params.filter || {};
+        params.filter.transaction_type = "AHOFA";
+      } else if (amidyFilter && !ahofaFilter) {
+        params.transaction_type = "AMIDY";
+        // Format alternatif au cas où l'API attend une autre forme
+        params.filter = params.filter || {};
+        params.filter.transaction_type = "AMIDY";
+      }
+      // Si les deux filtres sont actifs ou inactifs, ne pas filtrer par transaction_type
+      
       // Log détaillé pour vérifier les paramètres exactement tels qu'ils sont envoyés
       console.log("Appel API avec params:", JSON.stringify(params, null, 2));
       const url = `/properties?${new URLSearchParams(params).toString()}`;
@@ -291,6 +316,23 @@ export const TranoSombre = (): JSX.Element => {
           }
         }
         
+        // Filtrage côté client pour AHOFA/AMIDY si nécessaire
+        if (ahofaFilter && !amidyFilter) {
+          const filteredByTransactionType = propertyArray.some(p => p.transaction_type === "AHOFA");
+          
+          if (!filteredByTransactionType) {
+            console.log("Application d'un filtrage côté client pour AHOFA");
+            propertyArray = propertyArray.filter(p => p.transaction_type === "AHOFA");
+          }
+        } else if (amidyFilter && !ahofaFilter) {
+          const filteredByTransactionType = propertyArray.some(p => p.transaction_type === "AMIDY");
+          
+          if (!filteredByTransactionType) {
+            console.log("Application d'un filtrage côté client pour AMIDY");
+            propertyArray = propertyArray.filter(p => p.transaction_type === "AMIDY");
+          }
+        }
+        
         // Filtrage côté client pour la recherche
         if (searchTerm && searchTerm.trim() !== "") {
           const term = searchTerm.trim().toLowerCase();
@@ -343,7 +385,7 @@ export const TranoSombre = (): JSX.Element => {
   // Charger les propriétés lorsque les filtres ou la page changent
   useEffect(() => {
     fetchProperties();
-  }, [currentPage, activeFilter, priceFilter]);
+  }, [currentPage, activeFilter, priceFilter, ahofaFilter, amidyFilter]);
 
   // Gérer le changement de filtre
   const handleFilterChange = (filter: string) => {
@@ -421,7 +463,9 @@ export const TranoSombre = (): JSX.Element => {
     currentPage,
     totalPages,
     activeFilter,
-    priceFilter
+    priceFilter,
+    ahofaFilter,
+    amidyFilter
   });
 
   // Corriger le rendu de la pagination qui peut causer des erreurs
@@ -513,6 +557,9 @@ export const TranoSombre = (): JSX.Element => {
     setSelectedProperty(property);
     setShowPreviewModal(true);
     setCurrentImageIndex(0);
+    
+    // Incrémenter les vues
+    incrementPropertyView(property.property_id);
   };
 
   // Fonction pour fermer le modal
@@ -532,6 +579,49 @@ export const TranoSombre = (): JSX.Element => {
 
     return () => clearInterval(timer);
   }, [filteredImages.length]);
+
+  // Fonction pour incrémenter le nombre de vues d'une propriété
+  const incrementPropertyView = async (propertyId: number) => {
+    try {
+      // Récupérer l'utilisateur connecté depuis le localStorage ou le service d'authentification
+      const currentUser = localStorage.getItem('user') 
+        ? JSON.parse(localStorage.getItem('user') || '{}') as CurrentUser 
+        : null;
+        
+      // Préparer les données et headers pour l'API
+      const headers: Record<string, string> = {};
+      const params: Record<string, any> = {};
+      
+      // Si un utilisateur est connecté, on ajoute son ID
+      if (currentUser && currentUser.user_id) {
+        params['user_id'] = currentUser.user_id;
+        headers['X-User-ID'] = currentUser.user_id.toString();
+      }
+      
+      console.log('Incrementing view with user data:', { currentUser, params, headers });
+      
+      // Appel à l'API pour incrémenter le nombre de vues avec les informations d'utilisateur
+      const response = await apiService.post<{status: string, views: number, debug_auth: any}>(
+        `/properties/${propertyId}/view`, 
+        params,
+        { headers }
+      );
+      
+      console.log('View increment response:', response.data);
+      
+      // Si la requête réussit, mettre à jour les vues dans le state local
+      if (response.data && response.data.status === "success") {
+        // Mise à jour du compteur de vues dans les propriétés locales
+        setProperties(properties.map(prop => 
+          prop.property_id === propertyId 
+            ? { ...prop, views: response.data.views } 
+            : prop
+        ));
+      }
+    } catch (error) {
+      console.error("Erreur lors de l'incrémentation des vues:", error);
+    }
+  };
 
   // Fonction pour passer à l'image suivante
   const nextImage = () => {
@@ -616,20 +706,22 @@ export const TranoSombre = (): JSX.Element => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="relative mt-2 xs:mt-3 mb-3 xs:mb-6 rounded-[24px] xs:rounded-[32px] overflow-hidden"
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence initial={false} mode="wait">
             <motion.div
-              key={currentImageIndex}
+              key={`carousel-image-${currentImageIndex}`}
               initial={{ opacity: 0, x: 300 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -300 }}
               transition={{ duration: 0.5 }}
               className="w-full h-full"
             >
-              <img
-                src={filteredImages[currentImageIndex].url}
-                alt="Hero"
-                className="w-full h-[150px] xs:h-[190px] sm:h-[230px] object-cover"
-              />
+              {filteredImages[currentImageIndex] && (
+                <img
+                  src={filteredImages[currentImageIndex].url}
+                  alt="Hero"
+                  className="w-full h-[150px] xs:h-[190px] sm:h-[230px] object-cover"
+                />
+              )}
             </motion.div>
           </AnimatePresence>
 
@@ -832,10 +924,13 @@ export const TranoSombre = (): JSX.Element => {
                       Aperçu
                     </button>
                     <button 
+                      onClick={() => {
+                        incrementPropertyView(property.property_id);
+                        navigate(`/property/${property.property_id}`);
+                      }}
                       className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
-                      onClick={() => navigate(`/property/${property.property_id}`)}
                     >
-                      Détails
+                      Visite virtuel
                     </button>
                   </div>
                 </div>
@@ -923,6 +1018,7 @@ export const TranoSombre = (): JSX.Element => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
               onClick={handleCloseModal}
             >
@@ -930,6 +1026,7 @@ export const TranoSombre = (): JSX.Element => {
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 className={`relative w-[90%] max-w-4xl ${cardBgColor} rounded-xl overflow-hidden`}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
               >
@@ -940,7 +1037,7 @@ export const TranoSombre = (): JSX.Element => {
 
                 {/* Conteneur des images */}
                 <div className="relative h-[300px] overflow-hidden">
-                  <AnimatePresence mode="wait">
+                  <AnimatePresence initial={false} mode="wait">
                     {selectedProperty.media && selectedProperty.media.length > 0 ? (
                       (() => {
                         // Filtrer seulement les médias de type Photo
@@ -950,10 +1047,11 @@ export const TranoSombre = (): JSX.Element => {
                         if (photoMedia.length === 0) {
                           return (
                             <motion.img
-                              key="default"
+                              key="default-image"
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                               exit={{ opacity: 0 }}
+                              transition={{ duration: 0.3 }}
                               src="/public_Trano/maison-01.png"
                               alt="Image par défaut"
                               className="w-full h-full object-cover"
@@ -961,18 +1059,34 @@ export const TranoSombre = (): JSX.Element => {
                           );
                         }
                         
-                        // Utiliser l'index du carousel dans la limite des photos disponibles
-                        const photoIndex = currentImageIndex % photoMedia.length;
+                        // S'assurer que l'index est valide
+                        const validIndex = currentImageIndex % photoMedia.length;
+                        const currentMedia = photoMedia[validIndex];
+                        
+                        if (!currentMedia || !currentMedia.media_url) {
+                          return (
+                            <motion.img
+                              key="fallback-image"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.3 }}
+                              src="/public_Trano/maison-01.png"
+                              alt="Image par défaut"
+                              className="w-full h-full object-cover"
+                            />
+                          );
+                        }
                         
                         return (
                           <motion.img
-                            key={photoIndex}
+                            key={`property-image-${validIndex}-${currentMedia.media_id}`}
                             initial={{ opacity: 0, x: 100 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.5 }}
-                            src={getMediaUrl(photoMedia[photoIndex].media_url)}
-                            alt={`Image ${photoIndex + 1}`}
+                            transition={{ duration: 0.3 }}
+                            src={getMediaUrl(currentMedia.media_url)}
+                            alt={`Image ${validIndex + 1}`}
                             className="w-full h-full object-cover"
                             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                               const target = e.target as HTMLImageElement;
@@ -984,10 +1098,11 @@ export const TranoSombre = (): JSX.Element => {
                       })()
                     ) : (
                       <motion.img
-                        key="default"
+                        key="no-media-image"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                         src="/public_Trano/maison-01.png"
                         alt="Image par défaut"
                         className="w-full h-full object-cover"
@@ -1002,9 +1117,11 @@ export const TranoSombre = (): JSX.Element => {
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           const photoMedia = selectedProperty.media!.filter(media => media.media_type === 'Photo');
-                          setCurrentImageIndex((prev) => 
-                            prev === 0 ? photoMedia.length - 1 : prev - 1
-                          );
+                          if (photoMedia.length > 0) {
+                            setCurrentImageIndex((prev) => 
+                              prev === 0 ? photoMedia.length - 1 : prev - 1
+                            );
+                          }
                         }}
                         className={`absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full ${buttonBg} ${textColor} hover:opacity-80 transition-opacity`}
                       >
@@ -1014,9 +1131,11 @@ export const TranoSombre = (): JSX.Element => {
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           const photoMedia = selectedProperty.media!.filter(media => media.media_type === 'Photo');
-                          setCurrentImageIndex((prev) => 
-                            prev === photoMedia.length - 1 ? 0 : prev + 1
-                          );
+                          if (photoMedia.length > 0) {
+                            setCurrentImageIndex((prev) => 
+                              prev === photoMedia.length - 1 ? 0 : prev + 1
+                            );
+                          }
                         }}
                         className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full ${buttonBg} ${textColor} hover:opacity-80 transition-opacity`}
                       >

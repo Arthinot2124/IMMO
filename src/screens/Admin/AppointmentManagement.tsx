@@ -493,7 +493,7 @@ export const AppointmentManagement = (): JSX.Element => {
                   className={`flex items-center ${isLightMode ? "bg-white border-[#0150BC]/30" : "bg-[#0f172a] border-[#59e0c5]/30"} border rounded-lg px-3 py-2`}
                 >
                   <CalendarDaysIcon className="w-4 h-4 mr-2" />
-                  {selectedDate ? formatDate(selectedDate) : "Choisir une date"}
+                  {selectedDate ? formatDate(selectedDate) : "Calendrier"}
                 </button>
                 {selectedDate && (
                   <button
@@ -511,7 +511,7 @@ export const AppointmentManagement = (): JSX.Element => {
               </div>
 
               {showDatePicker && (
-                <div className={`absolute mt-1 z-10 ${isLightMode ? "bg-white" : "bg-[#1e293b]"} border ${isLightMode ? "border-gray-200" : "border-gray-700"} rounded-lg shadow-lg p-3 min-w-[280px]`}>
+                <div className={`absolute mt-1 z-10 right-0 ${isLightMode ? "bg-white" : "bg-[#1e293b]"} border ${isLightMode ? "border-gray-200" : "border-gray-700"} rounded-lg shadow-lg p-3 min-w-[280px] `}>
                   <div className="flex justify-between items-center mb-2">
                     <button 
                       onClick={() => changeMonth(-1)} 

@@ -11,7 +11,7 @@ const SplashScreen: React.FC = () => {
       setIsVisible(false);
       setTimeout(() => {
         navigate('/login');
-      }, 500); // Délai pour laisser l'animation de sortie se terminer
+      }, 500); 
     }, 3000);
 
     return () => clearTimeout(timer);

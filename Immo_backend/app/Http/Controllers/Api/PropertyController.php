@@ -61,6 +61,11 @@ class PropertyController extends Controller
             $query->where('property_type', $request->property_type);
         }
 
+        // Filter by transaction_type
+        if ($request->has('transaction_type')) {
+            $query->where('transaction_type', $request->transaction_type);
+        }
+
         // Get per_page parameter or use default 10
         $perPage = $request->input('per_page', 10);
 
@@ -85,6 +90,7 @@ class PropertyController extends Controller
             'surface' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'property_type' => 'required|in:VILLA,TERRAIN,APPARTEMENT',
+            'transaction_type' => 'nullable|in:AHOFA,AMIDY',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
         ]);
@@ -128,6 +134,7 @@ class PropertyController extends Controller
             'surface' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'property_type' => 'sometimes|required|in:VILLA,TERRAIN,APPARTEMENT',
+            'transaction_type' => 'nullable|in:AHOFA,AMIDY',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
         ]);
@@ -152,5 +159,111 @@ class PropertyController extends Controller
             'status' => 'success',
             'message' => 'Property deleted successfully'
         ]);
+    }
+
+    /**
+     * Increment view count for a property
+     */
+    public function incrementView(Request $request, Property $property)
+    {
+        // Récupérer l'ID utilisateur de plusieurs façons pour déboguer
+        $userId = null;
+        
+        // Méthode 1: Auth standard
+        if (auth()->check()) {
+            $userId = auth()->id();
+        }
+        
+        // Méthode 2: Depuis la requête
+        if ($request->has('user_id')) {
+            $userId = $request->input('user_id');
+        }
+        
+        // Méthode 3: Depuis la session ou le token
+        if (session()->has('user_id')) {
+            $userId = session('user_id');
+        }
+        
+        // Méthode 4: Header personnalisé (à ajouter côté frontend)
+        if ($request->header('X-User-ID')) {
+            $userId = $request->header('X-User-ID');
+        }
+        
+        // Get IP address
+        $ipAddress = $request->ip();
+        
+        // Journaliser pour déboguer
+        \Illuminate\Support\Facades\Log::info('Increment view data', [
+            'user_id' => $userId,
+            'ip_address' => $ipAddress,
+            'property_id' => $property->property_id,
+            'auth_check' => auth()->check(),
+            'request_user_id' => $request->input('user_id')
+        ]);
+        
+        // Si l'utilisateur n'est pas identifié
+        if (!$userId) {
+            // Check if this IP has already viewed this property in the last 24 hours
+            $lastView = \App\Models\PropertyView::where('property_id', $property->property_id)
+                ->where('ip_address', $ipAddress)
+                ->where('viewed_at', '>', now()->subHours(24))
+                ->first();
+        } else {
+            // Si l'utilisateur est identifié
+            // Check if this user has already viewed this property in the last 24 hours
+            $lastView = \App\Models\PropertyView::where('property_id', $property->property_id)
+                ->where('user_id', $userId)
+                ->where('viewed_at', '>', now()->subHours(24))
+                ->first();
+        }
+        
+        // If no recent view found, create a new one and increment the property's view count
+        if (!$lastView) {
+            // Create the view record
+            \App\Models\PropertyView::create([
+                'property_id' => $property->property_id,
+                'user_id' => $userId,
+                'ip_address' => $ipAddress
+            ]);
+            
+            // Increment the property view count
+            $property->increment('views');
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'views' => $property->views,
+            'debug_auth' => [
+                'user_id' => $userId,
+                'auth_check' => auth()->check(),
+                'ip' => $ipAddress
+            ]
+        ]);
+    }
+
+    /**
+     * Reset view count for a property
+     */
+    public function resetViews(Property $property)
+    {
+        try {
+            // Réinitialiser le compteur de vues
+            $property->views = 0;
+            $property->save();
+            
+            // Supprimer tous les enregistrements de vues pour cette propriété
+            \App\Models\PropertyView::where('property_id', $property->property_id)->delete();
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Compteur de vues réinitialisé',
+                'views' => 0
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erreur lors de la réinitialisation des vues: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

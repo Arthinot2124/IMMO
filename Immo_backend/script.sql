@@ -33,8 +33,10 @@ CREATE TABLE properties (
     surface DECIMAL(10,2),
     location VARCHAR(255),
     property_type ENUM('VILLA', 'TERRAIN', 'APPARTEMENT', 'MAISON', 'AUTRE') NOT NULL DEFAULT 'AUTRE',
+    transaction_type ENUM('AHOFA', 'AMIDY') NOT NULL,
     category ENUM('LITE', 'ESSENTIEL', 'PREMIUM') DEFAULT 'LITE',
     status ENUM('Disponible', 'Réservé', 'Vendu', 'Loué') DEFAULT 'Disponible',
+    views INT NOT NULL DEFAULT 0, -- Ajout du compteur de vues
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     -- Clé étrangère
@@ -62,6 +64,7 @@ CREATE TABLE property_requests (
     description TEXT,
     additional_details TEXT,
     property_type ENUM('VILLA', 'TERRAIN', 'APPARTEMENT') NOT NULL DEFAULT 'VILLA',
+    transaction_type ENUM('AHOFA', 'AMIDY') NOT NULL,
     status ENUM('En attente', 'Accepté', 'Refusé') DEFAULT 'En attente',
     submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -159,6 +162,19 @@ CREATE TABLE property_request_media (
     uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_media_property_request FOREIGN KEY (request_id) REFERENCES property_requests(request_id)
         ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- Table pour suivre les vues de propriétés
+CREATE TABLE property_views (
+    view_id INT AUTO_INCREMENT PRIMARY KEY,
+    property_id INT NOT NULL,
+    user_id INT, -- L'utilisateur qui a vu la propriété (peut être NULL pour les visiteurs non connectés)
+    ip_address VARCHAR(45), -- Pour suivre les vues par adresse IP (IPv4 ou IPv6)
+    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_view_property FOREIGN KEY (property_id) REFERENCES properties(property_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_view_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 -- Insertion d'utilisateurs

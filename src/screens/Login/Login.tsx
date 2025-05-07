@@ -470,19 +470,6 @@ export const Login = (): JSX.Element => {
           >
             {isLoading ? 'Chargement...' : isSignUp ? "S'inscrire" : "Se connecter"}
           </button>
-
-          {/* Liens supplémentaires */}
-          {!isSignUp && (
-            <div className="flex flex-col items-center gap-4 mt-6 text-white">
-              <button 
-                type="button" 
-                className="text-sm hover:underline"
-                onClick={toggleForgotPassword}
-              >
-                J'ai oublié mon mot de passe
-              </button>
-            </div>
-          )}
         </form>
 
         {error && (
@@ -490,10 +477,23 @@ export const Login = (): JSX.Element => {
             {error}
           </div>
         )}
+
+        {/* Forgot password button fixed at bottom */}
+        {!isSignUp && (
+          <div className="fixed bottom-6 left-0 right-0 text-center z-10">
+            <button 
+              type="button" 
+              className="text-white text-sm hover:underline"
+              onClick={toggleForgotPassword}
+            >
+              J'ai oublié mon mot de passe
+            </button>
+          </div>
+        )}
       </motion.div>
 
       {/* Toggle Inscription/Connexion à l'extérieur de la div principale */}
-      <div className="absolute bottom-14 text-center">
+      <div className="absolute bottom-2 text-center">
         <button
           onClick={() => {
             setIsSignUp(!isSignUp);

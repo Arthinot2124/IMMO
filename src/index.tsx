@@ -18,6 +18,7 @@ import { AdminDashboard } from "./screens/Admin/AdminDashboard";
 import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval";
 import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
 import PropertyManagement from "./screens/Admin/PropertyManagement";
+import UserManagement from "./screens/Admin/UserManagement";
 import { Parametres } from "./screens/Parametres";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
@@ -97,7 +98,7 @@ createRoot(document.getElementById("app") as HTMLElement).render(
           path="/admin/users" 
           element={
             <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
+              <UserManagement />
             </ProtectedRoute>
           } 
         />

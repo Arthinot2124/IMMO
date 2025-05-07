@@ -56,6 +56,8 @@ export const Profile = (): JSX.Element => {
   const textColor = isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]";
   const textPrimaryColor = isLightMode ? "text-[#1E293B]" : "text-white";
   const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
+  const adminBadgeText = isLightMode ? "text-red-700" : "text-red-300";
+  const adminBadgeBg = isLightMode ? "bg-red-100" : "bg-red-500/20";
   const buttonPrimaryBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
   const buttonPrimaryText = isLightMode ? "text-white" : "text-[#0f172a]";
   const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
@@ -283,6 +285,18 @@ export const Profile = (): JSX.Element => {
               onClick={() => navigate('/parametres')}
             />
           </div>
+           {/* Bouton pour basculer entre les modes */}
+           <button 
+            onClick={toggleLightMode}
+            className={`${buttonPrimaryBg} ${buttonPrimaryText} p-2 rounded-full flex items-center justify-center`}
+            aria-label={isLightMode ? "Passer au mode sombre" : "Passer au mode clair"}
+          >
+            {isLightMode ? (
+              <MoonIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+            ) : (
+              <SunIcon className="w-5 h-5 xs:w-6 xs:h-6" />
+            )}
+          </button>
         </motion.header>
 
         {/* Messages */}
@@ -359,13 +373,24 @@ export const Profile = (): JSX.Element => {
                     className={`w-full ${inputBgColor} border ${borderColor} rounded-lg px-4 py-2 ${textPrimaryColor}`}
                   />
                 ) : (
-                  <p className={textPrimaryColor}>{userData?.full_name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className={textPrimaryColor}>{userData?.full_name}</p>
+                    {(userData?.role_id === 1 || (userData?.role && userData.role.role_id === 1)) && (
+                      <span className={`px-2 py-1 text-xs rounded-full ${adminBadgeBg} ${adminBadgeText}`}>
+                        Mode Administrateur
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
 
               <div>
                 <label className={`block text-sm ${textColor} mb-1`}>Rôle</label>
-                <p className={textPrimaryColor}>Admin</p>
+                <p className={textPrimaryColor}>
+                  {userData?.role_id === 1 || (userData?.role && userData.role.role_id === 1) 
+                    ? "Admin" 
+                    : "Client"}
+                </p>
               </div>
 
               <div>

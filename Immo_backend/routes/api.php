@@ -35,6 +35,8 @@ Route::get('/properties/{property}', [PropertyController::class, 'show']);
 Route::get('/properties/{property}/media', [PropertyMediaController::class, 'index']);
 Route::get('/properties/{property}/ratings', [RatingController::class, 'propertyRatings']);
 Route::get('/properties/{property}/average-rating', [RatingController::class, 'propertyAverageRating']);
+Route::post('/properties/{property}/view', [PropertyController::class, 'incrementView']);
+Route::post('/properties/{property}/reset-views', [PropertyController::class, 'resetViews']);
 
 // User profile - était protégé, maintenant public
 Route::get('/user', [UserController::class, 'profile']);

@@ -1,0 +1,84 @@
+/* Styles pour les petits écrans (moins de 394px) */
+@media (max-width: 394px) {
+    /* Ajuster la taille des boutons d'action */
+    .property-actions button {
+      padding: 0.15rem 0.35rem !important;
+      font-size: 0.6rem !important;
+      min-width: 50px !important;
+    }
+  
+    /* Ajuster la taille des icônes dans les boutons */
+    .property-actions button svg {
+      width: 10px !important;
+      height: 10px !important;
+      margin-right: 0.15rem !important;
+    }
+  
+    /* Ajuster l'espacement entre les boutons */
+    .property-actions {
+      gap: 0.2rem !important;
+    }
+  
+  }
+
+
+  @media (max-width: 361px) {
+    /* Ajuster la taille des boutons d'action */
+    .property-actions button {
+      padding: 0.15rem 0.35rem !important;
+      font-size: 0.45rem !important;
+      min-width: 50px !important;
+      margin-right: 0.9rem !important;
+    }
+  
+    /* Ajuster la taille des icônes dans les boutons */
+    .property-actions button svg {
+      width: 10px !important;
+      height: 10px !important;
+      margin-right: 0.15rem !important;
+    }
+  
+    /* Ajuster l'espacement entre les boutons */
+    .property-actions {
+      gap: 0.1rem !important;
+    }
+  
+    /* Ajuster la taille du texte dans la carte */
+    .property-card h3 {
+      font-size: 0.55rem !important;
+      margin-bottom: 0.15rem !important;
+    }
+  
+    .property-card p {
+      font-size: 0.5rem !important;
+      line-height: 1.1 !important;
+    }
+  
+    /* Ajuster la taille de l'image */
+    .property-image-container {
+      width: 110px !important;
+      height: 90px !important;
+      
+    }
+  
+    /* Ajuster le padding de la carte */
+    .property-card {
+      padding: 0.1rem !important;
+    }
+  
+    /* Ajuster la hauteur de la carte */
+    .property-card {
+      height: 65px !important;
+      width: 210px !important;
+    }
+  }
+
+/* Animation pour le compte à rebours des alertes */
+@keyframes countdown {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}

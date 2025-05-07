@@ -36,8 +36,10 @@ class Property extends Model
         'surface',
         'location',
         'property_type',
+        'transaction_type',
         'category',
         'status',
+        'views',
     ];
 
     /**
@@ -49,8 +51,10 @@ class Property extends Model
         'price' => 'decimal:2',
         'surface' => 'decimal:2',
         'property_type' => 'string',
+        'transaction_type' => 'string',
         'category' => 'string',
         'status' => 'string',
+        'views' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -93,5 +97,13 @@ class Property extends Model
     public function ratings()
     {
         return $this->hasMany(Rating::class, 'property_id', 'property_id');
+    }
+
+    /**
+     * Get the property views records.
+     */
+    public function propertyViews()
+    {
+        return $this->hasMany(PropertyView::class, 'property_id', 'property_id');
     }
 }
