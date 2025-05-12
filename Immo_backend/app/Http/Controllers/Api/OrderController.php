@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Property;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -77,6 +78,22 @@ class OrderController extends Controller
         }
         $property->save();
 
+        // Récupérer les informations de l'utilisateur qui a fait la commande
+        $user = User::findOrFail($validated['user_id']);
+        
+        // Créer une notification pour tous les administrateurs
+        $admins = User::whereHas('role', function($query) {
+            $query->where('role_name', 'Admin');
+        })->get();
+        
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->user_id,
+                'message' => "Nouvelle commande (#" . $order->order_id . ") de " . $user->full_name . " pour " . $property->title,
+                'is_read' => false
+            ]);
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Order created successfully',
@@ -116,12 +133,8 @@ class OrderController extends Controller
             // If order is cancelled, set property back to available
             $property->status = 'Disponible';
         } elseif ($validated['order_status'] === 'Confirmé' && $oldStatus !== 'Confirmé') {
-            // If order is confirmed, set property status based on order type
-            if ($order->order_type === 'Achat') {
-                $property->status = 'Vendu';
-            } else {
-                $property->status = 'Loué';
-            }
+            // When an order is confirmed, keep the property as reserved
+            $property->status = 'Réservé';
         } elseif ($validated['order_status'] === 'Terminé' && $oldStatus !== 'Terminé') {
             // If order is completed, set property status based on order type
             if ($order->order_type === 'Achat') {

@@ -47,6 +47,7 @@ interface Appointment {
   contact_phone?: string;
   contact_email?: string;
   notes?: string;
+  comments?: string;
   user?: AppointmentUser;
   property?: AppointmentProperty;
 }
@@ -627,7 +628,7 @@ export const AppointmentManagement = (): JSX.Element => {
               const statusInfo = getStatusInfo(appointment.confirmation_status);
               const propertyId = appointment.property?.property_id;
               const propertyImagesArray = propertyId ? propertyImages[propertyId] || [] : [];
-               
+                
               return (
                 <div 
                   key={appointment.appointment_id} 
@@ -639,20 +640,20 @@ export const AppointmentManagement = (): JSX.Element => {
                         <CalendarIcon className={`w-5 h-5 ${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"}`} />
                       </div>
                       <div>
-                        <h3 className="font-semibold">Rendez-vous #</h3>
+                        <h3 className="font-semibold">Rendez-vous #{appointment.appointment_id}</h3>
                         <div className="flex items-center text-sm text-gray-400">
                           <ClockIcon className="w-3.5 h-3.5 mr-1" />
                           <span>Créé le {new Date(appointment.created_at).toLocaleDateString('fr-FR')}</span>
                         </div>
                       </div>
                     </div>
-                     
+                    
                     <div className={`${statusInfo.bgColor} ${statusInfo.color} px-3 py-1 rounded-full flex items-center self-start md:self-center`}>
                       {statusInfo.icon}
                       <span className="ml-1 text-sm">{appointment.confirmation_status}</span>
                     </div>
                   </div>
-                   
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className={`${isLightMode ? "bg-white" : "bg-[#0f172a]"} p-3 rounded-lg ${cardBorder}`}>
                       <h4 className={`${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"} text-sm font-medium mb-2`}>Détails du rendez-vous</h4>
@@ -664,7 +665,7 @@ export const AppointmentManagement = (): JSX.Element => {
                             <p className="text-sm text-gray-400">{time}</p>
                           </div>
                         </div>
-                         
+                        
                         {appointment.property && (
                           <div className="flex items-start">
                             <HomeIcon className="w-4 h-4 text-gray-400 mt-1 mr-2" />
@@ -674,11 +675,11 @@ export const AppointmentManagement = (): JSX.Element => {
                             </div>
                           </div>
                         )}
-                         
-                        {appointment.notes && (
+                        
+                        {appointment.comments && (
                           <div className={`border-t ${isLightMode ? "border-gray-200" : "border-gray-700"} pt-2 mt-2`}>
-                            <p className="text-xs text-gray-400">Notes:</p>
-                            <p className="text-sm">{appointment.notes}</p>
+                            <p className="text-xs text-gray-400">Commentaires:</p>
+                            <p className="text-sm break-words overflow-hidden line-clamp-3">{appointment.comments}</p>
                           </div>
                         )}
                         
@@ -696,7 +697,10 @@ export const AppointmentManagement = (): JSX.Element => {
                               </div>
                             ) : propertyImagesArray.length > 0 ? (
                               <div className="grid grid-cols-3 gap-1">
-                                {propertyImagesArray.slice(0, 3).map((image) => (
+                                {propertyImagesArray
+                                  .filter(image => image.media_type === 'Photo')
+                                  .slice(0, 3)
+                                  .map((image) => (
                                   <div key={image.media_id} className={`h-16 ${isLightMode ? "bg-gray-100" : "bg-black/40"} rounded overflow-hidden`}>
                                     {imageErrors[image.media_id] ? (
                                       <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
@@ -713,9 +717,9 @@ export const AppointmentManagement = (): JSX.Element => {
                                     )}
                                   </div>
                                 ))}
-                                {propertyImagesArray.length > 3 && (
+                                {propertyImagesArray.filter(image => image.media_type === 'Photo').length > 3 && (
                                   <div className={`h-16 ${isLightMode ? "bg-gray-100" : "bg-black/40"} rounded flex items-center justify-center text-gray-500`}>
-                                    <span>+{propertyImagesArray.length - 3}</span>
+                                    <span>+{propertyImagesArray.filter(image => image.media_type === 'Photo').length - 3}</span>
                                   </div>
                                 )}
                               </div>
@@ -726,7 +730,7 @@ export const AppointmentManagement = (): JSX.Element => {
                         )}
                       </div>
                     </div>
-                     
+                    
                     <div className={`${isLightMode ? "bg-white" : "bg-[#0f172a]"} p-3 rounded-lg ${cardBorder}`}>
                       <h4 className={`${isLightMode ? "text-[#0150BC]" : "text-[#59e0c5]"} text-sm font-medium mb-2`}>Informations de contact</h4>
                       <div className="space-y-2">
@@ -734,12 +738,12 @@ export const AppointmentManagement = (): JSX.Element => {
                           <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
                           <p className="text-sm">{appointment.contact_name || appointment.user?.full_name || "Non spécifié"}</p>
                         </div>
-                         
+                        
                         <div className="flex items-center">
                           <PhoneIcon className="w-4 h-4 text-gray-400 mr-2" />
                           <p className="text-sm">{appointment.contact_phone || appointment.user?.phone || "Non spécifié"}</p>
                         </div>
-                         
+                        
                         <div className="flex items-center">
                           <MailIcon className="w-4 h-4 text-gray-400 mr-2" />
                           <p className="text-sm">{appointment.contact_email || appointment.user?.email || "Non spécifié"}</p>
@@ -747,7 +751,7 @@ export const AppointmentManagement = (): JSX.Element => {
                       </div>
                     </div>
                   </div>
-                   
+                  
                   {appointment.confirmation_status === 'En attente' && (
                     <div className="flex justify-end space-x-3">
                       <button 

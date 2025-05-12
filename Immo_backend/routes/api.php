@@ -106,6 +106,7 @@ Route::get('/dashboard/stats', function (Request $request) {
         'rented_properties' => \App\Models\Property::where('status', 'Loué')->count(),
         'total_users' => \App\Models\User::count(),
         'total_orders' => \App\Models\Order::count(),
+        'pending_orders' => \App\Models\Order::where('order_status', 'En attente')->count(),
         'pending_appointments' => \App\Models\Appointment::where('confirmation_status', 'En attente')->count(),
         'pending_property_requests' => \App\Models\PropertyRequest::where('status', 'En attente')->count(),
         'recent_orders' => \App\Models\Order::with(['user', 'property'])->orderBy('order_date', 'desc')->take(5)->get(),

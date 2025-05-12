@@ -367,7 +367,10 @@ const PropertyManagement = (): JSX.Element => {
         console.log(`Téléchargement du média ${index}: ${file.name}`);
         const formData = new FormData();
         formData.append('media_file', file);
-        formData.append('media_type', 'Photo'); // On définit le type par défaut comme 'Photo'
+        
+        // Déterminer le type de média basé sur le type MIME du fichier
+        const mediaType = file.type.startsWith('image/') ? 'Photo' : file.type.startsWith('video/') ? 'Vidéo' : 'Document';
+        formData.append('media_type', mediaType);
         
         return apiService.post(
           `/properties/${selectedProperty.property_id}/media`,
@@ -522,17 +525,17 @@ const PropertyManagement = (): JSX.Element => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       
-      // Calculer le nombre d'images actuelles (existantes non supprimées + nouvelles)
-      const existingImagesCount = selectedProperty?.media 
+      // Calculer le nombre de médias actuels (existants non supprimés + nouveaux)
+      const existingMediaCount = selectedProperty?.media 
         ? selectedProperty.media.filter(m => 
-            m.media_type === 'Photo' && !mediaToDelete.includes(m.media_id)
+            (m.media_type === 'Photo' || m.media_type === 'Vidéo') && !mediaToDelete.includes(m.media_id)
           ).length 
         : 0;
       
-      const totalImagesAfterAdd = existingImagesCount + mediaFiles.length + filesArray.length;
+      const totalMediaAfterAdd = existingMediaCount + mediaFiles.length + filesArray.length;
       
-      if (totalImagesAfterAdd > MAX_IMAGES) {
-        setImageError(`Vous ne pouvez pas ajouter plus de ${MAX_IMAGES} images au total`);
+      if (totalMediaAfterAdd > MAX_IMAGES) {
+        setImageError(`Vous ne pouvez pas ajouter plus de ${MAX_IMAGES} fichiers médias au total`);
         return;
       }
       
@@ -1105,7 +1108,7 @@ const PropertyManagement = (): JSX.Element => {
                   <div className="flex items-center">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       multiple
                       onChange={handleFileChange}
                       className="hidden"
@@ -1116,10 +1119,10 @@ const PropertyManagement = (): JSX.Element => {
                       className={`px-4 py-2 rounded-lg ${buttonPrimaryBg} ${buttonPrimaryText} cursor-pointer flex items-center`}
                     >
                       <ImageIcon size={16} className="mr-2" />
-                      Ajouter des images
+                      Ajouter des médias
                     </label>
                     <span className={`ml-3 text-sm ${textSecondaryColor}`}>
-                      Maximum {MAX_IMAGES} images
+                      Maximum {MAX_IMAGES} fichiers
                     </span>
                   </div>
                   
@@ -1130,28 +1133,41 @@ const PropertyManagement = (): JSX.Element => {
                   )}
                   
                   {/* Afficher les images existantes */}
-                  {selectedProperty?.media && selectedProperty.media.filter(media => media.media_type === 'Photo').length > 0 && (
+                  {selectedProperty?.media && selectedProperty.media.filter(media => media.media_type === 'Photo' || media.media_type === 'Vidéo').length > 0 && (
                     <div className="mt-3">
                       <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>
-                        Images existantes 
-                        ({selectedProperty.media.filter(media => media.media_type === 'Photo' && !mediaToDelete.includes(media.media_id)).length})
+                        Médias existants 
+                        ({selectedProperty.media.filter(media => (media.media_type === 'Photo' || media.media_type === 'Vidéo') && !mediaToDelete.includes(media.media_id)).length})
                       </h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {selectedProperty.media
-                          .filter(media => media.media_type === 'Photo' && !mediaToDelete.includes(media.media_id))
+                          .filter(media => (media.media_type === 'Photo' || media.media_type === 'Vidéo') && !mediaToDelete.includes(media.media_id))
                           .map((media) => (
                           <div key={media.media_id} className="relative group">
-                            <img 
-                              src={logMediaUrl(media.media_url)} 
-                              alt={`Property ${selectedProperty.property_id}`} 
-                              className="w-full h-24 object-cover rounded-lg"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                console.log("Erreur de chargement d'image:", media.media_url);
-                                target.src = '/img/default-property.jpg';
-                                target.onerror = null; // Éviter les boucles infinies
-                              }}
-                            />
+                            {media.media_type === 'Photo' ? (
+                              <img 
+                                src={logMediaUrl(media.media_url)} 
+                                alt={`Property ${selectedProperty.property_id}`} 
+                                className="w-full h-24 object-cover rounded-lg"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  console.log("Erreur de chargement d'image:", media.media_url);
+                                  target.src = '/img/default-property.jpg';
+                                  target.onerror = null; // Éviter les boucles infinies
+                                }}
+                              />
+                            ) : (
+                              <video 
+                                src={logMediaUrl(media.media_url)} 
+                                className="w-full h-24 object-cover rounded-lg"
+                                controls
+                                onError={(e) => {
+                                  console.log("Erreur de chargement de vidéo:", media.media_url);
+                                }}
+                              >
+                                Votre navigateur ne supporte pas les vidéos
+                              </video>
+                            )}
                             <button
                               onClick={() => removeExistingMedia(media.media_id)}
                               className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1165,20 +1181,34 @@ const PropertyManagement = (): JSX.Element => {
                     </div>
                   )}
                   
-                  {/* Afficher les nouvelles images */}
+                  {/* Afficher les nouveaux médias */}
                   {mediaFiles.length > 0 && (
                     <div className="mt-3">
                       <h3 className={`text-sm font-medium ${textSecondaryColor} mb-2`}>
-                        Nouvelles images ({mediaFiles.length})
+                        Nouveaux médias ({mediaFiles.length})
                       </h3>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                         {mediaFiles.map((file, index) => (
                           <div key={`new-${index}`} className="relative group">
-                            <img 
-                              src={URL.createObjectURL(file)} 
-                              alt={`Preview ${index}`} 
-                              className="w-full h-24 object-cover rounded-lg"
-                            />
+                            {file.type.startsWith('image/') ? (
+                              <img 
+                                src={URL.createObjectURL(file)} 
+                                alt={`Preview ${index}`} 
+                                className="w-full h-24 object-cover rounded-lg"
+                              />
+                            ) : file.type.startsWith('video/') ? (
+                              <video 
+                                src={URL.createObjectURL(file)} 
+                                className="w-full h-24 object-cover rounded-lg"
+                                controls
+                              >
+                                Votre navigateur ne supporte pas les vidéos
+                              </video>
+                            ) : (
+                              <div className="w-full h-24 flex items-center justify-center bg-gray-200 rounded-lg">
+                                <span className="text-sm text-gray-600">Fichier non pris en charge</span>
+                              </div>
+                            )}
                             <button
                               onClick={() => removeFile(index)}
                               className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity"

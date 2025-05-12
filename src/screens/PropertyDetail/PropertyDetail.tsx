@@ -3,9 +3,11 @@ import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
 import { HomeIcon, SettingsIcon } from "lucide-react";
 import NotificationBadge from "../../components/NotificationBadge";
+import StarRating from "../../components/StarRating";
 import apiService from "../../services/apiService";
+import authService from "../../services/authService";
 import { getMediaUrl } from "../../config/api";
-import { BellIcon, HeartIcon, CalendarIcon, StarIcon, MessageSquareIcon, ShareIcon, ImageIcon } from "lucide-react";
+import { BellIcon, HeartIcon, CalendarIcon, StarIcon, MessageSquareIcon, ShareIcon, ImageIcon,ArrowLeftIcon } from "lucide-react";
 
 // Types pour les propriétés
 interface PropertyMedia {
@@ -14,6 +16,15 @@ interface PropertyMedia {
   media_type: string;
   media_url: string;
   uploaded_at: string;
+}
+
+interface Rating {
+  rating_id: number;
+  property_id: number;
+  user_id: number;
+  rating: number;
+  comment?: string;
+  created_at: string;
 }
 
 interface Property {
@@ -25,6 +36,7 @@ interface Property {
   location: string;
   category: string;
   status: string;
+  transaction_type: string;
   media?: PropertyMedia[];
   // Autres champs
   rating?: number;
@@ -38,6 +50,11 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+interface RatingData {
+  average_rating: number;
+  ratings_count: number;
+}
+
 // Données de secours en cas d'erreur
 const fallbackProperty = {
   property_id: 1,
@@ -48,6 +65,7 @@ const fallbackProperty = {
   location: "Tambohobe, Fianarantsoa",
   category: "PREMIUM",
   status: "Disponible",
+  transaction_type: "AMIDY",
   features: ["4 pièces", "3 chambres", "2 salles de bain", "Jardin", "Garage"],
   rating: 4.8,
   reviews: 12,
@@ -68,6 +86,11 @@ export const PropertyDetail = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [averageRating, setAverageRating] = useState<number>(0);
+  const [ratingsCount, setRatingsCount] = useState<number>(0);
+  const [userRating, setUserRating] = useState<number>(0);
+  const [propertyLoading, setPropertyLoading] = useState(true);
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -112,7 +135,62 @@ export const PropertyDetail = (): JSX.Element => {
     };
   }, [isLightMode]);
 
-  // Charger les données de la propriété
+  // Vérifier une seule fois au montage si l'utilisateur est connecté
+  useEffect(() => {
+    const currentUser = authService.getCurrentUser();
+    setIsLoggedIn(!!currentUser);
+    console.log("[PropertyDetail] Utilisateur connecté:", !!currentUser);
+  }, []);
+  
+  // Fonction pour charger les notations pour la propriété actuelle
+  const loadRatings = async (propertyId: string | undefined) => {
+    if (!propertyId) return;
+    
+    console.log(`[PropertyDetail] Chargement des notations pour propriété #${propertyId}`);
+    
+    try {
+      // 1. Charger la note moyenne
+      const avgResponse = await apiService.get<ApiResponse<RatingData>>(`/properties/${propertyId}/average-rating`);
+      
+      if (avgResponse.data.status === 'success') {
+        const avgRating = Number(avgResponse.data.data?.average_rating || 0);
+        const ratingCount = Number(avgResponse.data.data?.ratings_count || 0);
+        
+        setAverageRating(avgRating);
+        setRatingsCount(ratingCount);
+        
+        console.log(`[PropertyDetail] Note moyenne: ${avgRating}, Nombre d'avis: ${ratingCount}`);
+      }
+      
+      // 2. Vérifier si l'utilisateur a déjà noté cette propriété
+      const currentUser = authService.getCurrentUser();
+      if (currentUser) {
+        const userRatingResponse = await apiService.get<ApiResponse<Rating[]>>(
+          `/users/${currentUser.user_id}/ratings?property_id=${propertyId}`
+        );
+        
+        if (userRatingResponse.data.status === 'success') {
+          if (userRatingResponse.data.data && userRatingResponse.data.data.length > 0) {
+            const userNote = Number(userRatingResponse.data.data[0].rating);
+            setUserRating(userNote);
+            console.log(`[PropertyDetail] Note de l'utilisateur trouvée: ${userNote}`);
+          } else {
+            setUserRating(0);
+            console.log(`[PropertyDetail] Aucune note de l'utilisateur trouvée`);
+          }
+        }
+      } else {
+        setUserRating(0);
+      }
+    } catch (error) {
+      console.error(`[PropertyDetail] Erreur lors du chargement des notations:`, error);
+      setAverageRating(0);
+      setRatingsCount(0);
+      setUserRating(0);
+    }
+  };
+  
+  // Chargement initial des données de la propriété et des notations
   useEffect(() => {
     const fetchPropertyData = async () => {
       if (!id) {
@@ -120,18 +198,27 @@ export const PropertyDetail = (): JSX.Element => {
         setLoading(false);
         return;
       }
-
+      
+      console.log(`[PropertyDetail] Chargement de la propriété #${id}`);
+      setPropertyLoading(true);
+      
+      // Réinitialiser les états au changement de propriété - immédiatement avant de charger
+      setAverageRating(0);
+      setRatingsCount(0);
+      setUserRating(0);
+      
       try {
+        // Charger la propriété
         const response = await apiService.get<ApiResponse<Property>>(`/properties/${id}`);
-
+        
         if (response.data && response.data.status === "success" && response.data.data) {
-          console.log("Propriété chargée:", response.data.data);
+          console.log(`[PropertyDetail] Propriété chargée:`, response.data.data);
           setProperty(response.data.data);
         } else {
           throw new Error("Format de réponse inattendu");
         }
       } catch (err: any) {
-        console.error("Erreur lors du chargement de la propriété:", err);
+        console.error(`[PropertyDetail] Erreur lors du chargement de la propriété:`, err);
         setError(err.response?.data?.message || err.message || "Erreur lors du chargement des données");
         // Utiliser les données de secours
         setProperty({
@@ -140,11 +227,28 @@ export const PropertyDetail = (): JSX.Element => {
         } as Property);
       } finally {
         setLoading(false);
+        setPropertyLoading(false);
       }
+      
+      // Charger les notations une fois la propriété chargée
+      await loadRatings(id);
     };
-
+    
     fetchPropertyData();
   }, [id]);
+  
+  // Gestionnaire pour mettre à jour la note après notation par l'utilisateur
+  const handleRatingChange = async (newRating: number) => {
+    console.log(`[PropertyDetail] Notation reçue: ${newRating} pour propriété #${id}`);
+    
+    // Mettre à jour localement pour feedback immédiat
+    setUserRating(newRating);
+    
+    // Attendre un peu puis recharger les notes depuis le serveur
+    setTimeout(() => {
+      loadRatings(id);
+    }, 1000);
+  };
 
   // Gérer les erreurs d'images
   const handleImageError = (index: number) => {
@@ -196,17 +300,56 @@ export const PropertyDetail = (): JSX.Element => {
     return new Intl.NumberFormat('fr-FR').format(price) + " Ar";
   };
 
-  // Fonction pour déterminer si l'utilisateur est le propriétaire de ce bien
+  // Fonction pour vérifier si l'utilisateur est le propriétaire d'une propriété
   const isPropertyOwner = (): boolean => {
-    const currentUserId = localStorage.getItem('user_id');
-    return !!currentUserId && property?.user_id === parseInt(currentUserId);
+    const currentUser = authService.getCurrentUser();
+    // Si l'utilisateur n'est pas connecté ou si property n'est pas chargé, retourner false
+    if (!currentUser || !property) return false;
+    
+    return Number(property.user_id) === Number(currentUser.user_id);
   };
 
   // Propriétés extraites pour simplifier le template
   const images = getImageUrls();
   const videos = getVideos();
   const selectedVideo = selectedImage < videos.length ? selectedImage : 0;
-  const propertyId = property?.property_id || 1;
+  const propertyId = property?.property_id ? Number(property.property_id) : 0;
+
+  // Mise à jour pour la section de notation
+  const renderRatingSection = () => {
+    const isOwner = isPropertyOwner();
+    
+    return (
+      <div className="flex flex-col items-end">
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`${textSecondaryColor} text-sm font-medium`}>
+            {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'} ({ratingsCount} avis)
+          </span>
+          <StarIcon className={`w-5 h-5 ${textColor}`} fill="currentColor" />
+        </div>
+        <div className={`${!isLoggedIn || isOwner ? '' : 'border border-dashed border-gray-300 hover:border-gray-400 p-2 rounded-lg transition-colors'}`}>
+          <StarRating 
+            key={`property-rating-${id}`}
+            propertyId={Number(id)} 
+            userRating={userRating}
+            onRatingChange={handleRatingChange}
+            readOnly={!isLoggedIn || isOwner}
+            size="md"
+            isLightMode={isLightMode}
+          />
+        </div>
+        {!isLoggedIn && (
+          <span className={`text-xs ${textSecondaryColor} mt-2`}>Connectez-vous pour noter</span>
+        )}
+        {isLoggedIn && isOwner && (
+          <span className={`text-xs ${isLightMode ? "text-red-600" : "text-red-400"} mt-2`}>Vous ne pouvez pas noter votre propre bien</span>
+        )}
+        {isLoggedIn && !isOwner && userRating === 0 && (
+          <span className={`text-xs ${textSecondaryColor} mt-2`}>Cliquez pour noter</span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <motion.div 
@@ -230,7 +373,7 @@ export const PropertyDetail = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex justify-between items-center py-2 xs:py-4 mb-6 sm:mb-8"
+          className="flex justify-between items-center py-2 xs:py-4 mb-4 sm:mb-6"
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
@@ -245,9 +388,10 @@ export const PropertyDetail = (): JSX.Element => {
           </div>
           <button 
             onClick={() => navigate('/trano')}
-            className={`${buttonPrimaryBg} ${buttonPrimaryText} px-3 py-1.5 rounded-lg hover:opacity-90 transition-colors text-sm`}
+            className={`${buttonPrimaryBg} ${buttonPrimaryText} px-3 py-1.5 rounded-lg hover:opacity-90 transition-colors text-sm flex items-center gap-1`}
           >
-            Retour aux annonces
+            <ArrowLeftIcon size={16} />
+            Retour
           </button>
         </motion.header>
 
@@ -275,7 +419,7 @@ export const PropertyDetail = (): JSX.Element => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="mb-6 sm:mb-8"
+              className="mb-2 sm:mb-4"
             >
               <div className={`relative ${imageBgColor} rounded-2xl overflow-hidden h-[200px] xs:h-[250px] sm:h-[350px] md:h-[450px] ${imageBorder}`}>
                 {videos.length > 0 ? (
@@ -326,7 +470,7 @@ export const PropertyDetail = (): JSX.Element => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-6 sm:mb-8 ${cardBorder}`}
+              className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-4 sm:mb-6 ${cardBorder}`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -334,12 +478,7 @@ export const PropertyDetail = (): JSX.Element => {
                   <p className={`${textColor} text-lg sm:text-xl font-semibold`}>{formatPrice(property.price)}</p>
                   <p className={`${textSecondaryColor} text-sm`}>{property.location || "Emplacement non spécifié"}</p>
                 </div>
-                {(property.rating && property.reviews) && (
-                  <div className="flex items-center">
-                    <StarIcon className="w-5 h-5 text-yellow-400 mr-1" />
-                    <span className={textPrimaryColor}>{property.rating} ({property.reviews} avis)</span>
-                  </div>
-                )}
+                {renderRatingSection()}
               </div>
               
               <div className={`border-t ${borderColorLight} my-4 pt-4`}>
@@ -363,6 +502,10 @@ export const PropertyDetail = (): JSX.Element => {
                     <div className={`w-2 h-2 ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} rounded-full mr-2`}></div>
                     Statut: {property.status}
                   </div>
+                  <div className={`flex items-center ${textSecondaryColor} text-sm`}>
+                    <div className={`w-2 h-2 ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} rounded-full mr-2`}></div>
+                    Type: {property.transaction_type || "Non spécifié"}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -372,23 +515,49 @@ export const PropertyDetail = (): JSX.Element => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="grid grid-cols-2 gap-4 mb-8"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
             >
-              <button 
-                className={`flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
-                onClick={() => navigate(`/property/${propertyId}/book`)}
-              >
-                <CalendarIcon size={20} />
-                <span>Réserver une visite</span>
-              </button>
-              
-              <button 
-                className={`flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
-                onClick={() => navigate(`/property/${propertyId}/contact`)}
-              >
-                <MessageSquareIcon size={20} className={textColor} />
-                <span>Contacter l'agence</span>
-              </button>
+              {property.status === "Réservé" ? (
+                <div className={`col-span-full text-center ${isLightMode ? "text-red-600" : "text-red-400"} font-semibold py-4 ${isLightMode ? "bg-red-50" : "bg-red-900/20"} rounded-lg border ${isLightMode ? "border-red-200" : "border-red-800/30"}`}>
+                  Le bien que vous consultez est déjà Réservé
+                </div>
+              ) : (
+                <>
+                  <button 
+                    className={`flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
+                    onClick={() => navigate(`/property/${propertyId}/book`)}
+                  >
+                    <CalendarIcon size={20} />
+                    <span>Réserver une visite</span>
+                  </button>
+                  
+                  <button 
+                    className={`flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
+                    onClick={() => navigate(`/property/${propertyId}/order`)}
+                  >
+                    {property.transaction_type === "AHOFA" ? (
+                      <>
+                        <HomeIcon size={20} />
+                        <span>Louer ce bien</span>
+                      </>
+                    ) : (
+                      <>
+                        <HomeIcon size={20} />
+                        <span>Acheter ce bien</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  </>
+              )}
+                  <button 
+                    className={`flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
+                    onClick={() => navigate(`/property/${propertyId}/contact`)}
+                  >
+                    <MessageSquareIcon size={20} className={textColor} />
+                    <span>Contacter l'agence</span>
+                  </button>
+            
             </motion.div>
 
             {/* Share Button */}

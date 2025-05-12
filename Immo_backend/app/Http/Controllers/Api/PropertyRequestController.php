@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\PropertyRequest;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -55,6 +56,22 @@ class PropertyRequestController extends Controller
         ]);
 
         $propertyRequest = PropertyRequest::create($validated);
+
+        // Récupérer les informations de l'utilisateur qui a fait la demande
+        $user = User::findOrFail($validated['user_id']);
+        
+        // Créer une notification pour tous les administrateurs
+        $admins = User::whereHas('role', function($query) {
+            $query->where('role_name', 'Admin');
+        })->get();
+        
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->user_id,
+                'message' => "Nouvelle demande de propriété (#" . $propertyRequest->request_id . ") de " . $user->full_name . " - " . $propertyRequest->title,
+                'is_read' => false
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',

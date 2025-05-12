@@ -122,6 +122,23 @@ export const PropertyRequestApproval = (): JSX.Element => {
   useEffect(() => {
     const fetchPropertyRequest = async () => {
       if (!id) {
+        // Si aucun ID n'est fourni, afficher une liste des demandes de propriété en attente
+        try {
+          const response = await apiService.get<ApiResponse<PropertyRequest[]>>('/property-requests', {
+            params: { status: 'En attente' }
+          });
+          
+          if (response.data && response.data.status === "success" && Array.isArray(response.data.data)) {
+            // S'il y a des demandes en attente, rediriger vers la première
+            if (response.data.data.length > 0) {
+              navigate(`/admin/property-requests/${response.data.data[0].request_id}`);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Erreur lors du chargement des demandes:", err);
+        }
+        
         setLoading(false);
         return;
       }
@@ -162,7 +179,7 @@ export const PropertyRequestApproval = (): JSX.Element => {
     };
     
     fetchPropertyRequest();
-  }, [id]);
+  }, [id, navigate]);
 
   // Charger les images de la demande
   useEffect(() => {
@@ -317,7 +334,7 @@ export const PropertyRequestApproval = (): JSX.Element => {
             <ArrowLeftIcon size={20} />
           </button>
           <h1 className={`text-xl sm:text-2xl font-bold ${textColor}`}>
-            Validation de la demande de propriété
+            Validation de la demande
           </h1>
         </div>
         
@@ -488,38 +505,67 @@ export const PropertyRequestApproval = (): JSX.Element => {
           <>
             {/* Détails de la demande */}
             <div className={`${cardBgColor} rounded-lg p-5 mb-6 ${cardBorder}`}>
-              <h2 className={`text-lg font-semibold mb-3 ${textColor}`}>
-                Informations de la demande originale
-              </h2>
+             
+
+                {/* Détails de la demande */}
+                <div className={`${inputBgColor} p-4 rounded-lg ${cardBorder}`}>
+                  <h3 className={`text-md font-medium mb-3 ${textColor}`}>Détails de la demande</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-400">Demande #</p>
+                      <p className={textPrimaryColor}>{request.request_id}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Date de soumission</p>
+                      <p className={textPrimaryColor}>{new Date(request.submitted_at).toLocaleString('fr-FR')}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Statut</p>
+                      <p className={`${
+                        request.status === "En attente" ? (isLightMode ? "text-yellow-600" : "text-yellow-300") :
+                        request.status === "Accepté" ? (isLightMode ? "text-green-600" : "text-green-300") :
+                        (isLightMode ? "text-red-600" : "text-red-300")
+                      }`}>
+                        {request.status}
+                      </p>
+                    </div>
+                  </div>
+
+                
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-gray-400">Demande #</p>
-                  <p className={textPrimaryColor}>{request.request_id}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Informations du client */}
+                <div className={`${inputBgColor} p-4 rounded-lg ${cardBorder}`}>
+                  <h3 className={`text-md font-medium mb-3 ${textColor}`}>Informations du client</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-gray-400">Nom complet</p>
+                      <p className={textPrimaryColor}>{request.user?.full_name || `Utilisateur ${request.user_id}`}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Email</p>
+                      <p className={textPrimaryColor}>{request.user?.email || "Non spécifié"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Téléphone</p>
+                      <p className={textPrimaryColor}>{request.user?.phone || "Non spécifié"}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-400">Soumis par</p>
-                  <p className={textPrimaryColor}>{request.user?.full_name || `Utilisateur ${request.user_id}`}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Date de soumission</p>
-                  <p className="text-white">{new Date(request.submitted_at).toLocaleString('fr-FR')}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-400">Statut</p>
-                  <p className={`${
-                    request.status === "En attente" ? (isLightMode ? "text-yellow-600" : "text-yellow-300") :
-                    request.status === "Accepté" ? (isLightMode ? "text-green-600" : "text-green-300") :
-                    (isLightMode ? "text-red-600" : "text-red-300")
-                  }`}>
-                    {request.status}
-                  </p>
                 </div>
               </div>
-              
-              <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-1">Détails supplémentaires fournis</p>
-                <div className={`${inputBgColor} p-3 rounded ${cardBorder}`}>
+
+              {/* Description et détails supplémentaires */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={`${inputBgColor} p-4 rounded-lg ${cardBorder}`}>
+                  <h3 className={`text-md font-medium mb-3 ${textColor}`}>Description</h3>
+                  <p className={`${textSecondaryColor} text-sm whitespace-pre-line`}>
+                    {request.description || "Aucune description fournie."}
+                  </p>
+                </div>
+
+                <div className={`${inputBgColor} p-4 rounded-lg ${cardBorder}`}>
+                  <h3 className={`text-md font-medium mb-3 ${textColor}`}>Détails supplémentaires</h3>
                   <p className={`${textSecondaryColor} text-sm whitespace-pre-line`}>
                     {request.additional_details || "Aucun détail supplémentaire fourni."}
                   </p>
@@ -527,11 +573,11 @@ export const PropertyRequestApproval = (): JSX.Element => {
               </div>
               
               {/* Images de la demande */}
-              <div className="mb-4">
-                <p className={`text-sm ${textSecondaryColor} mb-2 flex items-center`}>
-                  <ImageIcon size={16} className="mr-1" />
+              <div className="mt-6">
+                <h3 className={`text-md font-medium mb-3 ${textColor} flex items-center`}>
+                  <ImageIcon size={16} className="mr-2" />
                   Photos soumises ({loadingImages ? "chargement..." : requestImages.length})
-                </p>
+                </h3>
                 
                 {loadingImages ? (
                   <div className="flex justify-center py-4">

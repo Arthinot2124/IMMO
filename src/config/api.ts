@@ -1,6 +1,6 @@
 // Configuration de l'API
 
-export const API_URL = 'http://192.168.8.114:8000';
+export const API_URL = 'http://192.168.1.42:8000';
 //
 export const API_ENDPOINT = `${API_URL}/api`;
 

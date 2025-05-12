@@ -207,7 +207,7 @@ export const AppointmentBooking = (): JSX.Element => {
         property_id: property?.property_id,
         user_id: parseInt(userId),
         appointment_date: appointmentDate.toISOString(),
-        notes: notes,
+        comments: notes,
         confirmation_status: 'En attente'
       };
       

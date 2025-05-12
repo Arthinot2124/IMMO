@@ -297,14 +297,14 @@ export const ElementAccueilSombre = (): JSX.Element => {
         >
           <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 icons">
             <UserIcon 
-              className={`w-8 h-8 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
+              className={`w-10 h-10 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
               onClick={() => navigate('/profile')} 
             />
             <div className="flex-shrink-0">
               <NotificationBadge size="md" className="mx-auto" accentColor={accentColor} />
             </div>
             <Settings 
-              className={`w-8 h-8 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
+              className={`w-10 h-10 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
               onClick={() => navigate('/parametres')} 
             />
           </div>

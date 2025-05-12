@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Property;
 use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -58,6 +59,7 @@ class AppointmentController extends Controller
             'property_id' => 'required|exists:properties,property_id',
             'user_id' => 'required|exists:users,user_id',
             'appointment_date' => 'required|date|after:now',
+            'comments' => 'nullable|string',
         ]);
 
         // Check if property is available for appointments
@@ -83,6 +85,22 @@ class AppointmentController extends Controller
         }
 
         $appointment = Appointment::create($validated);
+
+        // Récupérer les informations de l'utilisateur qui a pris le rendez-vous
+        $user = User::findOrFail($validated['user_id']);
+        
+        // Créer une notification pour tous les administrateurs
+        $admins = User::whereHas('role', function($query) {
+            $query->where('role_name', 'Admin');
+        })->get();
+        
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->user_id,
+                'message' => "Nouveau rendez-vous (#" . $appointment->appointment_id . ") de " . $user->full_name . " pour " . $property->title,
+                'is_read' => false
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',

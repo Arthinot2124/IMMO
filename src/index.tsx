@@ -14,15 +14,19 @@ import { AppointmentBooking } from "./screens/AppointmentBooking";
 import { Checkout } from "./screens/Checkout";
 import { Guide } from "./screens/Guide";
 import { ContactAgency } from "./screens/ContactAgency/ContactAgency";
-import { AdminDashboard } from "./screens/Admin/AdminDashboard";
-import { PropertyRequestApproval } from "./screens/Admin/PropertyRequestApproval";
-import { AppointmentManagement } from "./screens/Admin/AppointmentManagement";
-import PropertyManagement from "./screens/Admin/PropertyManagement";
-import UserManagement from "./screens/Admin/UserManagement";
 import { Parametres } from "./screens/Parametres";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
 import BackButtonHandler from "./components/BackButtonHandler";
+import { PropertyOrder } from "./screens/PropertyOrder";
+import { 
+  AdminDashboard as AdminDashboardAdmin, 
+  PropertyManagement as PropertyManagementAdmin, 
+  UserManagement as UserManagementAdmin, 
+  AppointmentManagement as AppointmentManagementAdmin, 
+  PropertyRequestApproval as PropertyRequestApprovalAdmin,
+  OrderManagement as OrderManagementAdmin 
+} from "./screens/Admin";
 
 createRoot(document.getElementById("app") as HTMLElement).render(
   <StrictMode>
@@ -37,6 +41,7 @@ createRoot(document.getElementById("app") as HTMLElement).render(
         <Route path="/parametres" element={<Parametres />} />
         <Route path="/property/:id" element={<PropertyDetail />} />
         <Route path="/property/:id/contact" element={<ContactAgency />} />
+        <Route path="/property/:id/order" element={<PropertyOrder />} />
         <Route path="/property-request" element={<PropertyRequest />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -50,47 +55,15 @@ createRoot(document.getElementById("app") as HTMLElement).render(
           path="/admin/dashboard" 
           element={
             <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
+              <AdminDashboardAdmin />
             </ProtectedRoute>
           } 
         />
         <Route 
-          path="/admin/property-requests/:id" 
+          path="/admin/properties" 
           element={
             <ProtectedRoute requiredRole="admin">
-              <PropertyRequestApproval />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/property-requests" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/property-requests/:id/approve" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <PropertyRequestApproval />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/appointments" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AppointmentManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin/property-management" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <PropertyManagement />
+              <PropertyManagementAdmin />
             </ProtectedRoute>
           } 
         />
@@ -98,7 +71,39 @@ createRoot(document.getElementById("app") as HTMLElement).render(
           path="/admin/users" 
           element={
             <ProtectedRoute requiredRole="admin">
-              <UserManagement />
+              <UserManagementAdmin />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/appointments" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <AppointmentManagementAdmin />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/property-requests" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PropertyRequestApprovalAdmin />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/property-requests/:id" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <PropertyRequestApprovalAdmin />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/orders" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <OrderManagementAdmin />
             </ProtectedRoute>
           } 
         />

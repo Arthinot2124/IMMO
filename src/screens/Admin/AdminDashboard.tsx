@@ -5,10 +5,13 @@ import {
   BellIcon, HomeIcon, SettingsIcon, ClipboardListIcon, 
   CalendarIcon, BuildingIcon, UserIcon, ListIcon,
   CheckCircleIcon, XCircleIcon, RefreshCwIcon,
-  SunIcon, MoonIcon
+  SunIcon, MoonIcon, UsersIcon, ShoppingCartIcon,
+  ClipboardIcon, InfoIcon, MailIcon, PhoneIcon, ImageIcon, FileIcon
 } from "lucide-react";
 import apiService from "../../services/apiService";
-import { API_URL, getMediaUrl } from "../../config/api";
+import NotificationBadge from "../../components/NotificationBadge";
+import { getMediaUrl } from "../../config/api";
+
 
 // Types
 interface DashboardStats {
@@ -20,6 +23,15 @@ interface DashboardStats {
   total_orders: number;
   pending_appointments: number;
   pending_property_requests: number;
+  pending_orders: number;
+}
+
+interface PropertyRequestMedia {
+  media_id: number;
+  request_id: number;
+  media_type: string;
+  media_url: string;
+  uploaded_at: string;
 }
 
 interface PropertyRequest {
@@ -31,6 +43,8 @@ interface PropertyRequest {
   status: string;
   submitted_at: string;
   updated_at: string;
+  image_url?: string;
+  media?: PropertyRequestMedia[];
   user?: {
     full_name: string;
     email: string;
@@ -54,8 +68,9 @@ export const AdminDashboard = (): JSX.Element => {
   const [isLightMode, setIsLightMode] = useState(() => {
     // Récupérer la préférence depuis localStorage
     const savedMode = localStorage.getItem('isLightMode');
-    return savedMode !== null ? savedMode === 'true' : false; // Défaut: mode sombre pour conserver le mode actuel
+    return savedMode !== null ? savedMode === 'true' : false;
   });
+  const [imageErrors, setImageErrors] = useState<{[key: string]: boolean}>({});
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -120,6 +135,14 @@ export const AdminDashboard = (): JSX.Element => {
     localStorage.setItem('isLightMode', newMode.toString());
   };
 
+  // Helper function to handle image errors
+  const handleImageError = (requestId: number) => {
+    setImageErrors(prev => ({
+      ...prev,
+      [`${requestId}`]: true
+    }));
+  };
+
   // Charger les statistiques et les demandes en attente
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -140,9 +163,41 @@ export const AdminDashboard = (): JSX.Element => {
         });
         
         if (requestsResponse.data && requestsResponse.data.data) {
-          setPendingRequests(Array.isArray(requestsResponse.data.data) 
+          const requests = Array.isArray(requestsResponse.data.data) 
             ? requestsResponse.data.data 
-            : requestsResponse.data.data.data || []);
+            : requestsResponse.data.data.data || [];
+            
+          // Fetch media for each request
+          const requestsWithMedia = await Promise.all(
+            requests.map(async (request) => {
+              try {
+                const mediaResponse = await apiService.get<ApiResponse<PropertyRequestMedia[]>>(
+                  `/property-requests/${request.request_id}/media`
+                );
+                
+                if (mediaResponse.data && mediaResponse.data.status === "success" && mediaResponse.data.data) {
+                  // Find the first image from media
+                  const media = mediaResponse.data.data;
+                  const firstImage = Array.isArray(media) ? 
+                    media.find(m => m.media_type === 'Photo') : null;
+                    
+                  if (firstImage) {
+                    return {
+                      ...request,
+                      image_url: firstImage.media_url,
+                      media: media
+                    };
+                  }
+                }
+              } catch (err) {
+                console.error(`Error fetching media for request ${request.request_id}:`, err);
+              }
+              
+              return request;
+            })
+          );
+          
+          setPendingRequests(requestsWithMedia);
         }
       } catch (err) {
         console.error("Erreur lors du chargement des données du tableau de bord:", err);
@@ -197,7 +252,7 @@ export const AdminDashboard = (): JSX.Element => {
 
   // Navigation vers les différentes pages d'administration
   const navigateToPropertyManagement = () => {
-    navigate('/admin/property-management');
+    navigate('/admin/properties');
   };
 
   const navigateToAppointmentManagement = () => {
@@ -206,6 +261,19 @@ export const AdminDashboard = (): JSX.Element => {
 
   const navigateToUserManagement = () => {
     navigate('/admin/users');
+  };
+
+  const navigateToOrderManagement = () => {
+    navigate('/admin/orders');
+  };
+
+  const navigateToPropertyRequestManagement = () => {
+    // S'il y a des demandes en attente, rediriger vers la première
+    if (pendingRequests.length > 0) {
+      navigate(`/admin/property-requests/${pendingRequests[0].request_id}`);
+    } else {
+      navigate('/admin/property-requests');
+    }
   };
 
   // Animation variants
@@ -229,6 +297,38 @@ export const AdminDashboard = (): JSX.Element => {
       }
     }
   };
+
+  // Modifier les cards de navigation pour ajouter la gestion des commandes
+  const adminCards = [
+    {
+      id: 1,
+      title: "Gestion des utilisateurs",
+      description: "Gérer les utilisateurs, voir les détails et modifier les permissions.",
+      icon: <UsersIcon className={`w-10 h-10 ${textColor}`} />,
+      link: "/admin/users"
+    },
+    {
+      id: 2,
+      title: "Gestion des biens",
+      description: "Ajouter, modifier et supprimer des biens immobiliers.",
+      icon: <HomeIcon className={`w-10 h-10 ${textColor}`} />,
+      link: "/admin/properties"
+    },
+    {
+      id: 3,
+      title: "Gestion des rendez-vous",
+      description: "Gérer les demandes de visites et les planifier.",
+      icon: <CalendarIcon className={`w-10 h-10 ${textColor}`} />,
+      link: "/admin/appointments"
+    },
+    {
+      id: 4,
+      title: "Gestion des commandes",
+      description: "Suivre et gérer les commandes d'achat et de location.",
+      icon: <ShoppingCartIcon className={`w-10 h-10 ${textColor}`} />,
+      link: "/admin/orders"
+    }
+  ];
 
   return (
     <div className={`${bgColor} min-h-screen ${textPrimaryColor} relative`}>
@@ -258,19 +358,16 @@ export const AdminDashboard = (): JSX.Element => {
               onClick={() => navigate('/home')}
               className={`p-2 rounded-full ${cardBgColor} ${textColor}`}
             >
-              <HomeIcon size={20} />
+              <HomeIcon size={25} />
             </button>
-            <button 
-              onClick={() => navigate('/notifications')}
-              className={`p-2 rounded-full ${cardBgColor} ${textColor}`}
-            >
-              <BellIcon size={20} />
-            </button>
+            <div className={`p-2 rounded-full ${cardBgColor}`}>
+              <NotificationBadge size="sm" accentColor={accentColor} />
+            </div>
             <button 
               onClick={() => navigate('/profile')}
               className={`p-2 rounded-full ${cardBgColor} ${textColor}`}
             >
-              <UserIcon size={20} />
+              <UserIcon size={25} />
             </button>
           </div>
         </div>
@@ -288,21 +385,7 @@ export const AdminDashboard = (): JSX.Element => {
             >
               Vue d'ensemble
             </button>
-            <button 
-              onClick={() => setActiveTab("requests")}
-              className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
-                activeTab === "requests" 
-                  ? `${tabActiveBg} ${textColor}` 
-                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
-              }`}
-            >
-              Demandes
-              {stats && stats.pending_property_requests > 0 && (
-                <span className={`ml-2 px-2 py-0.5 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-full text-xs`}>
-                  {stats.pending_property_requests}
-                </span>
-              )}
-            </button>
+
             <button 
               onClick={navigateToAppointmentManagement}
               className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
@@ -318,6 +401,38 @@ export const AdminDashboard = (): JSX.Element => {
                 </span>
               )}
             </button>
+            <button 
+              onClick={navigateToOrderManagement}
+              className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
+                activeTab === "orders" 
+                  ? `${tabActiveBg} ${textColor}` 
+                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+              }`}
+            >
+              Commandes
+              {stats && stats.pending_orders > 0 && (
+                <span className={`ml-2 px-2 py-0.5 ${buttonpending} ${buttonPrimaryText} rounded-full text-xs`}>
+                  {stats.pending_orders}
+                </span>
+              )}
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab("requests")}
+              className={`px-4 py-2 mr-2 rounded-t-lg font-medium flex items-center ${
+                activeTab === "requests" 
+                  ? `${tabActiveBg} ${textColor}` 
+                  : `${textSecondaryColor} hover:${textColor} hover:${tabHoverBg}`
+              }`}
+            >
+              Demandes
+              {stats && stats.pending_property_requests > 0 && (
+                <span className={`ml-2 px-2 py-0.5 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-full text-xs`}>
+                  {stats.pending_property_requests}
+                </span>
+              )}
+            </button>
+           
             <button 
               onClick={navigateToPropertyManagement}
               className={`px-4 py-2 mr-2 rounded-t-lg font-medium ${
@@ -372,25 +487,24 @@ export const AdminDashboard = (): JSX.Element => {
                   <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Statistiques Générales</h2>
                 </div>
                 <div className="flex-1 overflow-y-auto pr-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 sm:gap-1 mb-6 sm:mb-8">
                     <motion.div 
                       variants={itemVariants}
-                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
+                      className={`${statCardBg} p-4 sm:p-4 rounded-lg ${cardBorder}`}
                     >
                       <div className="flex items-center mb-2">
-                        <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <h3 className={textSecondaryColor}>Propriétés</h3>
+                        <ShoppingCartIcon className={`w-5 h-5 ${textColor} mr-2`} />
+                        <h3 className={textSecondaryColor}>Commandes</h3>
                       </div>
-                      <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.total_properties}</p>
-                      <div className="mt-2 flex justify-between text-sm">
-                        <span className={greenTextColor}>{stats.available_properties} disponibles</span>
-                        <span className={blueTextColor}>{stats.sold_properties} vendues</span>
-                      </div>
+                      <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.total_orders || 0}</p>
+                      <p className={`mt-2 text-sm ${yellowTextColor}`}>
+                        {stats?.pending_orders || 0} en attente
+                      </p>
                     </motion.div>
                     
                     <motion.div 
                       variants={itemVariants}
-                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
+                      className={`${statCardBg} p-4 sm:p-4 rounded-lg ${cardBorder}`}
                     >
                       <div className="flex items-center mb-2">
                         <UserIcon className={`w-5 h-5 ${textColor} mr-2`} />
@@ -401,11 +515,11 @@ export const AdminDashboard = (): JSX.Element => {
                     
                     <motion.div 
                       variants={itemVariants}
-                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
+                      className={`${statCardBg} p-4 sm:p-4 rounded-lg ${cardBorder}`}
                     >
                       <div className="flex items-center mb-2">
                         <ClipboardListIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <h3 className={textSecondaryColor}>Demandes en attente</h3>
+                        <h3 className={textSecondaryColor}>Demandes</h3>
                       </div>
                       <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats?.pending_property_requests || 0}</p>
                       <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_property_requests} en attente</p>
@@ -413,14 +527,30 @@ export const AdminDashboard = (): JSX.Element => {
                     
                     <motion.div 
                       variants={itemVariants}
-                      className={`${statCardBg} p-4 rounded-lg ${cardBorder}`}
+                      className={`${statCardBg} p-4 sm:p-4 rounded-lg ${cardBorder}`}
                     >
                       <div className="flex items-center mb-2">
                         <CalendarIcon className={`w-5 h-5 ${textColor} mr-2`} />
-                        <h3 className={textSecondaryColor}>Rendez-vous en attente</h3>
+                        <h3 className={textSecondaryColor}>Rendez-vous</h3>
                       </div>
                       <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.pending_appointments}</p>
                       <p className={`mt-2 text-sm ${yellowTextColor}`}>{stats.pending_appointments} en attente</p>
+                    </motion.div>
+
+                    <motion.div 
+                      variants={itemVariants}
+                      className={`${statCardBg} p-4 sm:p-4 rounded-lg ${cardBorder} col-span-2`}
+                    >
+                      <div className="flex items-center mb-2">
+                        <BuildingIcon className={`w-5 h-5 ${textColor} mr-2`} />
+                        <h3 className={textSecondaryColor}>Propriétés</h3>
+                      </div>
+                      <p className={`text-2xl font-bold ${textPrimaryColor}`}>{stats.total_properties}</p>
+                      <div className="mt-2 flex justify-between text-sm">
+                        <span className={greenTextColor}>{stats.available_properties} disponibles</span>
+                        <span className={blueTextColor}>{stats.sold_properties} vendues</span>
+                        <span className={yellowTextColor}>{stats.rented_properties} louées</span>
+                      </div>
                     </motion.div>
                   </div>
                   
@@ -428,47 +558,29 @@ export const AdminDashboard = (): JSX.Element => {
                     <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Accès Rapides</h2>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    {adminCards.map(card => (
                     <motion.button
+                        key={card.id}
                       variants={itemVariants}
                       className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder} hover:shadow-md transition-all`}
-                      onClick={navigateToPropertyManagement}
+                        onClick={() => {
+                          // Pour les demandes de propriété, utiliser la fonction spéciale
+                          if (card.title === "Demandes de mise en ligne") {
+                            navigateToPropertyRequestManagement();
+                          } else {
+                            navigate(card.link);
+                          }
+                        }}
                     >
                       <div className={`${iconBgColor} p-3 rounded-lg mr-4`}>
-                        <BuildingIcon className={`w-6 h-6 ${textColor}`} />
+                          {card.icon}
                       </div>
                       <div className="text-left">
-                        <h3 className={`font-medium ${textPrimaryColor}`}>Gestion des Propriétés</h3>
-                        <p className={`text-sm ${textSecondaryColor}`}>Gérer toutes les propriétés</p>
+                          <h3 className={`font-medium ${textPrimaryColor}`}>{card.title}</h3>
+                          <p className={`text-sm ${textSecondaryColor}`}>{card.description}</p>
                       </div>
                     </motion.button>
-                    
-                    <motion.button
-                      variants={itemVariants}
-                      className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder} hover:shadow-md transition-all`}
-                      onClick={navigateToAppointmentManagement}
-                    >
-                      <div className={`${iconBgColor} p-3 rounded-lg mr-4`}>
-                        <CalendarIcon className={`w-6 h-6 ${textColor}`} />
-                      </div>
-                      <div className="text-left">
-                        <h3 className={`font-medium ${textPrimaryColor}`}>Gestion des Rendez-vous</h3>
-                        <p className={`text-sm ${textSecondaryColor}`}>Gérer les rendez-vous</p>
-                      </div>
-                    </motion.button>
-                    
-                    <motion.button
-                      variants={itemVariants}
-                      className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder} hover:shadow-md transition-all`}
-                      onClick={navigateToUserManagement}
-                    >
-                      <div className={`${iconBgColor} p-3 rounded-lg mr-4`}>
-                        <UserIcon className={`w-6 h-6 ${textColor}`} />
-                      </div>
-                      <div className="text-left">
-                        <h3 className={`font-medium ${textPrimaryColor}`}>Gestion des Utilisateurs</h3>
-                        <p className={`text-sm ${textSecondaryColor}`}>Gérer les utilisateurs</p>
-                      </div>
-                    </motion.button>
+                    ))}
                   </div>
                 </div>
               </motion.div>
@@ -499,29 +611,84 @@ export const AdminDashboard = (): JSX.Element => {
                       <motion.div 
                         key={request.request_id}
                         variants={itemVariants}
-                        className={`${cardBgColor} p-4 rounded-lg ${cardBorder}`}
+                        className={`${cardBgColor} p-4 rounded-lg ${cardBorder} hover:shadow-md transition-all`}
                       >
-                        <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-                          <div className="mb-4 md:mb-0">
-                            <h3 className={`font-medium ${textPrimaryColor}`}>{request.title}</h3>
-                            <p className={`text-sm ${textSecondaryColor} mt-1`}>
-                              {request.user?.full_name} - {new Date(request.submitted_at).toLocaleDateString()}
-                            </p>
+                        <div className="flex flex-col md:flex-row md:items-start mb-4">
+                          <div className="flex items-center mb-3 md:mb-0 md:mr-6">
+                            <div className={`w-10 h-10 ${iconBgColor} rounded-full flex items-center justify-center mr-3`}>
+                              <ClipboardIcon className={`w-5 h-5 ${textColor}`} />
+                            </div>
+                            <div>
+                              <h3 className="font-medium">Demande #{request.request_id}</h3>
+                              <div className="flex items-center text-sm text-gray-400">
+                                <RefreshCwIcon className="w-3.5 h-3.5 mr-1" />
+                                <span>Soumise le {new Date(request.submitted_at).toLocaleDateString('fr-FR')}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          
+                          <div className={`${yellowBgColor} ${yellowTextColor} px-3 py-1 rounded-full text-sm flex items-center self-start`}>
+                            <span className="ml-1">En attente</span>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div className={`${darkBgColor} p-3 rounded-lg ${cardBorder}`}>
+                            <h4 className={`${textColor} text-sm font-medium mb-2`}>Détails de la demande</h4>
+                            <div className="space-y-3">
+                              <div>
+                                <p className="text-sm font-medium">{request.title}</p>
+                                {request.description && (
+                                  <p className={`text-sm ${textSecondaryColor} line-clamp-2 mt-1`}>
+                                    {request.description}
+                                  </p>
+                                )}
+                              </div>
+                              
+                              {request.additional_details && (
+                                <div className={`border-t ${isLightMode ? "border-gray-200" : "border-gray-700"} pt-2 mt-2`}>
+                                  <p className="text-xs text-gray-400">Détails supplémentaires:</p>
+                                  <p className={`text-sm ${textSecondaryColor} line-clamp-2`}>
+                                    {request.additional_details}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className={`${darkBgColor} p-3 rounded-lg ${cardBorder}`}>
+                            <h4 className={`${textColor} text-sm font-medium mb-2`}>Image de la propriété</h4>
+                            <div className="w-full h-32 overflow-hidden rounded bg-gray-200 flex items-center justify-center">
+                              {request.image_url && !imageErrors[`${request.request_id}`] ? (
+                                <img 
+                                  src={getMediaUrl(request.image_url)} 
+                                  alt={request.title} 
+                                  className="w-full h-full object-cover" 
+                                  onError={() => handleImageError(request.request_id)}
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center text-gray-400">
+                                  <FileIcon size={36} />
+                                  <p className="mt-2 text-xs">Aucune image disponible</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                             <button
-                              onClick={() => handleApproveRequest(request.request_id)}
-                              className={`${buttonPrimaryBg} ${buttonPrimaryText} px-3 py-1 rounded-lg text-sm flex items-center`}
+                            onClick={() => handleRejectRequest(request.request_id)}
+                            className="px-4 py-2 border border-red-500 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500/10 transition-colors"
                             >
-                              <CheckCircleIcon className="w-4 h-4 mr-1" /> Approuver
+                            <XCircleIcon className="w-4 h-4 mr-2" /> Refuser
                             </button>
                             <button
-                              onClick={() => handleRejectRequest(request.request_id)}
-                              className={`bg-red-600 text-white px-3 py-1 rounded-lg text-sm flex items-center`}
+                            onClick={() => navigate(`/admin/property-requests/${request.request_id}`)}
+                            className={`px-4 py-2 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg flex items-center justify-center hover:opacity-90 transition-colors`}
                             >
-                              <XCircleIcon className="w-4 h-4 mr-1" /> Refuser
+                            <InfoIcon className="w-4 h-4 mr-2" /> Voir détail
                             </button>
-                          </div>
                         </div>
                       </motion.div>
                     ))}

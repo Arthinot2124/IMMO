@@ -33,6 +33,7 @@ class Appointment extends Model
         'user_id',
         'appointment_date',
         'confirmation_status',
+        'comments',
     ];
 
     /**
