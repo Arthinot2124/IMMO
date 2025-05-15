@@ -106,4 +106,12 @@ class Property extends Model
     {
         return $this->hasMany(PropertyView::class, 'property_id', 'property_id');
     }
+
+    /**
+     * Get the favorites for the property.
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class, 'property_id', 'property_id');
+    }
 }

@@ -324,4 +324,75 @@ class UserController extends Controller
             'message' => 'Mot de passe réinitialisé avec succès.'
         ]);
     }
+
+    /**
+     * Update user profile image
+     */
+    public function updateProfileImage(Request $request, User $user)
+    {
+        try {
+            $request->validate([
+                'profile_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
+
+            if ($request->hasFile('profile_image')) {
+                // Supprimer l'ancienne image si elle existe
+                if ($user->profile_image) {
+                    $oldImagePath = public_path('storage/' . $user->profile_image);
+                    if (file_exists($oldImagePath)) {
+                        unlink($oldImagePath);
+                    }
+                }
+
+                // Sauvegarder la nouvelle image
+                $image = $request->file('profile_image');
+                $imageName = 'profile_' . $user->user_id . '_' . time() . '.' . $image->getClientOriginalExtension();
+                $image->storeAs('public/profile_images', $imageName);
+
+                // Mettre à jour le chemin de l'image dans la base de données
+                $user->update([
+                    'profile_image' => 'profile_images/' . $imageName
+                ]);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Profile image updated successfully',
+                    'data' => [
+                        'profile_image' => asset('storage/' . $user->profile_image)
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No image file provided'
+            ], Response::HTTP_BAD_REQUEST);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get user profile image
+     */
+    public function getProfileImage(User $user)
+    {
+        if ($user->profile_image) {
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'profile_image' => asset('storage/' . $user->profile_image)
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'No profile image found'
+        ], Response::HTTP_NOT_FOUND);
+    }
 }

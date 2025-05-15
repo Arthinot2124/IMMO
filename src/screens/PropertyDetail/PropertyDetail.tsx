@@ -91,6 +91,7 @@ export const PropertyDetail = (): JSX.Element => {
   const [ratingsCount, setRatingsCount] = useState<number>(0);
   const [userRating, setUserRating] = useState<number>(0);
   const [propertyLoading, setPropertyLoading] = useState(true);
+  const [addingToFavorites, setAddingToFavorites] = useState(false); // Nouvel état pour le chargement des favoris
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -165,28 +166,147 @@ export const PropertyDetail = (): JSX.Element => {
       // 2. Vérifier si l'utilisateur a déjà noté cette propriété
       const currentUser = authService.getCurrentUser();
       if (currentUser) {
-        const userRatingResponse = await apiService.get<ApiResponse<Rating[]>>(
-          `/users/${currentUser.user_id}/ratings?property_id=${propertyId}`
-        );
-        
-        if (userRatingResponse.data.status === 'success') {
-          if (userRatingResponse.data.data && userRatingResponse.data.data.length > 0) {
-            const userNote = Number(userRatingResponse.data.data[0].rating);
-            setUserRating(userNote);
-            console.log(`[PropertyDetail] Note de l'utilisateur trouvée: ${userNote}`);
-          } else {
-            setUserRating(0);
-            console.log(`[PropertyDetail] Aucune note de l'utilisateur trouvée`);
+        try {
+          const userRatingResponse = await apiService.get<ApiResponse<Rating[]>>(
+            `/users/${currentUser.user_id}/ratings?property_id=${propertyId}`
+          );
+          
+          if (userRatingResponse.data.status === 'success') {
+            if (userRatingResponse.data.data && userRatingResponse.data.data.length > 0) {
+              const userNote = Number(userRatingResponse.data.data[0].rating);
+              setUserRating(userNote);
+              console.log(`[PropertyDetail] Note de l'utilisateur trouvée: ${userNote}`);
+            } else {
+              setUserRating(0);
+              console.log(`[PropertyDetail] Aucune note de l'utilisateur trouvée`);
+            }
           }
+        } catch (error: any) {
+          console.error(`[PropertyDetail] Erreur lors de la vérification des notes de l'utilisateur:`, error);
+          // Spécifiquement pour l'erreur 429
+          if (error.response?.status === 429) {
+            console.warn("Trop de requêtes effectuées, veuillez réessayer plus tard");
+          }
+          setUserRating(0);
         }
       } else {
         setUserRating(0);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[PropertyDetail] Erreur lors du chargement des notations:`, error);
+      // Spécifiquement pour l'erreur 429
+      if (error.response?.status === 429) {
+        console.warn("Trop de requêtes effectuées, veuillez réessayer plus tard");
+      }
       setAverageRating(0);
       setRatingsCount(0);
       setUserRating(0);
+    }
+  };
+  
+  // Fonction pour vérifier si la propriété est dans les favoris de l'utilisateur
+  const checkFavoriteStatus = async (propertyId: string) => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      setIsFavorite(false);
+      return;
+    }
+    
+    try {
+      // Vérifier d'abord dans localStorage
+      const favoritesInStorage = localStorage.getItem('userFavorites');
+      if (favoritesInStorage) {
+        const favorites = JSON.parse(favoritesInStorage);
+        const isInFavorites = favorites.some((fav: number) => fav === Number(propertyId));
+        setIsFavorite(isInFavorites);
+        console.log(`[PropertyDetail] Statut favori (localStorage): ${isInFavorites}`);
+        return;
+      }
+      
+      // Essayer avec l'API si disponible
+      try {
+        const response = await apiService.get<ApiResponse<any>>(`/properties/${propertyId}/favorites`);
+        
+        if (response.data && response.data.status === 'success') {
+          // Si des données sont retournées, cela signifie que la propriété est dans les favoris
+          setIsFavorite(response.data.data && response.data.data.length > 0);
+          console.log(`[PropertyDetail] Statut favori (API): ${response.data.data && response.data.data.length > 0}`);
+        } else {
+          setIsFavorite(false);
+        }
+      } catch (apiError) {
+        console.warn("[PropertyDetail] API de favoris non disponible, utilisation du localStorage");
+        setIsFavorite(false);
+      }
+    } catch (error) {
+      console.error("[PropertyDetail] Erreur lors de la vérification des favoris:", error);
+      setIsFavorite(false);
+    }
+  };
+  
+  // Fonction pour ajouter/supprimer des favoris
+  const toggleFavorite = async () => {
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser || !id) {
+      // Si l'utilisateur n'est pas connecté, rediriger vers la page de connexion
+      if (!currentUser) {
+        navigate('/login');
+      }
+      return;
+    }
+    
+    setAddingToFavorites(true);
+    
+    try {
+      // Utilisation de localStorage comme solution de repli
+      const favoritesKey = 'userFavorites';
+      let favorites: number[] = [];
+      const storedFavorites = localStorage.getItem(favoritesKey);
+      
+      if (storedFavorites) {
+        favorites = JSON.parse(storedFavorites);
+      }
+      
+      if (isFavorite) {
+        // Supprimer des favoris dans localStorage
+        favorites = favorites.filter(fav => fav !== Number(id));
+        localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+        setIsFavorite(false);
+        console.log("[PropertyDetail] Bien retiré des favoris (localStorage)");
+        
+        // Essayer aussi avec l'API si disponible
+        try {
+          const response = await apiService.delete<ApiResponse<{ success: boolean }>>(`/favorites/${id}?user_id=${currentUser.user_id}`);
+          if (response.data && response.data.status === 'success') {
+            console.log("[PropertyDetail] Bien retiré des favoris (API)");
+          }
+        } catch (apiError) {
+          console.warn("[PropertyDetail] Impossible d'utiliser l'API pour supprimer le favori");
+        }
+      } else {
+        // Ajouter aux favoris dans localStorage
+        favorites.push(Number(id));
+        localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+        setIsFavorite(true);
+        console.log("[PropertyDetail] Bien ajouté aux favoris (localStorage)");
+        
+        // Essayer aussi avec l'API si disponible
+        try {
+          const response = await apiService.post<ApiResponse<{ favorite_id: number }>>(`/favorites`, {
+            property_id: Number(id),
+            user_id: currentUser.user_id
+          });
+          if (response.data && response.data.status === 'success') {
+            console.log("[PropertyDetail] Bien ajouté aux favoris (API)");
+          }
+        } catch (apiError) {
+          console.warn("[PropertyDetail] Impossible d'utiliser l'API pour ajouter le favori");
+        }
+      }
+    } catch (error) {
+      console.error("[PropertyDetail] Erreur lors de la mise à jour des favoris:", error);
+    } finally {
+      setAddingToFavorites(false);
     }
   };
   
@@ -217,9 +337,19 @@ export const PropertyDetail = (): JSX.Element => {
         } else {
           throw new Error("Format de réponse inattendu");
         }
+
+        // Vérifier si la propriété est dans les favoris
+        await checkFavoriteStatus(id);
       } catch (err: any) {
         console.error(`[PropertyDetail] Erreur lors du chargement de la propriété:`, err);
-        setError(err.response?.data?.message || err.message || "Erreur lors du chargement des données");
+        
+        // Spécifiquement pour l'erreur 429
+        if (err.response?.status === 429) {
+          setError("Trop de requêtes. Veuillez patienter quelques instants et rafraîchir la page.");
+        } else {
+          setError(err.response?.data?.message || err.message || "Erreur lors du chargement des données");
+        }
+        
         // Utiliser les données de secours
         setProperty({
           ...fallbackProperty, 
@@ -318,33 +448,37 @@ export const PropertyDetail = (): JSX.Element => {
   // Mise à jour pour la section de notation
   const renderRatingSection = () => {
     const isOwner = isPropertyOwner();
+    const isAdmin = authService.isAdmin();
+    
+    // Déterminer quelle note afficher dans les étoiles
+    const displayRating = isAdmin ? userRating : averageRating;
     
     return (
       <div className="flex flex-col items-end">
         <div className="flex items-center gap-2 mb-2">
           <span className={`${textSecondaryColor} text-sm font-medium`}>
-            {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'} ({ratingsCount} avis)
+            {averageRating > 0 ? averageRating.toFixed(1) : 'N/A'}
           </span>
           <StarIcon className={`w-5 h-5 ${textColor}`} fill="currentColor" />
         </div>
-        <div className={`${!isLoggedIn || isOwner ? '' : 'border border-dashed border-gray-300 hover:border-gray-400 p-2 rounded-lg transition-colors'}`}>
+        <div className={`${!isLoggedIn || isOwner || !isAdmin ? '' : 'border border-dashed border-gray-300 hover:border-gray-400 p-2 rounded-lg transition-colors'}`}>
           <StarRating 
             key={`property-rating-${id}`}
             propertyId={Number(id)} 
-            userRating={userRating}
+            userRating={displayRating}
             onRatingChange={handleRatingChange}
-            readOnly={!isLoggedIn || isOwner}
+            readOnly={!isLoggedIn || isOwner || !isAdmin}
             size="md"
             isLightMode={isLightMode}
           />
         </div>
         {!isLoggedIn && (
-          <span className={`text-xs ${textSecondaryColor} mt-2`}>Connectez-vous pour noter</span>
+          <span className={`text-xs ${textSecondaryColor} mt-2`}>Connectez-vous pour voir les notes</span>
         )}
-        {isLoggedIn && isOwner && (
+        {isLoggedIn && isOwner && isAdmin && (
           <span className={`text-xs ${isLightMode ? "text-red-600" : "text-red-400"} mt-2`}>Vous ne pouvez pas noter votre propre bien</span>
         )}
-        {isLoggedIn && !isOwner && userRating === 0 && (
+        {isLoggedIn && isAdmin && !isOwner && userRating === 0 && (
           <span className={`text-xs ${textSecondaryColor} mt-2`}>Cliquez pour noter</span>
         )}
       </div>
@@ -436,12 +570,17 @@ export const PropertyDetail = (): JSX.Element => {
                   </div>
                 )}
                 <button 
-                  onClick={() => setIsFavorite(!isFavorite)}
-                  className={`absolute top-4 right-4 ${favoriteButtonBg} p-2 rounded-full`}
+                  onClick={toggleFavorite}
+                  disabled={addingToFavorites || !isLoggedIn}
+                  className={`absolute top-4 right-4 ${favoriteButtonBg} p-2 rounded-full ${!isLoggedIn ? 'opacity-70' : ''}`}
                 >
-                  <HeartIcon 
-                    className={`w-6 h-6 ${isFavorite ? 'text-red-500 fill-red-500' : isLightMode ? 'text-[#0f172a]' : 'text-white'}`} 
-                  />
+                  {addingToFavorites ? (
+                    <div className={`w-6 h-6 border-2 ${borderColor} border-t-transparent rounded-full animate-spin`}></div>
+                  ) : (
+                    <HeartIcon 
+                      className={`w-6 h-6 ${isFavorite ? 'text-red-500 fill-red-500' : isLightMode ? 'text-[#0f172a]' : 'text-white'}`} 
+                    />
+                  )}
                 </button>
               </div>
               
@@ -517,9 +656,11 @@ export const PropertyDetail = (): JSX.Element => {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
             >
-              {property.status === "Réservé" ? (
+              {property.status === "Réservé" || property.status === "Vendu" || property.status === "Loué" ? (
                 <div className={`col-span-full text-center ${isLightMode ? "text-red-600" : "text-red-400"} font-semibold py-4 ${isLightMode ? "bg-red-50" : "bg-red-900/20"} rounded-lg border ${isLightMode ? "border-red-200" : "border-red-800/30"}`}>
-                  Le bien que vous consultez est déjà Réservé
+                  {property.status === "Réservé" && "Le bien que vous consultez est déjà Réservé"}
+                  {property.status === "Vendu" && "Le bien que vous consultez est déjà Vendu"}
+                  {property.status === "Loué" && "Le bien que vous consultez est déjà Loué"}
                 </div>
               ) : (
                 <>
@@ -547,17 +688,16 @@ export const PropertyDetail = (): JSX.Element => {
                       </>
                     )}
                   </button>
-                  
-                  </>
+                </>
               )}
-                  <button 
-                    className={`flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
-                    onClick={() => navigate(`/property/${propertyId}/contact`)}
-                  >
-                    <MessageSquareIcon size={20} className={textColor} />
-                    <span>Contacter l'agence</span>
-                  </button>
-            
+              
+              <button 
+                className={`flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"} ${property.status === "Réservé" || property.status === "Vendu" || property.status === "Loué" ? "col-span-full" : ""}`}
+                onClick={() => navigate(`/property/${propertyId}/contact`)}
+              >
+                <MessageSquareIcon size={20} className={textColor} />
+                <span>Contacter l'agence</span>
+              </button>
             </motion.div>
 
             {/* Share Button */}
@@ -567,10 +707,10 @@ export const PropertyDetail = (): JSX.Element => {
               transition={{ duration: 0.5, delay: 0.4 }}
               className="text-center mb-12"
             >
-              <button className={`inline-flex items-center gap-2 ${textColor} hover:underline`}>
+              {/* <button className={`inline-flex items-center gap-2 ${textColor} hover:underline`}>
                 <ShareIcon size={18} />
                 <span>Partager cette annonce</span>
-              </button>
+              </button> */}
             </motion.div>
           </>
         ) : null}

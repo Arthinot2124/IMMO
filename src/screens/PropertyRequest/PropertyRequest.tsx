@@ -92,7 +92,7 @@ export const PropertyRequest = (): JSX.Element => {
     localStorage.setItem('isLightMode', newMode.toString());
   };
 
-  // Récupérer l'ID utilisateur au chargement
+  // Récupérer l'ID utilisateur et la catégorie sélectionnée au chargement
   useEffect(() => {
     // Récupérer l'ID utilisateur depuis le localStorage
     const storedUserId = localStorage.getItem('user_id');
@@ -102,6 +102,16 @@ export const PropertyRequest = (): JSX.Element => {
       // Si aucun utilisateur n'est connecté, rediriger vers la page de connexion
       navigate('/');
       setError("Vous devez être connecté pour soumettre une demande de propriété");
+    }
+    
+    // Récupérer la catégorie sélectionnée depuis le localStorage
+    const selectedCategory = localStorage.getItem('selected_category');
+    if (selectedCategory) {
+      setFormData(prev => ({
+        ...prev,
+        category: selectedCategory
+      }));
+      console.log("Catégorie récupérée du localStorage:", selectedCategory);
     }
   }, [navigate]);
 

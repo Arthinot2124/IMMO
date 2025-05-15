@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\AdCampaignController;
+use App\Http\Controllers\Api\FavoriteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,6 +92,14 @@ Route::post('/users/{user}/notifications/mark-all-read', [NotificationController
 Route::apiResource('ratings', RatingController::class);
 Route::get('/users/{user}/ratings', [RatingController::class, 'userRatings']);
 
+// Favorites
+Route::get('/favorites', [FavoriteController::class, 'index']);
+Route::post('/favorites', [FavoriteController::class, 'store']);
+Route::delete('/favorites/{property}', [FavoriteController::class, 'destroy']);
+Route::get('/users/{user}/favorites', [FavoriteController::class, 'userFavorites']);
+Route::get('/properties/{property}/favorites', [FavoriteController::class, 'checkFavorite']);
+Route::get('/users/{user}/favorite-properties', [FavoriteController::class, 'getFavoriteProperties']);
+
 // Ad Campaigns
 Route::apiResource('ad-campaigns', AdCampaignController::class);
 Route::get('/users/{admin}/ad-campaigns', [AdCampaignController::class, 'adminCampaigns']);
@@ -122,3 +131,7 @@ Route::get('/dashboard/stats', function (Request $request) {
 // Ajouter les routes d'authentification pour le mot de passe oublié
 Route::post('/auth/forgot-password', [UserController::class, 'forgotPassword']);
 Route::post('/auth/reset-password', [UserController::class, 'resetPassword']);
+
+// Profile image routes
+Route::post('/users/{user}/profile-image', [UserController::class, 'updateProfileImage']);
+Route::get('/users/{user}/profile-image', [UserController::class, 'getProfileImage']);

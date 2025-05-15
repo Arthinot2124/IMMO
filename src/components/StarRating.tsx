@@ -19,6 +19,15 @@ interface StarRatingProps {
   isLightMode?: boolean;
 }
 
+interface UserRating {
+  rating_id: number;
+  property_id: number;
+  user_id: number;
+  rating: number;
+  comment?: string;
+  created_at: string;
+}
+
 const StarRating: React.FC<StarRatingProps> = ({
   propertyId,
   initialRating = 0,
@@ -34,6 +43,8 @@ const StarRating: React.FC<StarRatingProps> = ({
   const [canRate, setCanRate] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [ratingId, setRatingId] = useState<number | null>(null);
   
   // Styles basés sur les props
   const starSize = { sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-6 h-6' }[size];
@@ -52,6 +63,14 @@ const StarRating: React.FC<StarRatingProps> = ({
     setCanRate(false);
     setError('');
     setSuccess(false);
+    setIsUpdating(false);
+    setRatingId(null);
+    
+    // Définir la note visible immédiatement si userRating est fourni
+    if (userRating > 0) {
+      console.log(`[StarRating] userRating fourni: ${userRating}`);
+      setRating(userRating);
+    }
     
     const checkIfUserCanRate = async () => {
       // Si le composant est en mode lecture seule, on arrête ici
@@ -64,6 +83,12 @@ const StarRating: React.FC<StarRatingProps> = ({
       const currentUser = authService.getCurrentUser();
       if (!currentUser) {
         console.log(`[StarRating] Utilisateur non connecté`);
+        return;
+      }
+      
+      // Vérifier si l'utilisateur est admin
+      if (currentUser.role_id !== 1) {
+        console.log(`[StarRating] Utilisateur non admin, notation impossible`);
         return;
       }
       
@@ -87,13 +112,18 @@ const StarRating: React.FC<StarRatingProps> = ({
           if (propertyRatings.length > 0) {
             // L'utilisateur a déjà noté cette propriété spécifique
             const userNote = Number(propertyRatings[0].rating);
-            console.log(`[StarRating] Utilisateur a déjà noté la propriété #${propertyIdNum}: ${userNote}`);
+            const ratingId = Number(propertyRatings[0].rating_id);
+            console.log(`[StarRating] Utilisateur a déjà noté la propriété #${propertyIdNum}: ${userNote} (id: ${ratingId})`);
             setRating(userNote);
-            setCanRate(false);
+            setRatingId(ratingId);
+            // Pour les admins, ils peuvent toujours modifier leur note
+            setCanRate(true);
+            setIsUpdating(true);
           } else {
             // L'utilisateur peut noter cette propriété
             console.log(`[StarRating] Utilisateur peut noter la propriété #${propertyIdNum} - aucune note existante`);
             setCanRate(true);
+            setIsUpdating(false);
             setRating(0); // S'assurer que rating est à 0
           }
         }
@@ -111,7 +141,11 @@ const StarRating: React.FC<StarRatingProps> = ({
       if (userRating > 0) {
         console.log(`[StarRating] userRating fourni: ${userRating}`);
         setRating(userRating);
-        setCanRate(false);
+        // Pour les admins, ils peuvent toujours modifier leur note existante
+        if (!readOnly && authService.isAdmin()) {
+          setCanRate(true);
+          setIsUpdating(true);
+        }
       } else {
         console.log(`[StarRating] Pas de userRating fourni ou userRating=0, vérification nécessaire`);
       }
@@ -124,7 +158,7 @@ const StarRating: React.FC<StarRatingProps> = ({
     };
   }, [propertyId, readOnly, userRating]);
   
-  // Envoi d'une nouvelle note
+  // Envoi d'une nouvelle note ou mise à jour d'une note existante
   const handleRating = async (newRating: number) => {
     // Si l'utilisateur ne peut pas noter, ne rien faire
     if (!canRate) {
@@ -139,25 +173,53 @@ const StarRating: React.FC<StarRatingProps> = ({
       return;
     }
     
+    // Vérifier si l'utilisateur est admin
+    if (currentUser.role_id !== 1) {
+      setError('Seuls les administrateurs peuvent noter');
+      return;
+    }
+    
     try {
       // S'assurer que propertyId est un nombre
       const propertyIdNum = Number(propertyId);
-      console.log(`[StarRating] Envoi note ${newRating} pour propriété #${propertyIdNum}`);
       
-      // Appel API pour enregistrer la note
-      const response = await apiService.post<ApiResponse>('/ratings', {
-        property_id: propertyIdNum,
-        user_id: currentUser.user_id,
-        rating: newRating,
-      });
+      // Montrer un feedback immédiat à l'utilisateur
+      setRating(newRating);
       
-      console.log(`[StarRating] Réponse API envoi:`, response.data);
+      // Ajouter un délai court avant l'envoi pour éviter les erreurs 429
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let response;
+      
+      if (isUpdating && ratingId) {
+        // Mise à jour d'une note existante
+        console.log(`[StarRating] Mise à jour note ${newRating} pour propriété #${propertyIdNum}, rating_id=${ratingId}`);
+        response = await apiService.put<ApiResponse>(`/ratings/${ratingId}`, {
+          property_id: propertyIdNum,
+          user_id: currentUser.user_id,
+          rating: newRating,
+        });
+      } else {
+        // Création d'une nouvelle note
+        console.log(`[StarRating] Création note ${newRating} pour propriété #${propertyIdNum}`);
+        response = await apiService.post<ApiResponse>('/ratings', {
+          property_id: propertyIdNum,
+          user_id: currentUser.user_id,
+          rating: newRating,
+        });
+      }
+      
+      console.log(`[StarRating] Réponse API ${isUpdating ? 'modification' : 'création'}:`, response.data);
       
       if (response.data.status === 'success') {
         // Mettre à jour l'état local
-        setRating(newRating);
-        setCanRate(false);
         setSuccess(true);
+        
+        // Si c'était une création, récupérer l'ID de la note créée
+        if (!isUpdating && response.data.data && response.data.data.rating_id) {
+          setRatingId(response.data.data.rating_id);
+          setIsUpdating(true);
+        }
         
         // Informer le parent du changement
         if (onRatingChange) {
@@ -173,6 +235,18 @@ const StarRating: React.FC<StarRatingProps> = ({
       }
     } catch (error: any) {
       console.error(`[StarRating] Erreur envoi:`, error);
+      
+      if (error.response?.status === 429) {
+        setError('Trop de tentatives, veuillez patienter un moment');
+        
+        // Réessayer automatiquement après 3 secondes
+        setTimeout(() => {
+          setError('');
+          handleRating(newRating);
+        }, 3000);
+        return;
+      }
+      
       setError(error.response?.data?.message || 'Erreur lors de l\'envoi');
       
       // Masquer le message d'erreur après 3 secondes
@@ -184,53 +258,60 @@ const StarRating: React.FC<StarRatingProps> = ({
   
   // Rendu des étoiles
   const renderStars = () => {
-    return [1, 2, 3, 4, 5].map((star) => (
-      <button
-        key={star}
-        type="button"
-        disabled={!canRate}
-        className={`${starSize} transition-colors duration-200 focus:outline-none mr-1.5 ${
-          canRate ? 'cursor-pointer' : 'cursor-default'
-        }`}
-        onClick={() => handleRating(star)}
-        onMouseEnter={() => canRate && setHover(star)}
-        onMouseLeave={() => canRate && setHover(0)}
-      >
-        <StarIcon 
-          className={`${
-            (hover || rating) >= star ? filledColor : emptyColor
-          } transition-all duration-200 ${
-            canRate ? 'hover:scale-110' : ''
+    return [1, 2, 3, 4, 5].map((star) => {
+      // Déterminer si l'étoile doit être remplie
+      const isFilled = (hover && canRate) ? 
+        hover >= star : 
+        rating >= star;
+      
+      return (
+        <button
+          key={star}
+          type="button"
+          disabled={!canRate}
+          className={`${starSize} transition-colors duration-200 focus:outline-none mr-1.5 ${
+            canRate ? 'cursor-pointer' : 'cursor-default'
           }`}
-          fill={(hover || rating) >= star ? 'currentColor' : 'none'}
-          strokeWidth={1.5}
-        />
-      </button>
-    ));
+          onClick={() => handleRating(star)}
+          onMouseEnter={() => canRate && setHover(star)}
+          onMouseLeave={() => canRate && setHover(0)}
+        >
+          <StarIcon 
+            className={`${
+              isFilled ? filledColor : emptyColor
+            } transition-all duration-200 ${
+              canRate ? 'hover:scale-110' : ''
+            }`}
+            fill={isFilled ? 'currentColor' : 'none'}
+            strokeWidth={1.5}
+          />
+        </button>
+      );
+    });
   };
   
   return (
     <div className="relative">
       <div className="flex items-center">
         {renderStars()}
-        
-        {success && (
-          <span className={`ml-2 flex items-center ${successColor} text-xs animate-fade-in`}>
-            <CheckCircleIcon className="w-3 h-3 mr-1" />
-            Note enregistrée
-          </span>
-        )}
-        
-        {error && (
-          <span className={`ml-2 ${errorColor} text-xs animate-fade-in`}>
-            {error}
-          </span>
-        )}
       </div>
+      
+      {success && (
+        <div className={`flex items-center ${successColor} text-xs animate-fade-in mt-1`}>
+          <CheckCircleIcon className="w-3 h-3 mr-1" />
+          {isUpdating ? 'Note modifiée' : 'Note enregistrée'}
+        </div>
+      )}
+      
+      {error && (
+        <div className={`${errorColor} text-xs animate-fade-in mt-1`}>
+          {error}
+        </div>
+      )}
       
       {canRate && (
         <div className="absolute -top-8 left-0 right-0 text-center text-xs bg-gray-800 text-white py-1 px-2 rounded opacity-90 z-10 hidden group-hover:block">
-          Cliquez pour noter
+          {isUpdating ? 'Cliquez pour modifier' : 'Cliquez pour noter'}
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { BellIcon, HomeIcon, SettingsIcon, UserIcon, LogOutIcon, Edit2Icon, SaveIcon, AlertCircleIcon, XIcon, SunIcon, MoonIcon } from "lucide-react";
@@ -14,13 +14,19 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+// Étendre l'interface UserData pour inclure profile_image
+interface ExtendedUserData extends UserData {
+  profile_image?: string;
+  local_profile_image?: boolean;
+}
+
 export const Profile = (): JSX.Element => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [userData, setUserData] = useState<ExtendedUserData | null>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLightMode, setIsLightMode] = useState(() => {
     // Récupérer la préférence depuis localStorage
@@ -33,6 +39,13 @@ export const Profile = (): JSX.Element => {
     phone: "",
     address: ""
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(() => {
+    // Récupérer l'image du localStorage au chargement
+    return localStorage.getItem('userProfileImage');
+  });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fonction pour rediriger vers le tableau de bord approprié selon le rôle de l'utilisateur
   const navigateToDashboard = () => {
@@ -90,6 +103,18 @@ export const Profile = (): JSX.Element => {
     };
   }, [isLightMode]);
 
+  // Effacer automatiquement le message de succès après 3 secondes
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
+      
+      // Nettoyer le timer si le composant est démonté ou si le message change
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
   // Récupérer les données de l'utilisateur au chargement du composant
   useEffect(() => {
     // D'abord, vérifier si l'utilisateur est connecté
@@ -101,6 +126,9 @@ export const Profile = (): JSX.Element => {
       return;
     }
     
+    // Traiter currentUser comme ExtendedUserData
+    const extendedUser = currentUser as ExtendedUserData;
+    
     // Charger les données utilisateur depuis l'API pour obtenir les informations les plus récentes
     const fetchUserData = async () => {
       setIsLoading(true);
@@ -108,7 +136,7 @@ export const Profile = (): JSX.Element => {
       
       try {
         // Récupérer les données de l'utilisateur connecté depuis l'API
-        const response = await apiService.get<ApiResponse<UserData>>(`/users/${currentUser.user_id}`);
+        const response = await apiService.get<ApiResponse<ExtendedUserData>>(`/users/${currentUser.user_id}`);
         
         if (response.data && response.data.status === "success" && response.data.data) {
           const user = response.data.data;
@@ -120,26 +148,41 @@ export const Profile = (): JSX.Element => {
             phone: user.phone || "",
             address: user.address || ""
           });
+          
+          // Si l'utilisateur a une image de profil, l'afficher
+          if (user.profile_image) {
+            setImagePreview(getMediaUrl(user.profile_image));
+          }
         } else {
           // Utiliser les données du localStorage si l'API échoue
-          setUserData(currentUser);
+          setUserData(extendedUser);
           setFormData({
-            full_name: currentUser.full_name || "",
-            email: currentUser.email || "",
-            phone: currentUser.phone || "",
-            address: currentUser.address || ""
+            full_name: extendedUser.full_name || "",
+            email: extendedUser.email || "",
+            phone: extendedUser.phone || "",
+            address: extendedUser.address || ""
           });
+          
+          // Si l'utilisateur a une image de profil, l'afficher
+          if (extendedUser.profile_image) {
+            setImagePreview(getMediaUrl(extendedUser.profile_image));
+          }
         }
       } catch (err) {
         console.error("Erreur lors du chargement des données utilisateur:", err);
         // En cas d'erreur, utiliser les données du localStorage
-        setUserData(currentUser);
+        setUserData(extendedUser);
         setFormData({
-          full_name: currentUser.full_name || "",
-          email: currentUser.email || "",
-          phone: currentUser.phone || "",
-          address: currentUser.address || ""
+          full_name: extendedUser.full_name || "",
+          email: extendedUser.email || "",
+          phone: extendedUser.phone || "",
+          address: extendedUser.address || ""
         });
+        
+        // Si l'utilisateur a une image de profil, l'afficher
+        if (extendedUser.profile_image) {
+          setImagePreview(getMediaUrl(extendedUser.profile_image));
+        }
       } finally {
         setIsLoading(false);
       }
@@ -165,11 +208,17 @@ export const Profile = (): JSX.Element => {
     
     try {
       // Envoyer les modifications au backend
-      const response = await apiService.put<ApiResponse<UserData>>(`/users/${userData.user_id}`, formData);
+      const response = await apiService.put<ApiResponse<ExtendedUserData>>(`/users/${userData.user_id}`, formData);
       
       if (response.data && response.data.status === "success") {
         // Mettre à jour les données stockées localement
         const updatedUser = { ...userData, ...formData };
+        
+        // Si une nouvelle image a été sélectionnée, l'envoyer séparément
+        if (imageFile) {
+          await handleImageUpload();
+        }
+        
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setUserData(updatedUser);
         setSuccessMessage("Profil mis à jour avec succès");
@@ -186,6 +235,122 @@ export const Profile = (): JSX.Element => {
       setIsLoading(false);
     }
   };
+
+  // Fonction pour gérer la sélection d'une image
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("Sélection de fichier déclenchée");
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      console.log("Fichier sélectionné:", files[0].name);
+      const selectedFile = files[0];
+      setImageFile(selectedFile);
+      
+      // Créer un aperçu de l'image
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          console.log("Image chargée avec succès");
+          const imageDataUrl = event.target.result as string;
+          setImagePreview(imageDataUrl);
+          // Sauvegarder l'image dans localStorage
+          localStorage.setItem('userProfileImage', imageDataUrl);
+          
+          // Si nous avons les données utilisateur, mettons à jour le localStorage
+          if (userData) {
+            const updatedUser = { 
+              ...userData, 
+              local_profile_image: true // Indicateur que nous avons une image locale
+            };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUserData(updatedUser);
+          }
+          
+          // Déclencher un événement personnalisé pour informer les autres composants du changement
+          window.dispatchEvent(new CustomEvent('profileImageUpdated', { 
+            detail: { imageUrl: imageDataUrl } 
+          }));
+          
+          // Afficher un message de confirmation
+          setSuccessMessage("Image de profil sélectionnée avec succès");
+        }
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+  };
+
+  // Fonction pour ouvrir la boîte de dialogue de sélection de fichier
+  const openFileSelector = () => {
+    console.log("Tentative d'ouverture du sélecteur de fichier dans Profile");
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    } else {
+      console.error("Référence au fileInput non disponible dans Profile");
+    }
+  };
+
+  // Fonction pour uploader l'image (à utiliser quand une API sera disponible)
+  const handleImageUpload = async () => {
+    if (!userData || !imageFile) return;
+    
+    setIsUploadingImage(true);
+    setError(null);
+
+    try {
+      // Comme nous n'avons pas encore d'API, nous simulons simplement un délai
+      // et nous gardons l'image dans localStorage
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSuccessMessage(prevMessage => prevMessage ? 
+        `${prevMessage} et image de profil mise à jour` : 
+        "Image de profil mise à jour avec succès");
+      setImageFile(null);
+    } catch (err: any) {
+      console.error("Erreur lors du téléchargement de l'image:", err);
+      setError("Une erreur est survenue lors du traitement de l'image");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  // Fonction pour supprimer l'image de profil
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setImageFile(null);
+    localStorage.removeItem('userProfileImage');
+    
+    // Mettre à jour les données utilisateur
+    if (userData) {
+      const updatedUser = { 
+        ...userData, 
+        local_profile_image: false 
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUserData(updatedUser);
+    }
+    
+    // Informer les autres composants de la suppression de l'image
+    window.dispatchEvent(new CustomEvent('profileImageUpdated', { 
+      detail: { imageUrl: null } 
+    }));
+    
+    setSuccessMessage("Image de profil supprimée");
+  };
+
+  // Écouter les changements d'image de profil depuis d'autres composants
+  useEffect(() => {
+    const handleProfileImageUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{imageUrl: string | null}>;
+      setImagePreview(customEvent.detail.imageUrl);
+    };
+    
+    // Ajouter l'écouteur d'événement
+    window.addEventListener('profileImageUpdated', handleProfileImageUpdate as EventListener);
+    
+    // Nettoyer l'écouteur d'événement
+    return () => {
+      window.removeEventListener('profileImageUpdated', handleProfileImageUpdate as EventListener);
+    };
+  }, []);
 
   const handleLogout = () => {
     authService.logout();
@@ -353,12 +518,57 @@ export const Profile = (): JSX.Element => {
 
           <div className="flex flex-col sm:flex-row gap-6 sm:gap-10">
             <div className="flex flex-col items-center">
-              <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full ${isLightMode ? "bg-[#0150BC]/10" : "bg-[#59e0c5]/20"} border-4 ${borderColor} flex items-center justify-center mb-3`}>
-                <UserIcon className={`w-14 h-14 ${textColor}`} />
+              <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full ${isLightMode ? "bg-[#0150BC]/10" : "bg-[#59e0c5]/20"} border-4 ${borderColor} flex items-center justify-center mb-3 overflow-hidden relative`}>
+                {imagePreview ? (
+                  <>
+                    <img
+                      src={imagePreview}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                    {isEditing && (
+                      <button
+                        onClick={handleRemoveImage}
+                        className={`absolute top-0 right-0 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-full p-1 m-1`}
+                        title="Supprimer l'image"
+                      >
+                        <XIcon size={16} />
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <UserIcon className={`w-14 h-14 ${textColor}`} />
+                )}
               </div>
-              <button className={`mt-2 text-sm ${textColor} hover:underline`}>
-                Changer l'avatar
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                id="profile-image-input"
+              />
+              <button 
+                onClick={openFileSelector}
+                className={`mt-2 text-sm ${textColor} hover:underline`}
+                disabled={isUploadingImage}
+                type="button"
+              >
+                {isUploadingImage ? (
+                  <span className="flex items-center">
+                    <div className={`w-3 h-3 border-2 ${textColor} border-t-transparent rounded-full animate-spin mr-1`}></div>
+                    Téléchargement...
+                  </span>
+                ) : (
+                  "Changer l'avatar"
+                )}
               </button>
+              <label 
+                htmlFor="profile-image-input" 
+                className={`mt-1 text-xs ${textSecondaryColor} hover:underline cursor-pointer`}
+              >
+                ou cliquez ici pour changer
+              </label>
             </div>
 
             <div className="flex-1 space-y-4">

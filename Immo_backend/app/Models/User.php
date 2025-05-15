@@ -132,4 +132,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(AdCampaign::class, 'admin_id', 'user_id');
     }
+
+    /**
+     * Get the favorites for the user.
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class, 'user_id', 'user_id');
+    }
+
+    /**
+     * Check if the user is an admin.
+     *
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        return $this->role_id === 1; // Supposant que le role_id 1 est Admin
+    }
 }

@@ -15,6 +15,7 @@ import { Checkout } from "./screens/Checkout";
 import { Guide } from "./screens/Guide";
 import { ContactAgency } from "./screens/ContactAgency/ContactAgency";
 import { Parametres } from "./screens/Parametres";
+import { CategorySelection } from "./screens/CategorySelection";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SplashScreen from "./components/SplashScreen";
 import BackButtonHandler from "./components/BackButtonHandler";
@@ -42,6 +43,7 @@ createRoot(document.getElementById("app") as HTMLElement).render(
         <Route path="/property/:id" element={<PropertyDetail />} />
         <Route path="/property/:id/contact" element={<ContactAgency />} />
         <Route path="/property/:id/order" element={<PropertyOrder />} />
+        <Route path="/category-selection" element={<CategorySelection />} />
         <Route path="/property-request" element={<PropertyRequest />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/dashboard" element={<Dashboard />} />

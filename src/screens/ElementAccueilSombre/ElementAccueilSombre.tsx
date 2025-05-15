@@ -397,7 +397,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
               border: cardBorderStyle
             }}
             className={`rounded-xl overflow-hidden animate-on-mount cursor-pointer hover:opacity-90 transition-opacity small-screen-feature-card small-screen-sell-card`}
-            onClick={() => navigate('/property-request')}
+            onClick={() => navigate('/category-selection')}
           >
             <CardContent className="p-2 sm:p-3 md:p-4">
               <div className="flex justify-between items-start mb-1 sm:mb-2">

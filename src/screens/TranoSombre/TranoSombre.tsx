@@ -904,7 +904,7 @@ export const TranoSombre = (): JSX.Element => {
                     <h3 className={`text-xs xs:text-sm sm:text-base font-semibold ${textColor} mb-1`}>
                       {property.title}
                     </h3>
-                    <p className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor} line-clamp-2`}>
+                    <p className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor} line-clamp-1`}>
                       {property.description || `Située à ${property.location}, surface: ${property.surface}m²`}
                     </p>
                     <div className="flex items-center gap-2 mt-1">

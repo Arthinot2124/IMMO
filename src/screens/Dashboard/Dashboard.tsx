@@ -242,6 +242,7 @@ export const Dashboard = (): JSX.Element => {
           // Correction de la route API selon le backend
           const ordersResponse = await apiService.get<any>(`/users/${userId}/orders`);
           if (ordersResponse.data && ordersResponse.data.status === "success") {
+            console.log("Orders data:", ordersResponse.data.data);
             setOrders(ordersResponse.data.data || []);
           } else {
             console.warn("Réponse inattendue lors du chargement des commandes:", ordersResponse.data);
@@ -281,7 +282,11 @@ export const Dashboard = (): JSX.Element => {
   };
 
   // Formater le prix en Ariary
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | null | undefined): string => {
+    // Add validation to handle invalid or missing price values
+    if (price === null || price === undefined || isNaN(price)) {
+      return "Prix non disponible";
+    }
     return new Intl.NumberFormat('fr-FR').format(price) + ' Ar';
   };
 
@@ -443,6 +448,18 @@ export const Dashboard = (): JSX.Element => {
     }
   };
 
+  // Add a function to handle clicks on property cards
+  const handlePropertyClick = (order: any) => {
+    if (order.property && typeof order.property === 'object') {
+      const propertyId = (order.property as any).property_id;
+      if (propertyId) {
+        navigate(`/property/${propertyId}`);
+      }
+    } else if (order.property_id) {
+      navigate(`/property/${order.property_id}`);
+    }
+  };
+
   // Generate content based on active tab
   const renderTabContent = () => {
     // Afficher le loader si les données sont en cours de chargement
@@ -532,10 +549,13 @@ export const Dashboard = (): JSX.Element => {
                           <div className="flex justify-between items-start mb-2">
                             <h3 className={`${textColor} font-semibold text-sm md:text-base truncate max-w-[70%]`}>{property.title}</h3>
                             <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                              property.status === "Disponible" ? "bg-blue-500/20 text-blue-300" : 
-                              property.status === "Réservé" ? "bg-yellow-500/20 text-yellow-300" :
-                              property.status === "Vendu" ? "bg-green-500/20 text-green-300" :
-                              "bg-purple-500/20 text-purple-300"
+                              property.status === "Disponible" ? 
+                                isLightMode ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300" : 
+                              property.status === "Réservé" ? 
+                                isLightMode ? "bg-yellow-100 text-yellow-700" : "bg-yellow-500/20 text-yellow-300" :
+                              property.status === "Vendu" ? 
+                                isLightMode ? "bg-green-100 text-green-700" : "bg-green-500/20 text-green-300" :
+                                isLightMode ? "bg-purple-100 text-purple-700" : "bg-purple-500/20 text-purple-300"
                             }`}>
                               {property.status}
                             </span>
@@ -593,17 +613,20 @@ export const Dashboard = (): JSX.Element => {
                               )}
                             </div>
                             <span className={`self-start sm:self-auto text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                              property.status === "Disponible" ? "bg-blue-500/20 text-blue-300" : 
-                              property.status === "Réservé" ? "bg-yellow-500/20 text-yellow-300" :
-                              property.status === "Vendu" ? "bg-green-500/20 text-green-300" :
-                              "bg-purple-500/20 text-purple-300"
+                              property.status === "Disponible" ? 
+                                isLightMode ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300" : 
+                              property.status === "Réservé" ? 
+                                isLightMode ? "bg-yellow-100 text-yellow-700" : "bg-yellow-500/20 text-yellow-300" :
+                              property.status === "Vendu" ? 
+                                isLightMode ? "bg-green-100 text-green-700" : "bg-green-500/20 text-green-300" :
+                                isLightMode ? "bg-purple-100 text-purple-700" : "bg-purple-500/20 text-purple-300"
                             }`}>
                               {property.status}
                             </span>
                           </div>
                           
                           {property.description && (
-                            <p className={`${textSecondaryColor} text-xs md:text-sm mt-1 mb-2 line-clamp-2`}>
+                            <p className={`${textSecondaryColor} text-xs md:text-sm mt-1 mb-2 line-clamp-1`}>
                               {property.description}
                             </p>
                           )}
@@ -661,9 +684,11 @@ export const Dashboard = (): JSX.Element => {
                     <p className={`${textSecondaryColor} text-sm`}>Soumis le {formatDate(request.submitted_at)}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full ${
-                    request.status === "Accepté" ? "bg-green-500/20 text-green-300" : 
-                    request.status === "Refusé" ? "bg-red-500/20 text-red-300" :
-                    "bg-yellow-500/20 text-yellow-300"
+                    request.status === "Accepté" ? 
+                      isLightMode ? "bg-green-100 text-green-700" : "bg-green-500/20 text-green-300" : 
+                    request.status === "Refusé" ? 
+                      isLightMode ? "bg-red-100 text-red-700" : "bg-red-500/20 text-red-300" :
+                      isLightMode ? "bg-yellow-100 text-yellow-700" : "bg-yellow-500/20 text-yellow-300"
                   }`}>
                     {request.status}
                   </span>
@@ -702,9 +727,11 @@ export const Dashboard = (): JSX.Element => {
                         {formatDate(appointment.appointment_date)} à {formatTime(appointment.appointment_date)}
                       </p>
                       <span className={`text-xs px-2 py-1 rounded-full ${
-                        appointment.confirmation_status === "Confirmé" ? "bg-green-500/20 text-green-300" : 
-                        appointment.confirmation_status === "Annulé" ? "bg-red-500/20 text-red-300" :
-                        "bg-yellow-500/20 text-yellow-300"
+                        appointment.confirmation_status === "Confirmé" ? 
+                          isLightMode ? "bg-green-100 text-green-700" : "bg-green-500/20 text-green-300" : 
+                        appointment.confirmation_status === "Annulé" ? 
+                          isLightMode ? "bg-red-100 text-red-700" : "bg-red-500/20 text-red-300" :
+                          isLightMode ? "bg-yellow-100 text-yellow-700" : "bg-yellow-500/20 text-yellow-300"
                       }`}>
                         {appointment.confirmation_status}
                       </span>
@@ -728,30 +755,50 @@ export const Dashboard = (): JSX.Element => {
             animate="visible"
             className="mt-6 space-y-4"
           >
-            {orders.length > 0 ? orders.map((order) => (
+            {orders.length > 0 ? orders.map((order) => {
+              console.log("Rendering order:", order);
+              // Safely access price from property or order
+              const propertyPrice = order.property && typeof order.property === 'object' 
+                ? (order.property as any).price 
+                : undefined;
+              const orderPrice = typeof order.price !== 'undefined' ? order.price : undefined;
+              const price = propertyPrice || orderPrice;
+                
+              return (
                 <motion.div
-                key={order.order_id}
+                  key={order.order_id}
                   variants={itemVariants}
-                className={`${itemBgColor} rounded-lg p-4`}
+                  className={`${itemBgColor} rounded-lg p-4 cursor-pointer hover:opacity-90 transition-opacity`}
+                  onClick={() => handlePropertyClick(order)}
                 >
                   <div className="flex justify-between items-start mb-2">
-                  <h3 className={`${textColor} font-medium`}>{order.property.title}</h3>
+                    <h3 className={`${textColor} font-medium`}>
+                      {order.property && typeof order.property === 'object' 
+                        ? (order.property as any).title || 'Propriété'
+                        : 'Propriété'}
+                    </h3>
                     <span className={`text-xs px-2 py-1 rounded-full ${
-                    order.order_status === "Terminé" ? "bg-green-500/20 text-green-300" : 
-                    order.order_status === "Annulé" ? "bg-red-500/20 text-red-300" :
-                    order.order_status === "Confirmé" ? "bg-blue-500/20 text-blue-300" :
-                    "bg-yellow-500/20 text-yellow-300"
+                      order.order_status === "Terminé" ? 
+                        isLightMode ? "bg-green-100 text-green-700" : "bg-green-500/20 text-green-300" : 
+                      order.order_status === "Annulé" ? 
+                        isLightMode ? "bg-red-100 text-red-700" : "bg-red-500/20 text-red-300" :
+                      order.order_status === "Confirmé" ? 
+                        isLightMode ? "bg-blue-100 text-blue-700" : "bg-blue-500/20 text-blue-300" :
+                        isLightMode ? "bg-yellow-100 text-yellow-700" : "bg-yellow-500/20 text-yellow-300"
                     }`}>
-                    {order.order_status}
+                      {order.order_status}
                     </span>
                   </div>
-                <p className={`${textColor} font-medium`}>{formatPrice(order.price)}</p>
+                  <p className={`${textColor} font-medium`}>
+                    {formatPrice(price)} {order.order_type === "Location" ? "/mois" : ""}
+                  </p>
                   <div className="flex justify-between items-center mt-2">
-                  <span className={`${textSecondaryColor} text-sm`}>{order.order_type}</span>
-                  <span className={`${textSecondaryColor} text-sm`}>{formatDate(order.order_date)}</span>
+                    <span className={`${textSecondaryColor} text-sm`}>{order.order_type}</span>
+                    <span className={`${textSecondaryColor} text-sm`}>{formatDate(order.order_date)}</span>
                   </div>
                 </motion.div>
-            )) : (
+              );
+            }) : (
               <div className="text-center py-12">
                 <p className={`${textSecondaryColor}`}>Vous n'avez pas encore d'achats ou de locations</p>
               </div>
@@ -799,7 +846,7 @@ export const Dashboard = (): JSX.Element => {
             <NotificationBadge size="lg" accentColor={accentColor} />
             <SettingsIcon 
               className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`}
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/parametres')}
             />
           </div>
           
@@ -903,7 +950,7 @@ export const Dashboard = (): JSX.Element => {
         {/* Add Property Button */}
         <div className="text-center mb-16">
           <button 
-            onClick={() => navigate('/property-request')}
+            onClick={() => navigate('/category-selection')}
             className={`inline-flex items-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} px-6 py-3 rounded-lg font-bold hover:opacity-90 transition-colors`}
           >
             <BuildingIcon size={18} />
