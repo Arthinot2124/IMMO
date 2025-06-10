@@ -241,11 +241,11 @@ export const Notifications = (): JSX.Element => {
       className={`${bgColor} min-h-screen`}
     >
       <div 
-        className="absolute inset-0 opacity-50 z-0" 
+        className="fixed inset-0 opacity-50 z-0" 
         style={{ 
           backgroundImage: `url(${isLightMode ? '/public_Accueil_Sombre/blie-pattern2.jpeg' : '/public_Accueil_Sombre/blie-pattern.png'})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'fixed',
           transition: 'background-image 0.5s ease-in-out'
         }}
       ></div>

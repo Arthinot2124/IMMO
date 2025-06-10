@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import apiService from "../../services/apiService";
 import { API_URL, getMediaUrl } from "../../config/api";
+import { formatCurrency } from "../../services/currencyService";
 import "./PropertyManagement.css";
 
 // Types
@@ -106,6 +107,11 @@ const PropertyManagement = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : false; // Défaut: mode sombre
   });
+  const [isEuro, setIsEuro] = useState(() => {
+    // Récupérer la préférence de devise depuis localStorage
+    const savedCurrency = localStorage.getItem('isEuro');
+    return savedCurrency !== null ? savedCurrency === 'true' : false;
+  });
   const [mediaToDelete, setMediaToDelete] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -189,6 +195,31 @@ const PropertyManagement = (): JSX.Element => {
       clearInterval(interval);
     };
   }, [isLightMode]);
+
+  // Mettre à jour le mode de devise quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si la devise a changé
+    const interval = setInterval(() => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null && (savedCurrency === 'true') !== isEuro) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isEuro]);
 
   // Fonction pour basculer entre le mode clair et sombre
   const toggleLightMode = () => {
@@ -824,12 +855,12 @@ const PropertyManagement = (): JSX.Element => {
                     <h3 className={`text-xs xs:text-sm sm:text-base font-semibold ${textColor} mb-1`}>
                       {property.title}
                     </h3>
-                    <p className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor} line-clamp-2`}>
+                    <p className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor} line-clamp-1`}>
                       {property.description || `Située à ${property.location}, surface: ${property.surface}m²`}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`text-[10px] xs:text-xs sm:text-sm ${textColor} font-medium`}>
-                        {property.price.toLocaleString()} Ar
+                        {formatCurrency(property.price, isEuro)}
                       </span>
                       <span className={`text-[10px] xs:text-xs sm:text-sm ${textSecondaryColor}`}>
                         • {property.location}
@@ -927,7 +958,7 @@ const PropertyManagement = (): JSX.Element => {
                   <div className="flex items-center mt-2">
                     <span className={`inline-flex items-center ${textSecondaryColor} text-sm mr-3`}>
                       <DollarSignIcon size={14} className="mr-1" />
-                      {selectedProperty.price.toLocaleString()} Ar
+                      {formatCurrency(selectedProperty.price, isEuro)}
                     </span>
                     <span className={`inline-flex items-center ${textSecondaryColor} text-sm`}>
                       <SquareIcon size={14} className="mr-1" />
@@ -1321,7 +1352,7 @@ const PropertyManagement = (): JSX.Element => {
                       <DollarSignIcon size={18} className="mr-2" />
                       <h3 className="font-semibold">Prix</h3>
                     </div>
-                    <p className={`${textPrimaryColor} text-lg font-medium`}>{selectedProperty.price.toLocaleString()} Ar</p>
+                    <p className={`${textPrimaryColor} text-lg font-medium`}>{formatCurrency(selectedProperty.price, isEuro)}</p>
                   </div>
                   
                   <div className={`${cardBgColor} p-4 rounded-lg`}>

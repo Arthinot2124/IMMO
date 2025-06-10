@@ -90,7 +90,7 @@ class PropertyController extends Controller
             'surface' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'property_type' => 'required|in:VILLA,TERRAIN,APPARTEMENT',
-            'transaction_type' => 'nullable|in:AHOFA,AMIDY',
+            'transaction_type' => 'required|in:AHOFA,AMIDY',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
         ]);
@@ -134,7 +134,7 @@ class PropertyController extends Controller
             'surface' => 'nullable|numeric|min:0',
             'location' => 'nullable|string|max:255',
             'property_type' => 'sometimes|required|in:VILLA,TERRAIN,APPARTEMENT',
-            'transaction_type' => 'nullable|in:AHOFA,AMIDY',
+            'transaction_type' => 'sometimes|required|in:AHOFA,AMIDY',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
         ]);

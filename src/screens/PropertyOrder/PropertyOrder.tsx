@@ -5,6 +5,7 @@ import { HomeIcon, SettingsIcon, ArrowLeft, Check, X } from "lucide-react";
 import NotificationBadge from "../../components/NotificationBadge";
 import apiService from "../../services/apiService";
 import { formatPrice } from "../../utils/formatters";
+import { formatCurrency } from "../../services/currencyService";
 
 // Types
 interface Property {
@@ -53,6 +54,11 @@ const PropertyOrder = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
+  const [isEuro, setIsEuro] = useState(() => {
+    // Récupérer la préférence de devise depuis localStorage
+    const savedCurrency = localStorage.getItem('isEuro');
+    return savedCurrency !== null ? savedCurrency === 'true' : false;
+  });
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -93,6 +99,31 @@ const PropertyOrder = (): JSX.Element => {
       clearInterval(interval);
     };
   }, [isLightMode]);
+
+  // Mettre à jour le mode de devise quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si la devise a changé
+    const interval = setInterval(() => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null && (savedCurrency === 'true') !== isEuro) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isEuro]);
 
   // Charger les données de la propriété
   useEffect(() => {
@@ -168,6 +199,12 @@ const PropertyOrder = (): JSX.Element => {
     return property.transaction_type === "AHOFA" ? "Louer ce bien" : "Acheter ce bien";
   };
 
+  // Fonction pour formater les prix en euros ou en ariary
+  const formatPropertyPrice = (price?: number): string => {
+    if (!price) return "Prix non spécifié";
+    return formatCurrency(price, isEuro);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -192,6 +229,14 @@ const PropertyOrder = (): JSX.Element => {
           transition={{ duration: 0.5 }}
           className="flex justify-between items-center py-2 xs:py-4 mb-6 sm:mb-8"
         >
+          <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-colors" onClick={() => navigate(`/property/${id}`)}>
+            <img 
+              src={isLightMode ? "/public_Trano/fleche_retour_b.png" : "/public_Trano/fleche_retour_v.png"} 
+              alt="Retour" 
+              className="w-7 h-7 xs:w-7 xs:h-7 sm:w-8 sm:h-8" 
+            />
+            <span className={`${textColor} font-medium`}>Detail</span>
+          </div>
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
               className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`} 
@@ -203,13 +248,7 @@ const PropertyOrder = (): JSX.Element => {
               onClick={() => navigate('/parametres')}
             />
           </div>
-          <button 
-            onClick={() => navigate(`/property/${id}`)}
-            className={`${buttonPrimaryBg} ${buttonPrimaryText} px-3 py-1.5 rounded-lg hover:opacity-90 transition-colors text-sm flex items-center gap-1`}
-          >
-            <ArrowLeft size={16} />
-            Retour au bien
-          </button>
+      
         </motion.header>
 
         {loading ? (
@@ -293,7 +332,7 @@ const PropertyOrder = (): JSX.Element => {
                       <p className={`${textSecondaryColor} text-sm`}>{property.location || "Emplacement non spécifié"}</p>
                     </div>
                     <div className={`mt-2 md:mt-0 ${textColor} text-lg sm:text-xl font-semibold`}>
-                      {formatPrice(property.price)} {property.transaction_type === "AHOFA" ? "/mois" : ""}
+                      {formatPropertyPrice(property.price)} {property.transaction_type === "AHOFA" ? "/mois" : ""}
                     </div>
                   </div>
                   
@@ -320,7 +359,7 @@ const PropertyOrder = (): JSX.Element => {
                       </li>
                       <li className={`border-t ${borderColorLight} pt-2 flex justify-between font-bold`}>
                         <span className={textSecondaryColor}>Montant</span>
-                        <span className={textColor}>{formatPrice(property.price)} {property.transaction_type === "AHOFA" ? "/mois" : ""}</span>
+                        <span className={textColor}>{formatPropertyPrice(property.price)} {property.transaction_type === "AHOFA" ? "/mois" : ""}</span>
                       </li>
                     </ul>
                   </div>

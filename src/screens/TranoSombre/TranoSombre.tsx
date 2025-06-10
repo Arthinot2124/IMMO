@@ -66,7 +66,7 @@ export const TranoSombre = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("VILLAS");
   const [priceFilter, setPriceFilter] = useState<boolean>(false);
-  const [ahofaFilter, setAhofaFilter] = useState<boolean>(false);
+  const [ahofaFilter, setAhofaFilter] = useState<boolean>(true);
   const [amidyFilter, setAmidyFilter] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
@@ -403,13 +403,15 @@ export const TranoSombre = (): JSX.Element => {
 
   // Gérer le changement de filtre AHOFA
   const handleAhofaFilterChange = () => {
-    setAhofaFilter(!ahofaFilter);
+    setAhofaFilter(true);
+    setAmidyFilter(false);
     setCurrentPage(1);
   };
 
   // Gérer le changement de filtre AMIDY
   const handleAmidyFilterChange = () => {
-    setAmidyFilter(!amidyFilter);
+    setAmidyFilter(true);
+    setAhofaFilter(false);
     setCurrentPage(1);
   };
 

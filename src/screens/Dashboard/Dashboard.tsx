@@ -10,6 +10,7 @@ import NotificationBadge from "../../components/NotificationBadge";
 import apiService from "../../services/apiService";
 import authService from "../../services/authService";
 import { getMediaUrl } from "../../config/api";
+import { formatCurrency } from "../../services/currencyService";
 
 // Types pour les données
 interface Property {
@@ -21,6 +22,7 @@ interface Property {
   media?: { media_url: string }[];
   location: string;
   description: string;
+  user_id?: number;
 }
 
 interface PropertyRequest {
@@ -101,6 +103,13 @@ export const Dashboard = (): JSX.Element => {
     return savedMode !== null ? savedMode === 'true' : false;
   });
 
+  // État pour la devise en euros
+  const [isEuro, setIsEuro] = useState(() => {
+    // Récupérer la préférence de devise depuis localStorage
+    const savedCurrency = localStorage.getItem('isEuro');
+    return savedCurrency !== null ? savedCurrency === 'true' : false;
+  });
+
   // États pour la modale de confirmation
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
@@ -135,6 +144,31 @@ export const Dashboard = (): JSX.Element => {
       clearInterval(interval);
     };
   }, [isLightMode]);
+
+  // Mettre à jour le mode de devise quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si la devise a changé
+    const interval = setInterval(() => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null && (savedCurrency === 'true') !== isEuro) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isEuro]);
 
   // Fonction pour basculer entre le mode clair et sombre
   const toggleLightMode = () => {
@@ -281,22 +315,46 @@ export const Dashboard = (): JSX.Element => {
     });
   };
 
-  // Formater le prix en Ariary
+  // Formater le prix en Ariary ou en Euro selon la préférence
   const formatPrice = (price: number | null | undefined): string => {
     // Add validation to handle invalid or missing price values
     if (price === null || price === undefined || isNaN(price)) {
       return "Prix non disponible";
     }
-    return new Intl.NumberFormat('fr-FR').format(price) + ' Ar';
+    return formatCurrency(price, isEuro);
   };
 
   // Fonction pour incrémenter le nombre de vues d'une propriété
   const incrementPropertyView = async (propertyId: number) => {
     try {
-      // Récupérer l'utilisateur connecté depuis le service d'authentification ou localStorage
+      // Récupérer l'utilisateur connecté
       const currentUser = authService.getCurrentUser() || 
         (localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') || '{}') as CurrentUser : null);
         
+      // Trouver la propriété dans le tableau local
+      const property = properties.find(p => p.property_id === propertyId);
+      
+      // Vérifier de façon plus stricte si l'utilisateur est le propriétaire
+      // Ajout de logs détaillés pour déboguer
+      console.log('Propriété:', property);
+      console.log('Utilisateur actuel:', currentUser);
+      
+      // Convertir les IDs en nombres pour une comparaison cohérente
+      const propertyUserId = property?.user_id !== undefined ? Number(property.user_id) : null;
+      const currentUserId = currentUser?.user_id !== undefined ? Number(currentUser.user_id) : null;
+      
+      console.log('Property user_id (converti):', propertyUserId);
+      console.log('Current user_id (converti):', currentUserId);
+      
+      // Si l'utilisateur est le propriétaire, ajouter un flag dans les paramètres et les headers
+      if (propertyUserId !== null && currentUserId !== null && propertyUserId === currentUserId) {
+        console.log('Le propriétaire consulte sa propre propriété, pas d\'incrémentation de vue');
+        
+        // Option 1: Naviguer directement sans appeler l'API
+        navigate(`/property/${propertyId}`);
+        return;
+      }
+      
       // Préparer les données et headers pour l'API
       const headers: Record<string, string> = {};
       const params: Record<string, any> = {};
@@ -307,9 +365,16 @@ export const Dashboard = (): JSX.Element => {
         headers['X-User-ID'] = currentUser.user_id.toString();
       }
       
-      console.log('Incrementing view with user data:', { currentUser, params, headers });
+      // Ajouter l'ID du propriétaire si disponible
+      if (propertyUserId !== null) {
+        params['owner_id'] = propertyUserId;
+        headers['X-Owner-ID'] = propertyUserId.toString();
+      }
+      
+      console.log('Incrementing view with user data:', { currentUser, propertyUserId, params, headers });
       
       // Appel à l'API pour incrémenter le nombre de vues avec les informations d'utilisateur
+      // L'API doit gérer qu'un utilisateur ne peut incrémenter qu'une seule fois
       const response = await apiService.post<{status: string, views: number, debug_auth: any}>(
         `/properties/${propertyId}/view`, 
         params,
@@ -326,9 +391,14 @@ export const Dashboard = (): JSX.Element => {
             ? { ...prop, views: response.data.views } 
             : prop
         ));
+        
+        // Naviguer vers la page de détails de la propriété
+        navigate(`/property/${propertyId}`);
       }
     } catch (error) {
       console.error("Erreur lors de l'incrémentation des vues:", error);
+      // En cas d'erreur, naviguer tout de même vers la page de détails
+      navigate(`/property/${propertyId}`);
     }
   };
 
@@ -453,10 +523,10 @@ export const Dashboard = (): JSX.Element => {
     if (order.property && typeof order.property === 'object') {
       const propertyId = (order.property as any).property_id;
       if (propertyId) {
-        navigate(`/property/${propertyId}`);
+        incrementPropertyView(propertyId);
       }
     } else if (order.property_id) {
-      navigate(`/property/${order.property_id}`);
+      incrementPropertyView(order.property_id);
     }
   };
 

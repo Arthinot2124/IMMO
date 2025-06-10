@@ -58,20 +58,100 @@ export const CategorySelection = (): JSX.Element => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.5,
+        delayChildren: 0.4
+      }
+    },
+    exit: {
+      opacity: 0,
+      transition: {
+        staggerChildren: 0.15,
+        staggerDirection: -1
       }
     }
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
+    hidden: { x: -100, opacity: 0 },
+    visible: (i: number) => ({
+      x: 0,
       opacity: 1,
       transition: {
-        duration: 0.4
+        duration: 0.8,
+        type: "spring",
+        stiffness: 60,
+        damping: 10,
+        delay: i * 0.4
+      }
+    }),
+    exit: {
+      x: 100,
+      opacity: 0,
+      transition: {
+        duration: 0.6
       }
     }
+  };
+
+  const iconVariants = {
+    hidden: { scale: 0, rotate: -180 },
+    visible: { 
+      scale: 1, 
+      rotate: 0,
+      transition: { 
+        type: "spring", 
+        stiffness: 260, 
+        damping: 20,
+        delay: 0.2
+      } 
+    }
+  };
+
+  const checkVariants = {
+    hidden: { opacity: 0, pathLength: 0 },
+    visible: { 
+      opacity: 1, 
+      pathLength: 1,
+      transition: { 
+        duration: 0.5,
+        delay: 0.3
+      }
+    }
+  };
+
+  const buttonVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.3,
+        delay: 0.5
+      }
+    },
+    hover: {
+      scale: 1.05,
+      backgroundColor: isLightMode ? "#0150BC" : "#59e0c5",
+      color: isLightMode ? "white" : "#0f172a",
+      transition: {
+        duration: 0.2
+      }
+    },
+    tap: {
+      scale: 0.95
+    }
+  };
+
+  const listItemVariants = {
+    hidden: { opacity: 0, x: -10 },
+    visible: (i: number) => ({
+      opacity: 1,
+      x: 0,
+      transition: {
+        delay: 0.4 + (i * 0.1),
+        duration: 0.3
+      }
+    })
   };
 
   return (
@@ -79,6 +159,7 @@ export const CategorySelection = (): JSX.Element => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
+      exit={{ opacity: 0, y: 20 }}
       className={`${bgColor} min-h-screen w-screen overflow-auto relative`}
     >
       {/* Arrière-plan avec effet */}
@@ -104,7 +185,7 @@ export const CategorySelection = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="p-4 z-50 mb-10"
+          className="p-4 z-50 mb-8"
         >
           <div className="flex gap-3">
             <HomeIcon 
@@ -146,114 +227,185 @@ export const CategorySelection = (): JSX.Element => {
               {/* Carte LITE */}
               <motion.div
                 variants={itemVariants}
+                custom={0}
                 whileHover={{ scale: 1.03, y: -5, transition: { duration: 0.2 } }}
+                whileTap={{ scale: 0.98 }}
                 className="backdrop-blur-[1px] backdrop-saturate-150 bg-white/15 dark:bg-black/15 rounded-2xl overflow-hidden border-2 border-white/40 dark:border-[#59e0c5]/30 shadow-[0_10px_30px_rgba(0,0,0,0.12),_inset_0_1px_2px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.2),_inset_0_2px_3px_rgba(255,255,255,0.6)]"
                 onClick={() => handleCategorySelection('LITE')}
+                layout
               >
                 <div className="p-3 flex flex-col items-center text-center h-full relative">
                   {/* Reflet supérieur */}
                   <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/30 to-transparent"></div>
                   
-                  <div className={`${textColor} mb-1 flex items-center justify-center`}>
+                  <motion.div 
+                    className={`${textColor} mb-1 flex items-center justify-center`}
+                    variants={iconVariants}
+                  >
                     <CheckIcon size={24} />
-                  </div>
+                  </motion.div>
                   <h3 className={`text-base font-bold mb-0.5 ${textPrimaryColor}`}>LITE</h3>
-                  <div className="h-px w-12 bg-gradient-to-r from-transparent via-[#0150BC] dark:via-[#59e0c5] to-transparent mb-1"></div>
+                  <motion.div 
+                    className="h-px w-12 bg-gradient-to-r from-transparent via-[#0150BC] dark:via-[#59e0c5] to-transparent mb-1"
+                    initial={{ width: 0 }}
+                    animate={{ width: 48, transition: { delay: 0.3, duration: 0.5 } }}
+                  ></motion.div>
                   <p className={`${textSecondaryColor} text-xs mb-1`}>
                     Service de base pour les propriétés
                   </p>
                   <ul className={`text-left ${textSecondaryColor} text-[10px] space-y-0.5 mb-2 w-full px-2`}>
-                    <li className="flex items-start">
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={0}
+                    >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
                       <span>Publication standard</span>
-                    </li>
-                    <li className="flex items-start">
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={1}
+                    >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
                       <span>Visibilité normale</span>
-                    </li>
+                    </motion.li>
                   </ul>
-                  <button 
-                    className={`px-4 py-1 text-xs border ${borderColor} rounded-full ${textColor} hover:bg-[#0150BC] dark:hover:bg-[#59e0c5] hover:text-white dark:hover:text-[#0f172a] transition-colors mt-auto backdrop-blur-md`}
+                  <motion.button 
+                    className={`px-4 py-1 text-xs border ${borderColor} rounded-full ${textColor} transition-colors mt-auto backdrop-blur-md`}
+                    variants={buttonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
                   >
                     Sélectionner
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
 
               {/* Carte ESSENTIEL */}
               <motion.div
                 variants={itemVariants}
+                custom={1}
                 whileHover={{ scale: 1.03, y: -5, transition: { duration: 0.2 } }}
+                whileTap={{ scale: 0.98 }}
                 className="backdrop-blur-[1px] backdrop-saturate-150 bg-white/15 dark:bg-black/20 rounded-2xl overflow-hidden border-2 border-white/40 dark:border-[#59e0c5]/40 shadow-[0_10px_30px_rgba(0,0,0,0.18),_inset_0_1px_2px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.25),_inset_0_2px_3px_rgba(255,255,255,0.6)] relative"
                 onClick={() => handleCategorySelection('ESSENTIEL')}
+                layout
               >
                 {/* Éclat d'accent */}
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/30 dark:bg-[#59e0c5]/30 rounded-full blur-3xl"></div>
+                <motion.div 
+                  className="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/30 dark:bg-[#59e0c5]/30 rounded-full blur-3xl"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ 
+                    opacity: 1, 
+                    scale: 1,
+                    transition: { delay: 0.2, duration: 1 }
+                  }}
+                ></motion.div>
                 
                 <div className="p-3 flex flex-col items-center text-center h-full relative">
                   {/* Reflet supérieur */}
                   <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/40 to-transparent"></div>
                   
-                  <div className={`${textColor} mb-1 flex items-center justify-center`}>
+                  <motion.div 
+                    className={`${textColor} mb-1 flex items-center justify-center`}
+                    variants={iconVariants}
+                  >
                     <StarIcon size={24} />
-                  </div>
+                  </motion.div>
                   <h3 className={`text-base font-bold mb-0.5 ${textPrimaryColor}`}>ESSENTIEL</h3>
-                  <div className="h-px w-12 bg-gradient-to-r from-transparent via-[#0150BC] dark:via-[#59e0c5] to-transparent mb-1"></div>
+                  <motion.div 
+                    className="h-px w-12 bg-gradient-to-r from-transparent via-[#0150BC] dark:via-[#59e0c5] to-transparent mb-1"
+                    initial={{ width: 0 }}
+                    animate={{ width: 48, transition: { delay: 0.3, duration: 0.5 } }}
+                  ></motion.div>
                   <p className={`${textSecondaryColor} text-xs mb-1`}>
                     Service avec une visibilité accrue
                   </p>
                   <ul className={`text-left ${textSecondaryColor} text-[10px] space-y-0.5 mb-2 w-full px-2`}>
-                    <li className="flex items-start">
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={0}
+                    >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
                       <span>Mise en avant ++</span>
-                    </li>
-                    <li className="flex items-start">
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={1}
+                    >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
                       <span>Priorité affichage</span>
-                    </li>
+                    </motion.li>
                   </ul>
-                  <button 
-                    className={`px-4 py-1 text-xs border ${borderColor} rounded-full ${textColor} hover:bg-[#0150BC] dark:hover:bg-[#59e0c5] hover:text-white dark:hover:text-[#0f172a] transition-colors mt-auto backdrop-blur-md`}
+                  <motion.button 
+                    className={`px-4 py-1 text-xs border ${borderColor} rounded-full ${textColor} transition-colors mt-auto backdrop-blur-md`}
+                    variants={buttonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
                   >
                     Sélectionner
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
 
               {/* Carte PREMIUM */}
               <motion.div
                 variants={itemVariants}
+                custom={2}
                 whileHover={{ scale: 1.03, y: -5, transition: { duration: 0.2 } }}
+                whileTap={{ scale: 0.98 }}
                 className="backdrop-blur-[1px] backdrop-saturate-150 bg-white/15 dark:bg-black/15 rounded-2xl overflow-hidden border-2 border-white/40 dark:border-[#59e0c5]/30 shadow-[0_10px_30px_rgba(0,0,0,0.12),_inset_0_1px_2px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.2),_inset_0_2px_3px_rgba(255,255,255,0.6)]"
                 onClick={() => handleCategorySelection('PREMIUM')}
+                layout
               >
                 <div className="p-3 flex flex-col items-center text-center h-full relative">
                   {/* Reflet supérieur */}
                   <div className="absolute top-0 left-0 right-0 h-1/3 bg-gradient-to-b from-white/30 to-transparent"></div>
                   
-                  <div className={`${textColor} mb-1 flex items-center justify-center`}>
+                  <motion.div 
+                    className={`${textColor} mb-1 flex items-center justify-center`}
+                    variants={iconVariants}
+                  >
                     <AwardIcon size={24} />
-                  </div>
+                  </motion.div>
                   <h3 className={`text-base font-bold mb-0.5 ${textPrimaryColor}`}>PREMIUM</h3>
-                  <div className="h-px w-12 bg-gradient-to-r from-transparent via-[#0150BC] dark:via-[#59e0c5] to-transparent mb-1"></div>
+                  <motion.div 
+                    className="h-px w-12 bg-gradient-to-r from-transparent via-[#0150BC] dark:via-[#59e0c5] to-transparent mb-1"
+                    initial={{ width: 0 }}
+                    animate={{ width: 48, transition: { delay: 0.3, duration: 0.5 } }}
+                  ></motion.div>
                   <p className={`${textSecondaryColor} text-xs mb-1`}>
                     Service premium complet
                   </p>
                   <ul className={`text-left ${textSecondaryColor} text-[10px] space-y-0.5 mb-2 w-full px-2`}>
-                    <li className="flex items-start">
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={0}
+                    >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
                       <span>Première page garantie</span>
-                    </li>
-                    <li className="flex items-start">
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={1}
+                    >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
                       <span>Marketing premium</span>
-                    </li>
+                    </motion.li>
                   </ul>
-                  <button 
-                    className={`px-4 py-1 text-xs border ${borderColor} rounded-full ${textColor} hover:bg-[#0150BC] dark:hover:bg-[#59e0c5] hover:text-white dark:hover:text-[#0f172a] transition-colors mt-auto backdrop-blur-md`}
+                  <motion.button 
+                    className={`px-4 py-1 text-xs border ${borderColor} rounded-full ${textColor} transition-colors mt-auto backdrop-blur-md`}
+                    variants={buttonVariants}
+                    whileHover="hover"
+                    whileTap="tap"
                   >
                     Sélectionner
-                  </button>
+                  </motion.button>
                 </div>
               </motion.div>
             </motion.div>

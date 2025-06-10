@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import authService from "../../services/authService";
 
 export const Login = (): JSX.Element => {
+  const [searchParams] = useSearchParams();
   const [identifier, setIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,6 +18,18 @@ export const Login = (): JSX.Element => {
   const [resetStep, setResetStep] = useState<"request" | "verify" | "complete">("request");
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Vérifier si l'utilisateur arrive avec un token de réinitialisation
+  useEffect(() => {
+    const token = searchParams.get('token');
+    const email = searchParams.get('email');
+    
+    if (token && email) {
+      setIsForgotPassword(true);
+      setResetStep("verify");
+      setIdentifier(email);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,29 +130,33 @@ export const Login = (): JSX.Element => {
     
     try {
       if (resetStep === "request") {
-        // Étape 1: Demande de code de réinitialisation
+        // Étape 1: Demande de réinitialisation
         if (!identifier.trim()) {
           throw new Error("Veuillez entrer votre email ou numéro de téléphone");
         }
         
-        // Appel API pour demander un code
-        const response = await authService.requestPasswordReset(identifier);
+        // Appel API pour demander un lien de réinitialisation
+        await authService.requestPasswordReset(identifier);
         
-        // Remplir automatiquement le code s'il est présent dans la réponse
-        if (response.reset_code) {
-          setResetCode(response.reset_code);
-        }
-        
-        setResetSuccess("Un code de réinitialisation a été envoyé à votre adresse email ou numéro de téléphone.");
-        setResetStep("verify");
+        setResetSuccess("Un lien de réinitialisation a été envoyé à votre adresse email.");
+        setResetStep("complete");
       } else if (resetStep === "verify") {
         // Étape 2: Vérification du code et création d'un nouveau mot de passe
-        if (!resetCode.trim() || !newPassword.trim()) {
-          throw new Error("Veuillez remplir tous les champs");
+        if (!newPassword.trim()) {
+          throw new Error("Veuillez entrer un nouveau mot de passe");
         }
         
-        // Appel API pour vérifier le code et réinitialiser le mot de passe
-        await authService.resetPassword(identifier, resetCode, newPassword);
+        // Récupérer le token et l'email depuis l'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const email = urlParams.get('email');
+        
+        if (!token || !email) {
+          throw new Error("Lien de réinitialisation invalide ou expiré");
+        }
+        
+        // Appel API pour réinitialiser le mot de passe
+        await authService.resetPassword(token, email, newPassword);
         
         setResetSuccess("Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.");
         setResetStep("complete");
@@ -224,7 +241,7 @@ export const Login = (): JSX.Element => {
 
           <h2 className="text-white text-xl font-semibold text-center mb-6">
             {resetStep === "request" ? "Mot de passe oublié" : 
-             resetStep === "verify" ? "Vérification du code" : 
+             resetStep === "verify" ? "Réinitialisation du mot de passe" : 
              "Réinitialisation réussie"}
           </h2>
 
@@ -256,45 +273,34 @@ export const Login = (): JSX.Element => {
               )}
 
               {resetStep === "verify" && (
-                <>
-                  <div className="space-y-2 relative">
-                    <input
-                      type="text"
-                      value={resetCode}
-                      onChange={(e) => setResetCode(e.target.value)}
-                      className="w-full bg-transparent border-b-2 border-white/40 px-4 py-2 text-white placeholder-white/60 focus:outline-none focus:border-white/80 transition-colors caret-white"
-                      placeholder="Code de réinitialisation"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2 relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-transparent border-b-2 border-white/40 px-4 py-2 text-white placeholder-white/60 focus:outline-none focus:border-white/80 transition-colors pr-10 caret-white"
-                      placeholder="Nouveau mot de passe"
-                      required
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-2 text-white/70 hover:text-white"
-                    >
-                      {showPassword ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
-                          <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
-                </>
+                <div className="space-y-2 relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-transparent border-b-2 border-white/40 px-4 py-2 text-white placeholder-white/60 focus:outline-none focus:border-white/80 transition-colors pr-10 caret-white"
+                    placeholder="Nouveau mot de passe"
+                    required
+                    minLength={6}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-2 text-white/70 hover:text-white"
+                  >
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                        <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                        <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               )}
 
               <button
@@ -305,7 +311,7 @@ export const Login = (): JSX.Element => {
                 disabled={isLoading}
               >
                 {isLoading ? 'Chargement...' : 
-                 resetStep === "request" ? "Recevoir un code" : 
+                 resetStep === "request" ? "Envoyer le lien de réinitialisation" : 
                  "Réinitialiser le mot de passe"}
               </button>
             </form>
@@ -323,7 +329,6 @@ export const Login = (): JSX.Element => {
                 } else if (resetStep === "verify") {
                   // Retourner à l'étape de demande de code
                   setResetStep("request");
-                  setResetCode("");
                   setNewPassword("");
                   setError(null);
                   setResetSuccess(null);

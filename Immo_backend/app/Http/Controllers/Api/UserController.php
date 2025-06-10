@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
 
 class UserController extends Controller
 {
@@ -230,49 +233,75 @@ class UserController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
-        // Générer un code de réinitialisation (6 chiffres)
-        $resetCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // Générer un token unique
+        $token = Str::random(64);
         $expiresAt = now()->addHours(1); // Expire dans 1 heure
 
-        // Stocker le code dans la base de données
+        // Stocker le token dans la base de données
         DB::table('password_resets')->updateOrInsert(
             ['email' => $user->email ?? $user->phone],
             [
-                'token' => Hash::make($resetCode),
+                'token' => Hash::make($token),
                 'created_at' => now(),
                 'expires_at' => $expiresAt
             ]
         );
 
-        // Pour la phase de développement, on retourne toujours le code dans la réponse
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Code de réinitialisation envoyé avec succès.',
-            'reset_code' => $resetCode,
-            'expires_at' => $expiresAt->toDateTimeString()
-        ]);
+        // Construire le lien de réinitialisation
+        $frontendUrl = config('app.frontend_url') ?: 'http://192.168.8.192:5173';
+        $resetLink = $frontendUrl . '/login?token=' . $token . '&email=' . urlencode($user->email ?? $user->phone);
+
+        // Envoyer l'email
+        try {
+            \Log::info('Tentative d\'envoi d\'email de réinitialisation', [
+                'to' => $user->email,
+                'resetLink' => $resetLink
+            ]);
+
+            Mail::to($user->email)
+                ->send(new ResetPasswordMail($resetLink));
+            
+            \Log::info('Email de réinitialisation envoyé avec succès', [
+                'to' => $user->email
+            ]);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Un lien de réinitialisation a été envoyé à votre adresse email.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erreur lors de l\'envoi de l\'email de réinitialisation', [
+                'error' => $e->getMessage(),
+                'to' => $user->email,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erreur lors de l\'envoi de l\'email. Veuillez réessayer.'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
-     * Reset password with code
+     * Reset password with token
      */
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'identifier' => 'required|string',
-            'code' => 'required|string|size:6',
+            'token' => 'required|string',
+            'email' => 'required|string',
             'password' => 'required|string|min:6',
         ]);
 
-        $identifier = $request->input('identifier');
         $user = null;
 
-        // Vérifier si l'identifier est un email ou un téléphone
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $user = User::where('email', $identifier)->first();
+        // Vérifier si l'email est valide
+        if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
+            $user = User::where('email', $request->email)->first();
         } else {
             // Supposer que c'est un numéro de téléphone
-            $user = User::where('phone', $identifier)->first();
+            $user = User::where('phone', $request->email)->first();
         }
 
         if (!$user) {
@@ -294,19 +323,19 @@ class UserController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
-        // Vérifier si le code a expiré
+        // Vérifier si le token a expiré
         if (now()->gt(\Carbon\Carbon::parse($resetEntry->expires_at))) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Le code de réinitialisation a expiré. Veuillez faire une nouvelle demande.'
+                'message' => 'Le lien de réinitialisation a expiré. Veuillez faire une nouvelle demande.'
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        // Vérifier le code
-        if (!Hash::check($request->code, $resetEntry->token)) {
+        // Vérifier le token
+        if (!Hash::check($request->token, $resetEntry->token)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Code de réinitialisation invalide.'
+                'message' => 'Lien de réinitialisation invalide.'
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 

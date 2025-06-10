@@ -39,13 +39,14 @@
    * Vous pouvez ajuster cette valeur selon vos préférences visuelles.
    */
   .small-screen-welcome-card .icons {
-    gap: 0.5rem !important; /* Espace entre les icônes */
+    gap: 0.6rem !important; /* Espace entre les icônes */
+    margin-bottom: 0.5rem !important; /* Réduction de l'espace vertical avec le texte */
   }
 
   /* Taille des icônes SVG dans la carte de bienvenue */
   .small-screen-welcome-card .icons svg {
-    width: 1.5rem !important; /* Largeur réduite des icônes */
-    height: 1.5rem !important; /* Hauteur réduite des icônes */
+    width: 2rem !important; /* Largeur augmentée des icônes */
+    height: 2rem !important; /* Hauteur augmentée des icônes */
   }
 
   /* 

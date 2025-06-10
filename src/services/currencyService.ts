@@ -8,7 +8,11 @@ export const convertToEuro = (amountInAr: number): number => {
 export const formatCurrency = (amount: number, isEuro: boolean): string => {
   if (isEuro) {
     const amountInEuro = convertToEuro(amount);
-    return `${amountInEuro.toFixed(2)} €`;
+    // Vérifier si le montant est un entier
+    const formattedAmount = amountInEuro % 1 === 0 
+      ? amountInEuro.toFixed(0)  // Pas de décimales pour les nombres entiers
+      : amountInEuro.toFixed(2); // 2 décimales pour les autres
+    return `${formattedAmount} €`;
   }
   return `${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} Ar`;
 };

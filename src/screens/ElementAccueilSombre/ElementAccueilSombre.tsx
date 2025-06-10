@@ -8,6 +8,7 @@ import "./animations.css";
 import "./accueil.css";
 import NotificationBadge from "../../components/NotificationBadge";
 import { UserIcon, Settings } from "lucide-react";
+import notificationService from "../../services/notificationService";
 
 const CountUp = ({ value }: { value: number }) => {
   const [count, setCount] = React.useState(0);
@@ -54,6 +55,52 @@ export const ElementAccueilSombre = (): JSX.Element => {
   const [tipClass, setTipClass] = useState('');
   const tipContainerRef = useRef<HTMLDivElement>(null);
   const [userName, setUserName] = useState("Visiteur");
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  // Fonction pour récupérer les notifications et actualiser le badge
+  const fetchNotifications = async () => {
+    try {
+      const notificationsList = await notificationService.getNotifications();
+      const count = notificationsList.filter(notification => !notification.is_read).length;
+      setUnreadNotificationsCount(count);
+      localStorage.setItem('unreadNotificationsCount', count.toString());
+      // Émettre un événement pour tous les composants qui affichent le nombre de notifications
+      window.dispatchEvent(new CustomEvent('unreadNotificationsUpdated', { detail: { count } }));
+    } catch (err) {
+      console.error("Erreur lors du chargement des notifications:", err);
+    }
+  };
+
+  // Récupérer les notifications au chargement du composant
+  useEffect(() => {
+    fetchNotifications();
+    // Créer un intervalle pour actualiser régulièrement les notifications
+    const intervalId = setInterval(() => {
+      fetchNotifications();
+    }, 60000); // Actualiser toutes les minutes
+
+    // Nettoyer l'intervalle lorsque le composant est démonté
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Écouter les changements du nombre de notifications non lues dans localStorage
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'unreadNotificationsCount') {
+        setUnreadNotificationsCount(parseInt(e.newValue || '0'));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('unreadNotificationsUpdated', ((e: CustomEvent) => {
+      setUnreadNotificationsCount(e.detail.count);
+    }) as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('unreadNotificationsUpdated', ((e: CustomEvent) => {}) as EventListener);
+    };
+  }, []);
 
   // Redirection vers TranoSombre lorsque isSearch est activé
   useEffect(() => {
@@ -144,26 +191,26 @@ export const ElementAccueilSombre = (): JSX.Element => {
       value: 100,
       label: "Maisons",
       subLabel: "en Vente",
-      onClick: () => navigate("/trano"),
+      
     },
     {
       value: 50,
       label: "Terrains",
       subLabel: "en Vente",
-      onClick: () => navigate("/tany"),
+      
     },
     {
       value: 150,
       label: "Immeuble",
       subLabel: "en Vente",
-      onClick: () => navigate("/immeuble"),
+      
     },
   ];
 
   const settings = [
     { label: "Prix en", highlight: "euro", state: isEuro, setState: setIsEuro },
     { label: "Ouverture sur", highlight: "Recherche", state: isSearch, setState: setIsSearch, newLine: true },
-    { label: "Mode", highlight: "light", state: isLightMode, setState: setIsLightMode },
+    { label: "Mode", highlight: "Clair", state: isLightMode, setState: setIsLightMode },
   ];
 
   const containerVariants = {
@@ -300,8 +347,8 @@ export const ElementAccueilSombre = (): JSX.Element => {
               className={`w-10 h-10 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
               onClick={() => navigate('/profile')} 
             />
-            <div className="flex-shrink-0">
-              <NotificationBadge size="md" className="mx-auto" accentColor={accentColor} />
+            <div className="flex-shrink-0 relative">
+              <NotificationBadge size="lg" className="mx-auto" accentColor={accentColor} />
             </div>
             <Settings 
               className={`w-10 h-10 sm:w-10 sm:h-10 cursor-pointer text-[${accentColor}] hover:text-[${accentColor}]/80 transition-colors`} 
@@ -353,7 +400,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
                     key={index} 
                     variants={itemVariants}
                     className="text-center cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={stat.onClick}
+                    
                   >
                     <motion.div 
                       className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-['Anton'] stat-value`}

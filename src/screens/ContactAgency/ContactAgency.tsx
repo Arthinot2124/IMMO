@@ -88,6 +88,14 @@ export const ContactAgency = (): JSX.Element => {
           transition={{ duration: 0.5 }}
           className="flex justify-between items-center py-2 xs:py-4 mb-6 sm:mb-8"
         >
+          <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-colors" onClick={() => navigate(`/property/${id}`)}>
+            <img 
+              src={isLightMode ? "/public_Trano/fleche_retour_b.png" : "/public_Trano/fleche_retour_v.png"} 
+              alt="Retour" 
+              className="w-7 h-7 xs:w-7 xs:h-7 sm:w-8 sm:h-8" 
+            />
+            <span className={`${textColor} font-medium`}>Detail</span>
+          </div>
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
               className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`} 
@@ -99,13 +107,7 @@ export const ContactAgency = (): JSX.Element => {
               onClick={() => navigate('/profile')}
             />
           </div>
-          <button 
-            onClick={() => navigate(`/property/${id}`)}
-            className={`${buttonPrimaryBg} ${buttonPrimaryText} px-3 py-1.5 rounded-lg hover:opacity-90 transition-colors text-sm flex items-center gap-1`}
-          >
-            <ArrowLeftIcon size={16} />
-            Retour à l'annonce
-          </button>
+        
         </motion.header>
 
         {/* Contact Information */}

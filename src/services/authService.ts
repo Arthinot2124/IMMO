@@ -247,7 +247,7 @@ const authService = {
   },
 
   /**
-   * Request a password reset code
+   * Request a password reset link
    * @param identifier Email or phone number
    */
   async requestPasswordReset(identifier: string): Promise<any> {
@@ -261,16 +261,16 @@ const authService = {
   },
 
   /**
-   * Reset password with verification code
-   * @param identifier Email or phone number
-   * @param code Reset code
+   * Reset password with token
+   * @param token Reset token
+   * @param email User's email
    * @param password New password
    */
-  async resetPassword(identifier: string, code: string, password: string): Promise<any> {
+  async resetPassword(token: string, email: string, password: string): Promise<any> {
     try {
       const response = await apiService.post('/auth/reset-password', { 
-        identifier, 
-        code, 
+        token,
+        email,
         password 
       });
       return response.data;

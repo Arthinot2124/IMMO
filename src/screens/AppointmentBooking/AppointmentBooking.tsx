@@ -8,6 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { fr } from 'date-fns/locale';
 import apiService from "../../services/apiService";
 import { getMediaUrl } from "../../config/api";
+import { formatCurrency } from "../../services/currencyService";
 
 // Types pour les propriétés
 interface PropertyMedia {
@@ -80,6 +81,11 @@ export const AppointmentBooking = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
+  const [isEuro, setIsEuro] = useState(() => {
+    // Récupérer la préférence de devise depuis localStorage
+    const savedCurrency = localStorage.getItem('isEuro');
+    return savedCurrency !== null ? savedCurrency === 'true' : false;
+  });
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -129,6 +135,31 @@ export const AppointmentBooking = (): JSX.Element => {
       clearInterval(interval);
     };
   }, [isLightMode]);
+
+  // Mettre à jour le mode de devise quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si la devise a changé
+    const interval = setInterval(() => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null && (savedCurrency === 'true') !== isEuro) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isEuro]);
 
   // Fonction pour basculer entre le mode clair et sombre
   const toggleLightMode = () => {
@@ -255,7 +286,7 @@ export const AppointmentBooking = (): JSX.Element => {
   // Formater le prix
   const formatPrice = (price?: number): string => {
     if (!price) return "Prix non spécifié";
-    return new Intl.NumberFormat('fr-FR').format(price) + " Ar";
+    return formatCurrency(price, isEuro); // Utiliser formatCurrency pour respecter le mode euro
   };
 
   return (
@@ -282,6 +313,14 @@ export const AppointmentBooking = (): JSX.Element => {
           transition={{ duration: 0.5 }}
           className="flex justify-between items-center py-2 xs:py-4 mb-6 sm:mb-8"
         >
+            <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-colors" onClick={() => navigate(`/property/${id}`)}>
+              <img 
+                src={isLightMode ? "/public_Trano/fleche_retour_b.png" : "/public_Trano/fleche_retour_v.png"} 
+                alt="Retour" 
+                className="w-7 h-7 xs:w-7 xs:h-7 sm:w-8 sm:h-8" 
+              />
+              <span className={`${textColor} font-medium`}>Detail</span>
+            </div>
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
               className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`}
@@ -293,15 +332,7 @@ export const AppointmentBooking = (): JSX.Element => {
               onClick={() => navigate('/parametres')}
             />
           </div>
-          <div className="flex items-center gap-4">
-         
-            <button
-              onClick={() => navigate(`/property/${id}`)}
-              className={`${textColor} hover:underline`}
-            >
-              Retour à l'annonce
-            </button>
-          </div>
+        
         </motion.header>
 
         {loading ? (

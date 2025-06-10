@@ -7,6 +7,7 @@ import StarRating from "../../components/StarRating";
 import apiService from "../../services/apiService";
 import authService from "../../services/authService";
 import { getMediaUrl } from "../../config/api";
+import { formatCurrency } from "../../services/currencyService";
 import { BellIcon, HeartIcon, CalendarIcon, StarIcon, MessageSquareIcon, ShareIcon, ImageIcon,ArrowLeftIcon } from "lucide-react";
 
 // Types pour les propriétés
@@ -86,6 +87,11 @@ export const PropertyDetail = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
+  const [isEuro, setIsEuro] = useState(() => {
+    // Récupérer la préférence de devise depuis localStorage
+    const savedCurrency = localStorage.getItem('isEuro');
+    return savedCurrency !== null ? savedCurrency === 'true' : false;
+  });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [averageRating, setAverageRating] = useState<number>(0);
   const [ratingsCount, setRatingsCount] = useState<number>(0);
@@ -135,6 +141,31 @@ export const PropertyDetail = (): JSX.Element => {
       clearInterval(interval);
     };
   }, [isLightMode]);
+
+  // Mettre à jour le mode de devise quand il change dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Vérifier régulièrement si la devise a changé
+    const interval = setInterval(() => {
+      const savedCurrency = localStorage.getItem('isEuro');
+      if (savedCurrency !== null && (savedCurrency === 'true') !== isEuro) {
+        setIsEuro(savedCurrency === 'true');
+      }
+    }, 1000); // Vérifier chaque seconde
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isEuro]);
 
   // Vérifier une seule fois au montage si l'utilisateur est connecté
   useEffect(() => {
@@ -427,7 +458,7 @@ export const PropertyDetail = (): JSX.Element => {
   // Formater le prix
   const formatPrice = (price?: number): string => {
     if (!price) return "Prix non spécifié";
-    return new Intl.NumberFormat('fr-FR').format(price) + " Ar";
+    return formatCurrency(price, isEuro); // Utiliser formatCurrency pour respecter le mode euro
   };
 
   // Fonction pour vérifier si l'utilisateur est le propriétaire d'une propriété
@@ -509,6 +540,15 @@ export const PropertyDetail = (): JSX.Element => {
           transition={{ duration: 0.5 }}
           className="flex justify-between items-center py-2 xs:py-4 mb-4 sm:mb-6"
         >
+           <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-colors" onClick={() => navigate('/trano')}>
+             <img 
+              src={isLightMode ? "/public_Trano/fleche_retour_b.png" : "/public_Trano/fleche_retour_v.png"} 
+              alt="Retour" 
+              className="w-7 h-7 xs:w-7 xs:h-7 sm:w-8 sm:h-8" 
+            />
+            <span className={`${textColor} font-medium`}>Annonces</span>
+           </div>
+
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
               className={`w-8 h-8 xs:w-8 xs:h-8 sm:w-10 sm:h-10 ${textColor} cursor-pointer hover:opacity-80 transition-colors`} 
@@ -520,13 +560,7 @@ export const PropertyDetail = (): JSX.Element => {
               onClick={() => navigate('/parametres')}
             />
           </div>
-          <button 
-            onClick={() => navigate('/trano')}
-            className={`${buttonPrimaryBg} ${buttonPrimaryText} px-3 py-1.5 rounded-lg hover:opacity-90 transition-colors text-sm flex items-center gap-1`}
-          >
-            <ArrowLeftIcon size={16} />
-            Retour
-          </button>
+         
         </motion.header>
 
         {loading ? (
