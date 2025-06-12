@@ -484,6 +484,9 @@ export const PropertyDetail = (): JSX.Element => {
     // Déterminer quelle note afficher dans les étoiles
     const displayRating = isAdmin ? userRating : averageRating;
     
+    // Un admin peut toujours noter, un utilisateur normal ne peut pas noter son propre bien
+    const canRate = isAdmin || (isLoggedIn && !isOwner);
+    
     return (
       <div className="flex flex-col items-end">
         <div className="flex items-center gap-2 mb-2">
@@ -492,13 +495,13 @@ export const PropertyDetail = (): JSX.Element => {
           </span>
           <StarIcon className={`w-5 h-5 ${textColor}`} fill="currentColor" />
         </div>
-        <div className={`${!isLoggedIn || isOwner || !isAdmin ? '' : 'border border-dashed border-gray-300 hover:border-gray-400 p-2 rounded-lg transition-colors'}`}>
+        <div className={`${!canRate ? '' : 'border border-dashed border-gray-300 hover:border-gray-400 p-2 rounded-lg transition-colors'}`}>
           <StarRating 
             key={`property-rating-${id}`}
             propertyId={Number(id)} 
             userRating={displayRating}
             onRatingChange={handleRatingChange}
-            readOnly={!isLoggedIn || isOwner || !isAdmin}
+            readOnly={!canRate}
             size="md"
             isLightMode={isLightMode}
           />
@@ -506,10 +509,7 @@ export const PropertyDetail = (): JSX.Element => {
         {!isLoggedIn && (
           <span className={`text-xs ${textSecondaryColor} mt-2`}>Connectez-vous pour voir les notes</span>
         )}
-        {isLoggedIn && isOwner && isAdmin && (
-          <span className={`text-xs ${isLightMode ? "text-red-600" : "text-red-400"} mt-2`}>Vous ne pouvez pas noter votre propre bien</span>
-        )}
-        {isLoggedIn && isAdmin && !isOwner && userRating === 0 && (
+        {isLoggedIn && isAdmin && canRate && userRating === 0 && (
           <span className={`text-xs ${textSecondaryColor} mt-2`}>Cliquez pour noter</span>
         )}
       </div>

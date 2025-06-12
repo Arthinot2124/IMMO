@@ -13,6 +13,13 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+// Type pour les médias
+interface MediaFile {
+  file: File;
+  type: 'photo' | 'video';
+  previewUrl: string;
+}
+
 // Interface pour les caractéristiques du bien immobilier
 interface PropertyFeatures {
   // Caractéristiques générales
@@ -107,8 +114,7 @@ export const PropertyRequest = (): JSX.Element => {
   const [activePropertyType, setActivePropertyType] = useState<string>("VILLA");
   const [ahofaFilter, setAhofaFilter] = useState<boolean>(true);
   const [amidyFilter, setAmidyFilter] = useState<boolean>(false);
-  const [images, setImages] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,6 +125,9 @@ export const PropertyRequest = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
+
+  // Constantes
+  const MAX_MEDIA_FILES = 4;
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -341,8 +350,7 @@ export const PropertyRequest = (): JSX.Element => {
     const wcFeatures = [];
     if (features.wcInterne) wcFeatures.push("interne");
     if (features.wcExterne) wcFeatures.push("externe");
-    if (features.wcPrivatif) wcFeatures.push("privatif");
-    if (features.wcCommun) wcFeatures.push("commun");
+    
     
     if (wcFeatures.length > 0) {
       description += `, WC ${wcFeatures.join(" et ")}`;
@@ -367,30 +375,41 @@ export const PropertyRequest = (): JSX.Element => {
     return description;
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       
-      // Create preview URLs
-      const newPreviewUrls = filesArray.map(file => URL.createObjectURL(file));
+      // Vérifier si le nombre de fichiers dépasse la limite
+      if (mediaFiles.length + filesArray.length > MAX_MEDIA_FILES) {
+        setError(`Vous ne pouvez pas ajouter plus de ${MAX_MEDIA_FILES} fichiers médias au total`);
+        return;
+      }
       
-      setImages([...images, ...filesArray]);
-      setPreviewUrls([...previewUrls, ...newPreviewUrls]);
+      // Créer des objets MediaFile pour chaque fichier
+      const newMediaFiles = filesArray.map(file => {
+        // Déterminer le type de média basé sur le type MIME du fichier
+        const mediaType = file.type.startsWith('image/') ? 'photo' : 'video';
+        
+        return {
+          file,
+          type: mediaType as 'photo' | 'video',
+          previewUrl: URL.createObjectURL(file)
+        };
+      });
+      
+      setMediaFiles([...mediaFiles, ...newMediaFiles]);
+      setError(null);
     }
   };
 
-  const removeImage = (index: number) => {
-    const newImages = [...images];
-    const newPreviewUrls = [...previewUrls];
+  const removeMedia = (index: number) => {
+    const newMediaFiles = [...mediaFiles];
     
-    // Revoke object URL to avoid memory leaks
-    URL.revokeObjectURL(previewUrls[index]);
+    // Libérer l'URL de l'objet pour éviter les fuites de mémoire
+    URL.revokeObjectURL(newMediaFiles[index].previewUrl);
     
-    newImages.splice(index, 1);
-    newPreviewUrls.splice(index, 1);
-    
-    setImages(newImages);
-    setPreviewUrls(newPreviewUrls);
+    newMediaFiles.splice(index, 1);
+    setMediaFiles(newMediaFiles);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -403,6 +422,13 @@ export const PropertyRequest = (): JSX.Element => {
       // Vérifications basiques
       if (!userId) {
         throw new Error("Vous devez être connecté pour soumettre une demande");
+      }
+      
+      // Vérifier si le nombre minimum de médias est respecté
+      if (mediaFiles.length < 1) {
+        setError("Veuillez ajouter au moins une photo ou vidéo de votre bien");
+        setIsLoading(false);
+        return;
       }
       
       // Préparer les données pour l'API (selon le schema de la base de données)
@@ -429,33 +455,36 @@ export const PropertyRequest = (): JSX.Element => {
       
       console.log("API Response:", response.data);
       
-      // Gestion des images avec FormData (nécessite une approche différente)
-      if (images.length > 0 && response.data?.data?.request_id) {
-        const formData = new FormData();
-        
-        images.forEach(image => {
-          formData.append('images[]', image);
-        });
-        
+      // Gestion des fichiers médias avec FormData (nécessite une approche différente)
+      if (mediaFiles.length > 0 && response.data?.data?.request_id) {
         try {
-          // Pour l'upload de fichiers, on utilise axios directement car apiService
-          // est configuré avec des headers spécifiques pour JSON
-          const uploadResponse = await axios.post(
-            `${API_URL}/api/property-requests/${response.data.data.request_id}/images`,
-            formData,
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+          // Créer un tableau de promesses pour uploader chaque fichier individuellement
+          const uploadPromises = mediaFiles.map(async (media) => {
+            const formData = new FormData();
+            formData.append('media_file', media.file); // Utiliser media_file au lieu de media[]
+            formData.append('media_type', media.type === 'photo' ? 'Photo' : 'Vidéo'); // Utiliser media_type au lieu de media_types[]
+            
+            // Pour l'upload de fichiers, on utilise axios directement car apiService
+            // est configuré avec des headers spécifiques pour JSON
+            return axios.post(
+              `${API_URL}/api/property-requests/${response.data.data.request_id}/media`,
+              formData,
+              {
+                headers: {
+                  'Content-Type': 'multipart/form-data',
+                  'Accept': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+                }
               }
-            }
-          );
+            );
+          });
           
-          console.log("Images uploaded successfully:", uploadResponse.data);
+          // Attendre que tous les uploads soient terminés
+          const uploadResults = await Promise.all(uploadPromises);
+          console.log("Tous les médias ont été uploadés avec succès");
         } catch (uploadError) {
-          console.error("Error uploading images:", uploadError);
-          // We continue even if image upload fails
+          console.error("Erreur lors de l'upload des médias:", uploadError);
+          // On continue même si l'upload des médias échoue
         }
       }
       
@@ -606,12 +635,9 @@ export const PropertyRequest = (): JSX.Element => {
                   >
                     <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                       ahofaFilter 
-                        ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                        ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
                         : `border-2 ${borderColor}`
                     }`}>
-                      {ahofaFilter && (
-                        <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                      )}
                     </div>
                     <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
                       AHOFA (Location)
@@ -624,12 +650,9 @@ export const PropertyRequest = (): JSX.Element => {
                   >
                     <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                       amidyFilter 
-                        ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                        ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
                         : `border-2 ${borderColor}`
                     }`}>
-                      {amidyFilter && (
-                        <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                      )}
                     </div>
                     <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
                       AMIDY (Achat)
@@ -1167,40 +1190,54 @@ export const PropertyRequest = (): JSX.Element => {
 
               <div>
                 <label className={`block text-sm ${textColor} mb-3`}>
-                  Photos du bien (minimum 4)
+                  Médias du Bien (max. 4)
                 </label>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
-                  {previewUrls.map((url, index) => (
+                  {mediaFiles.map((media, index) => (
                     <div key={index} className={`relative h-24 sm:h-32 ${uploadBgColor} rounded-lg overflow-hidden`}>
-                      <img 
-                        src={url} 
-                        alt={`Preview ${index}`} 
-                        className="w-full h-full object-cover"
-                      />
+                      {media.type === 'photo' ? (
+                        <img 
+                          src={media.previewUrl} 
+                          alt={`Preview ${index}`} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <video 
+                          src={media.previewUrl}
+                          className="w-full h-full object-cover"
+                          controls
+                          preload="metadata"
+                        >
+                          Votre navigateur ne prend pas en charge la vidéo.
+                        </video>
+                      )}
                       <button
                         type="button"
-                        onClick={() => removeImage(index)}
-                        className={`absolute top-1 right-1 ${darkBgColor}/70 p-1 rounded-full`}
+                        onClick={() => removeMedia(index)}
+                        className={`absolute top-1 right-1 bg-black bg-opacity-50 p-1 rounded-full`}
                       >
                         <XIcon className="w-4 h-4 text-white" />
                       </button>
                     </div>
                   ))}
                   
-                  {previewUrls.length < 6 && (
+                  {mediaFiles.length < MAX_MEDIA_FILES && (
                     <label className={`h-24 sm:h-32 border-2 border-dashed ${uploadBorderColor} rounded-lg flex flex-col items-center justify-center cursor-pointer ${uploadBgColor}`}>
                       <ImagePlusIcon className={`w-8 h-8 ${textColor} mb-1`} />
-                      <span className={`text-xs ${textColor}`}>Ajouter</span>
+                      <span className={`text-xs ${textColor}`}>Ajouter photo/vidéo</span>
                       <input
                         type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
+                        accept="image/*,video/*"
+                        onChange={handleMediaUpload}
                         className="hidden"
                       />
                     </label>
                   )}
                 </div>
+                <p className={`${hintTextColor} text-xs mt-1`}>
+                  Ajoutez jusqu'à {MAX_MEDIA_FILES} photos/vidéos de votre bien (min. 1 requis)
+                </p>
               </div>
               
               <div className="pt-4">

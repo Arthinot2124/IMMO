@@ -31,7 +31,7 @@ class PropertyRequestMediaController extends Controller
     {
         $validated = $request->validate([
             'media_type' => 'nullable|in:Photo,Vidéo,Document',
-            'media_file' => 'required|file|max:10240', // Max 10MB
+            'media_file' => 'required|file|max:512000', // 512000 Ko = 500 Mo
         ]);
 
         // Store the file
@@ -59,7 +59,7 @@ class PropertyRequestMediaController extends Controller
     {
         $request->validate([
             'images' => 'required|array',
-            'images.*' => 'required|file|mimes:jpeg,png,jpg,gif|max:10240', // Max 10MB
+            'images.*' => 'required|file|mimes:jpeg,png,jpg,gif|max:102400', // Max 100MB
         ]);
 
         $uploadedMedia = [];
@@ -118,7 +118,7 @@ class PropertyRequestMediaController extends Controller
 
         $validated = $request->validate([
             'media_type' => 'sometimes|required|in:Photo,Vidéo,Document',
-            'media_file' => 'sometimes|required|file|max:10240', // Max 10MB
+            'media_file' => 'sometimes|required|file|max:512000', // 512000 Ko = 500 Mo
         ]);
 
         if ($request->hasFile('media_file')) {

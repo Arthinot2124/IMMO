@@ -792,12 +792,9 @@ export const TranoSombre = (): JSX.Element => {
               >
                 <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                   ahofaFilter 
-                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
                     : `border-2 ${borderColor}`
                 }`}>
-                  {ahofaFilter && (
-                    <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                  )}
                 </div>
                 <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
                   AHOFA
@@ -810,12 +807,9 @@ export const TranoSombre = (): JSX.Element => {
               >
                 <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                   amidyFilter 
-                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
                     : `border-2 ${borderColor}`
                 }`}>
-                  {amidyFilter && (
-                    <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                  )}
                 </div>
                 <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
                   AMIDY
@@ -829,12 +823,9 @@ export const TranoSombre = (): JSX.Element => {
             >
               <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
                 priceFilter 
-                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center` 
+                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
                   : `border-2 ${borderColor}`
               }`}>
-                {priceFilter && (
-                  <div className={`w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 rounded-full ${isLightMode ? "bg-white" : "bg-[#0f172a]"}`}></div>
-                )}
               </div>
               <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
                 + de {isEuro ? formatCurrency(10116000, true).replace('.00', '') : "10 116 000 Ar"}
@@ -947,7 +938,7 @@ export const TranoSombre = (): JSX.Element => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="relative mt-2 mb-2 flex flex-col items-center gap-2 sticky bottom-0 z-20 bg-inherit py-4"
+            className="relative mt-2 mb-2 flex flex-col items-center gap-2 sticky bottom-0 z-20 bg-inherit"
           >
             <div className="flex justify-center items-center gap-1 xs:gap-2 sm:gap-4 py-4">
               <button 
@@ -971,7 +962,7 @@ export const TranoSombre = (): JSX.Element => {
                         className={`${
                           currentPage === page 
                             ? `w-6 h-6 xs:w-8 xs:h-8 sm:w-12 sm:h-12 rounded-full ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} flex items-center justify-center ${isLightMode ? "text-white" : "text-[#0f172a]"}` 
-                            : `text-[${isLightMode ? "#0150BC" : "#59e0c5"}] hover:opacity-80`
+                            : `text-${isLightMode ? "#0150BC" : "#59e0c5"} hover:opacity-80`
                         } text-sm xs:text-lg sm:text-2xl cursor-pointer`}
                         onClick={() => handlePageChange(page)}
                       >
@@ -1033,7 +1024,7 @@ export const TranoSombre = (): JSX.Element => {
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
               >
                 {/* En-tête du modal */}
-                <div className={`p-4 border-b ${borderColorLight}`}>
+                <div className={`p-4 border-b ${borderColorLight} text-center`}>
                   <h3 className={`text-lg font-semibold ${textColor}`}>{selectedProperty.title}</h3>
                 </div>
 
