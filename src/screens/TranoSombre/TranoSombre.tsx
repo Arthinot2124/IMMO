@@ -1,5 +1,5 @@
-import { BellIcon, HomeIcon, SettingsIcon } from "lucide-react";
-import React, { useState, useEffect, useCallback } from "react";
+import { HomeIcon, SettingsIcon } from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import apiService from "../../services/apiService";
@@ -37,7 +37,7 @@ interface CurrentUser {
   email?: string;
   full_name?: string;
   role_id?: number;
-  [key: string]: any; // Pour les autres propriétés
+  [key: string]: any;
 }
 
 interface ApiResponse<T> {
@@ -130,7 +130,7 @@ export const TranoSombre = (): JSX.Element => {
       if (savedMode !== null && (savedMode === 'true') !== isLightMode) {
         setIsLightMode(savedMode === 'true');
       }
-    }, 1000); // Vérifier chaque seconde
+    }, 1000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -255,7 +255,7 @@ export const TranoSombre = (): JSX.Element => {
           lastPageFound = true;
         }
         
-        // Cas 2: { status: "success", data: { data: [...], meta: {...} } }
+    
         if (response.data.data && response.data.data.meta && response.data.data.meta.last_page) {
           setTotalPages(response.data.data.meta.last_page);
           console.log("Pagination via data.meta:", response.data.data.meta);
@@ -285,8 +285,6 @@ export const TranoSombre = (): JSX.Element => {
       
       // Si aucune info de pagination n'a été trouvée mais nous avons des données
       if (!lastPageFound && propertyArray.length > 0) {
-        // Estimer le nombre total de pages en fonction du nombre d'éléments retournés
-        // Assume une taille de page constante
         const estimatedTotalPages = Math.max(2, Math.ceil(propertyArray.length / 5));
         console.log(`Aucune information de pagination trouvée. Estimation: ${estimatedTotalPages} pages`);
         setTotalPages(estimatedTotalPages);
@@ -766,7 +764,7 @@ export const TranoSombre = (): JSX.Element => {
               className={`text-base xs:text-xl sm:text-2xl font-bold transition-colors ${
                 activeFilter === "VILLAS" 
                   ? textColor 
-                  : `${textColor} opacity-50 hover:opacity-70`
+                  : `${textColor} opacity-30 hover:opacity-70`
               }`}
             >
               TRANO
@@ -777,7 +775,7 @@ export const TranoSombre = (): JSX.Element => {
               className={`text-base xs:text-xl sm:text-2xl font-bold transition-colors ${
                 activeFilter === "TERRAINS" 
                   ? textColor 
-                  : `${textColor} opacity-50 hover:opacity-70`
+                  : `${textColor} opacity-30 hover:opacity-70`
               }`}
             >
               TANY

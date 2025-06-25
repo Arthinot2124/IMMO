@@ -16,6 +16,27 @@ interface ApiResponse<T> {
 
 const notificationService = {
   /**
+   * Crée une nouvelle notification pour un utilisateur
+   */
+  createNotification: async (userId: number, message: string): Promise<Notification> => {
+    try {
+      const response = await apiService.post<ApiResponse<Notification>>('/notifications', {
+        user_id: userId,
+        message: message
+      });
+
+      if (response.data && response.data.status === 'success') {
+        return response.data.data;
+      } else {
+        throw new Error('Format de réponse invalide');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la création de la notification:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Récupère toutes les notifications pour l'utilisateur actuel
    */
   getNotifications: async (): Promise<Notification[]> => {

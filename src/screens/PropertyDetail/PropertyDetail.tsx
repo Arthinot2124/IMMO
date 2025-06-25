@@ -6,9 +6,10 @@ import NotificationBadge from "../../components/NotificationBadge";
 import StarRating from "../../components/StarRating";
 import apiService from "../../services/apiService";
 import authService from "../../services/authService";
+import notificationService from "../../services/notificationService";
 import { getMediaUrl } from "../../config/api";
 import { formatCurrency } from "../../services/currencyService";
-import { BellIcon, HeartIcon, CalendarIcon, StarIcon, MessageSquareIcon, ShareIcon, ImageIcon,ArrowLeftIcon } from "lucide-react";
+import { BellIcon, HeartIcon, CalendarIcon, StarIcon, MessageSquareIcon, ShareIcon, ImageIcon, ArrowLeftIcon, LockIcon, UnlockIcon, KeyIcon, AlertTriangleIcon, CheckCircleIcon, XCircleIcon } from "lucide-react";
 
 // Types pour les propriétés
 interface PropertyMedia {
@@ -43,6 +44,7 @@ interface Property {
   rating?: number;
   reviews?: number;
   user_id: number;
+  additional_details?: string;
 }
 
 interface ApiResponse<T> {
@@ -98,6 +100,12 @@ export const PropertyDetail = (): JSX.Element => {
   const [userRating, setUserRating] = useState<number>(0);
   const [propertyLoading, setPropertyLoading] = useState(true);
   const [addingToFavorites, setAddingToFavorites] = useState(false); // Nouvel état pour le chargement des favoris
+  // Nouveaux états pour le verrouillage des vidéos
+  const [isVideoLocked, setIsVideoLocked] = useState(true);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -315,24 +323,38 @@ export const PropertyDetail = (): JSX.Element => {
           console.warn("[PropertyDetail] Impossible d'utiliser l'API pour supprimer le favori");
         }
       } else {
-        // Ajouter aux favoris dans localStorage
-        favorites.push(Number(id));
-        localStorage.setItem(favoritesKey, JSON.stringify(favorites));
-        setIsFavorite(true);
-        console.log("[PropertyDetail] Bien ajouté aux favoris (localStorage)");
-        
-        // Essayer aussi avec l'API si disponible
-        try {
-          const response = await apiService.post<ApiResponse<{ favorite_id: number }>>(`/favorites`, {
-            property_id: Number(id),
-            user_id: currentUser.user_id
-          });
-          if (response.data && response.data.status === 'success') {
-            console.log("[PropertyDetail] Bien ajouté aux favoris (API)");
+              // Ajouter aux favoris dans localStorage
+      favorites.push(Number(id));
+      localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+      setIsFavorite(true);
+      console.log("[PropertyDetail] Bien ajouté aux favoris (localStorage)");
+      
+      // Essayer aussi avec l'API si disponible
+      try {
+        const response = await apiService.post<ApiResponse<{ favorite_id: number }>>(`/favorites`, {
+          property_id: Number(id),
+          user_id: currentUser.user_id
+        });
+        if (response.data && response.data.status === 'success') {
+          console.log("[PropertyDetail] Bien ajouté aux favoris (API)");
+          
+          // Envoyer une notification au propriétaire du bien
+          if (property && property.user_id && property.user_id !== currentUser.user_id) {
+            try {
+              await notificationService.createNotification(
+                property.user_id,
+                `Un utilisateur a ajouté votre bien "${property.title}" à ses favoris.`
+              );
+              console.log("[PropertyDetail] Notification envoyée au propriétaire du bien");
+            } catch (notifErr) {
+              console.error("[PropertyDetail] Erreur lors de l'envoi de la notification:", notifErr);
+              // On continue même en cas d'erreur de notification
+            }
           }
-        } catch (apiError) {
-          console.warn("[PropertyDetail] Impossible d'utiliser l'API pour ajouter le favori");
         }
+      } catch (apiError) {
+        console.warn("[PropertyDetail] Impossible d'utiliser l'API pour ajouter le favori");
+      }
       }
     } catch (error) {
       console.error("[PropertyDetail] Erreur lors de la mise à jour des favoris:", error);
@@ -470,6 +492,214 @@ export const PropertyDetail = (): JSX.Element => {
     return Number(property.user_id) === Number(currentUser.user_id);
   };
 
+  // Vérifier si l'utilisateur a déjà déverrouillé la vidéo
+  useEffect(() => {
+    if (!property || !id) return;
+    
+    // Vérifier dans localStorage si la vidéo a déjà été déverrouillée
+    const unlockedVideos = localStorage.getItem('unlockedVideos');
+    if (unlockedVideos) {
+      try {
+        const videosData = JSON.parse(unlockedVideos);
+        const propertyId = Number(id);
+        
+        // Nouvelle structure: { "propertyId": expireTimestamp }
+        if (videosData[propertyId]) {
+          const expireTime = videosData[propertyId];
+          const currentTime = Date.now();
+          
+          if (currentTime < expireTime) {
+            // La période d'accès est encore valide
+            setIsVideoLocked(false);
+            
+            // Envoyer une notification au propriétaire pour l'informer qu'un utilisateur regarde sa vidéo
+            const currentUser = authService.getCurrentUser();
+            if (property && property.user_id && currentUser && property.user_id !== currentUser.user_id) {
+              try {
+                // Utiliser une fonction immédiatement invoquée pour pouvoir utiliser async/await dans useEffect
+                (async () => {
+                  await notificationService.createNotification(
+                    property.user_id,
+                    `Un utilisateur visionne la visite virtuelle de votre bien "${property.title}".`
+                  );
+                  console.log("[PropertyDetail] Notification envoyée au propriétaire pour visionnage vidéo (déjà déverrouillée)");
+                })().catch(notifErr => {
+                  console.error("[PropertyDetail] Erreur lors de l'envoi de la notification de visionnage:", notifErr);
+                });
+              } catch (notifErr) {
+                console.error("[PropertyDetail] Erreur lors de l'envoi de la notification de visionnage:", notifErr);
+              }
+            }
+            
+            // Configurer un timer pour reverouiller la vidéo à l'expiration
+            const timeLeft = expireTime - currentTime;
+            const timer = setTimeout(() => {
+              setIsVideoLocked(true);
+              console.log("Accès à la vidéo expiré");
+              
+              // Notification à l'utilisateur que l'accès a expiré
+              const notificationElement = document.createElement('div');
+              notificationElement.className = `fixed top-4 right-4 ${isLightMode ? 'bg-red-100 text-red-800' : 'bg-red-900/80 text-white'} p-3 rounded-lg shadow-lg z-50 animate-fade-in-down`;
+              notificationElement.innerHTML = `<div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10a8 8 0 01-14 0"></path><path d="M12 22v-4"></path><path d="M12 6v-4"></path></svg><span>Accès à la vidéo expiré</span></div>`;
+              document.body.appendChild(notificationElement);
+              
+              setTimeout(() => {
+                document.body.removeChild(notificationElement);
+              }, 6000);
+            }, timeLeft);
+            
+            // Nettoyer le timer si le composant est démonté
+            return () => clearTimeout(timer);
+          } else {
+            // La période d'accès a expiré
+            setIsVideoLocked(true);
+            
+            // Supprimer l'entrée expirée
+            delete videosData[propertyId];
+            localStorage.setItem('unlockedVideos', JSON.stringify(videosData));
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors de la lecture des données de déverrouillage:", error);
+      }
+    }
+  }, [property, id, isLightMode]);
+  
+  // Fonction pour valider le coupon en utilisant l'API backend
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Veuillez entrer un code");
+      return;
+    }
+    
+    setValidatingCoupon(true);
+    setCouponError(null);
+    
+    try {
+      // Appel API pour valider le coupon
+      const response = await apiService.post<ApiResponse<any>>('/coupons/validate', {
+        code: couponCode,
+        property_id: Number(id)
+      });
+      
+      if (response.data.status === 'success') {
+        // Coupon valide trouvé
+        console.log("[PropertyDetail] Coupon validé avec succès:", response.data);
+        
+        // Appliquer le coupon
+        const applyResponse = await apiService.post<ApiResponse<any>>('/coupons/apply', {
+          code: couponCode,
+          property_id: Number(id)
+        });
+        
+                   if (applyResponse.data.status === 'success') {
+             setIsVideoLocked(false);
+             setShowCouponModal(false);
+             
+             // Calculer le timestamp d'expiration (1 minute)
+             const expireTime = Date.now() + (60 * 1000); // Temps actuel + 60 secondes
+             
+             // Enregistrer le déverrouillage avec timestamp d'expiration dans localStorage
+             const unlockedVideos = localStorage.getItem('unlockedVideos');
+             let videosData = unlockedVideos ? JSON.parse(unlockedVideos) : {};
+             
+             if (id) {
+               // Stocker avec format { "propertyId": expireTimestamp }
+               videosData[Number(id)] = expireTime;
+               localStorage.setItem('unlockedVideos', JSON.stringify(videosData));
+               
+               // Notification à l'utilisateur que l'accès est limité
+               const notificationElement = document.createElement('div');
+               notificationElement.className = `fixed top-4 right-4 ${isLightMode ? 'bg-blue-100 text-blue-800' : 'bg-blue-900/80 text-white'} p-3 rounded-lg shadow-lg z-50 animate-fade-in-down`;
+               notificationElement.innerHTML = `<div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="10"></circle></svg><span>Accès déverrouillé pour 1 minute</span></div>`;
+               document.body.appendChild(notificationElement);
+               
+               setTimeout(() => {
+                 document.body.removeChild(notificationElement);
+               }, 6000);
+               
+               // Configurer un timer pour reverouiller après expiration
+               setTimeout(() => {
+                 setIsVideoLocked(true);
+               }, 60 * 1000);
+               
+               // Envoyer une notification au propriétaire du bien
+               const currentUser = authService.getCurrentUser();
+               if (property && property.user_id && currentUser && property.user_id !== currentUser.user_id) {
+                 try {
+                   await notificationService.createNotification(
+                     property.user_id,
+                     `Un client a consulté la visite virtuelle de votre propriété "${property.title}".`
+                   );
+                   console.log("[PropertyDetail] Notification envoyée au propriétaire pour visionnage vidéo");
+                 } catch (notifErr) {
+                   console.error("[PropertyDetail] Erreur lors de l'envoi de la notification de visionnage:", notifErr);
+                   // On continue même en cas d'erreur de notification
+                 }
+               }
+          }
+        } else {
+          setCouponError(applyResponse.data.message || "Erreur lors de l'application du coupon");
+        }
+      } else {
+        setCouponError(response.data.message || "Code coupon invalide");
+      }
+    } catch (error: any) {
+      console.error("Erreur lors de la validation du coupon:", error);
+      
+      // Fallback pour la démo : codes de secours en cas d'erreur d'API
+      if (couponCode === "TAFO2023" || couponCode === "ADMIN123" || couponCode === "123456") {
+        setIsVideoLocked(false);
+        setShowCouponModal(false);
+        
+        // Calculer le timestamp d'expiration (1 minute)
+        const expireTime = Date.now() + (60 * 1000);
+        
+        // Enregistrer le déverrouillage avec timestamp d'expiration
+        const unlockedVideos = localStorage.getItem('unlockedVideos');
+        let videosData = unlockedVideos ? JSON.parse(unlockedVideos) : {};
+        
+        if (id) {
+          videosData[Number(id)] = expireTime;
+          localStorage.setItem('unlockedVideos', JSON.stringify(videosData));
+          
+          // Notification pour les codes de secours
+          const notificationElement = document.createElement('div');
+          notificationElement.className = `fixed top-4 right-4 ${isLightMode ? 'bg-yellow-100 text-yellow-800' : 'bg-yellow-900/80 text-white'} p-3 rounded-lg shadow-lg z-50 animate-fade-in-down`;
+          notificationElement.innerHTML = `<div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="10"></circle></svg><span>Code de secours accepté (1 minute)</span></div>`;
+          document.body.appendChild(notificationElement);
+          
+          setTimeout(() => {
+            document.body.removeChild(notificationElement);
+          }, 6000);
+          
+          setTimeout(() => {
+            setIsVideoLocked(true);
+          }, 60 * 1000);
+          
+          // Envoyer une notification au propriétaire du bien (pour les codes de secours)
+          const currentUser = authService.getCurrentUser();
+          if (property && property.user_id && currentUser && property.user_id !== currentUser.user_id) {
+            try {
+              await notificationService.createNotification(
+                property.user_id,
+                `Un utilisateur a déverrouillé et visionne la visite virtuelle de votre bien "${property.title}".`
+              );
+              console.log("[PropertyDetail] Notification envoyée au propriétaire pour visionnage vidéo (code de secours)");
+            } catch (notifErr) {
+              console.error("[PropertyDetail] Erreur lors de l'envoi de la notification de visionnage:", notifErr);
+              // On continue même en cas d'erreur de notification
+            }
+          }
+        }
+      } else {
+        setCouponError(error.response?.data?.message || "Une erreur est survenue lors de la vérification du coupon");
+      }
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
   // Propriétés extraites pour simplifier le template
   const images = getImageUrls();
   const videos = getVideos();
@@ -591,12 +821,44 @@ export const PropertyDetail = (): JSX.Element => {
             >
               <div className={`relative ${imageBgColor} rounded-2xl overflow-hidden h-[200px] xs:h-[250px] sm:h-[350px] md:h-[450px] ${imageBorder}`}>
                 {videos.length > 0 ? (
-                  <video 
-                    src={videos[selectedVideo]} 
-                    className="w-full h-full object-contain"
-                    controls
-                    autoPlay={false}
-                  />
+                  isVideoLocked ? (
+                    // Afficher le cadenas et l'overlay de verrouillage
+                    <div className="w-full h-full relative">
+                      {/* Aperçu de la vidéo verrouillée (image floutée) */}
+                      <div className="absolute inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+                        {/* Icône de cadenas */}
+                        <LockIcon size={64} className={`${textColor} mb-4`} />
+                        <h3 className={`text-xl font-bold ${textPrimaryColor} mb-2 text-center px-4`}>
+                          Cette vidéo est verrouillée
+                        </h3>
+                        <p className={`${textSecondaryColor} text-center mb-4 px-4 text-sm`}>
+                          Contactez l'agence ou utilisez un code de coupon pour accéder à cette vidéo
+                        </p>
+                        <button
+                          onClick={() => setShowCouponModal(true)}
+                          className={`${buttonPrimaryBg} ${buttonPrimaryText} px-6 py-2 rounded-full font-medium hover:opacity-90 transition-all flex items-center gap-2 z-20`}
+                        >
+                          <KeyIcon size={16} />
+                          Entrer un code
+                        </button>
+                      </div>
+                      
+                      {/* Image d'aperçu (si disponible) ou icône vidéo */}
+                      <div className="w-full h-full flex items-center justify-center opacity-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-20 h-20 text-gray-400">
+                          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                      </div>
+                    </div>
+                  ) : (
+                    // Vidéo déverrouillée
+                    <video 
+                      src={videos[selectedVideo]} 
+                      className="w-full h-full object-contain"
+                      controls
+                      autoPlay={false}
+                    />
+                  )
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                     <ImageIcon size={48} />
@@ -659,14 +921,24 @@ export const PropertyDetail = (): JSX.Element => {
                 <p className={`${textSecondaryColor} text-sm`}>{property.description || "Aucune description disponible."}</p>
               </div>
               
+              {/* Affichage des détails supplémentaires s'ils existent */}
+              {property.additional_details && (
+                <div className={`border-t ${borderColorLight} my-4 pt-4`}>
+                  <h3 className={`${textColor} font-semibold mb-2`}>Détails supplémentaires</h3>
+                  <p className={`${textSecondaryColor} text-sm`}>{property.additional_details}</p>
+                </div>
+              )}
+              
               <div className={`border-t ${borderColorLight} my-4 pt-4`}>
                 <h3 className={`${textColor} font-semibold mb-2`}>Caractéristiques</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {/* Caractéristiques extraites des propriétés */}
-                  <div className={`flex items-center ${textSecondaryColor} text-sm`}>
-                    <div className={`w-2 h-2 ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} rounded-full mr-2`}></div>
-                    Surface: {property.surface || "Non spécifiée"} m²
-                  </div>
+                  {property.surface && Number(property.surface) > 0 && (
+                    <div className={`flex items-center ${textSecondaryColor} text-sm`}>
+                      <div className={`w-2 h-2 ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} rounded-full mr-2`}></div>
+                      Surface: {property.surface} m²
+                    </div>
+                  )}
                   <div className={`flex items-center ${textSecondaryColor} text-sm`}>
                     <div className={`w-2 h-2 ${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"} rounded-full mr-2`}></div>
                     Catégorie: {property.category}
@@ -748,6 +1020,76 @@ export const PropertyDetail = (): JSX.Element => {
             </motion.div>
           </>
         ) : null}
+
+        {/* Modal pour entrer le code coupon */}
+        {showCouponModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className={`${cardBgColor} rounded-xl p-5 w-full max-w-md ${cardBorder}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className={`text-lg font-bold ${textPrimaryColor}`}>
+                  Déverrouiller la vidéo
+                </h3>
+                <button 
+                  onClick={() => setShowCouponModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <XCircleIcon size={24} />
+                </button>
+              </div>
+              
+              <div className={`mb-4 p-3 ${isLightMode ? "bg-yellow-50" : "bg-yellow-900/20"} ${isLightMode ? "text-yellow-800" : "text-yellow-200"} rounded-lg flex items-start gap-3`}>
+                <AlertTriangleIcon size={20} className="flex-shrink-0 mt-1" />
+                <p className="text-sm">
+                  Pour accéder à cette vidéo, veuillez entrer le code de coupon fourni par l'administrateur.
+                </p>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="couponCode" className={`block mb-2 text-sm font-medium ${textSecondaryColor}`}>
+                  Code de coupon
+                </label>
+                <input
+                  type="text"
+                  id="couponCode"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="Entrez le code de coupon"
+                  className={`w-full p-3 rounded-lg border ${borderColorLight} bg-transparent text-sm ${textPrimaryColor} focus:outline-none focus:border-2 ${borderColor}`}
+                />
+                {couponError && (
+                  <p className="mt-2 text-sm text-red-500">{couponError}</p>
+                )}
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCouponModal(false)}
+                  className={`flex-1 py-2 px-4 border ${borderColor} rounded-lg ${textColor} font-medium`}
+                  disabled={validatingCoupon}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={validateCoupon}
+                  disabled={validatingCoupon}
+                  className={`flex-1 py-2 px-4 ${buttonPrimaryBg} ${buttonPrimaryText} rounded-lg font-medium flex items-center justify-center gap-2`}
+                >
+                  {validatingCoupon ? (
+                    <>
+                      <div className={`w-4 h-4 border-2 ${buttonPrimaryText} border-t-transparent rounded-full animate-spin`}></div>
+                      <span>Validation...</span>
+                    </>
+                  ) : (
+                    <>
+                      <KeyIcon size={16} />
+                      <span>Valider</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );

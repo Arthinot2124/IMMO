@@ -5,6 +5,7 @@ import { ArrowLeftIcon, CheckCircleIcon, RefreshCwIcon, AlertTriangleIcon, InfoI
 import apiService from "../../services/apiService";
 import { getMediaUrl } from "../../config/api";
 import { formatCurrency } from "../../services/currencyService";
+import notificationService from "../../services/notificationService";
 
 // Type de la demande de propriété
 interface PropertyRequest {
@@ -42,6 +43,7 @@ interface CreatedProperty {
   category: string;
   property_type: string;
   status: string;
+  additional_details?: string;
   created_at: string;
   updated_at: string;
 }
@@ -149,7 +151,8 @@ export const PropertyRequestApproval = (): JSX.Element => {
     location: "",
     category: "LITE",
     status: "Disponible",
-    property_type: "VILLA"
+    property_type: "VILLA",
+    additional_details: ""
   });
 
   // Charger les détails de la demande
@@ -199,7 +202,8 @@ export const PropertyRequestApproval = (): JSX.Element => {
             location: requestData.location || "",
             category: requestData.category || "LITE",
             status: requestData.property_status || "Disponible",
-            property_type: requestData.property_type || "VILLA"
+            property_type: requestData.property_type || "VILLA",
+            additional_details: requestData.additional_details || ""
           });
         } else {
           throw new Error("Format de réponse inattendu");
@@ -226,7 +230,16 @@ export const PropertyRequestApproval = (): JSX.Element => {
         const response = await apiService.get<ApiResponse<PropertyRequestMedia[]>>(`/property-requests/${id}/media`);
         
         if (response.data && response.data.status === "success" && Array.isArray(response.data.data)) {
-          setRequestImages(response.data.data);
+          // Filtrer pour ne garder que les images (pas les vidéos)
+          const imagesOnly = response.data.data.filter(media => 
+            media.media_type === 'image' || 
+            media.media_url.toLowerCase().endsWith('.jpg') || 
+            media.media_url.toLowerCase().endsWith('.jpeg') || 
+            media.media_url.toLowerCase().endsWith('.png') || 
+            media.media_url.toLowerCase().endsWith('.gif') || 
+            media.media_url.toLowerCase().endsWith('.webp')
+          );
+          setRequestImages(imagesOnly);
         }
       } catch (err: any) {
         console.error("Erreur lors du chargement des images:", err);
@@ -318,7 +331,8 @@ export const PropertyRequestApproval = (): JSX.Element => {
         category: formData.category || request.category || "LITE",
         status: formData.status || request.property_status || "Disponible",
         property_type: request.property_type || "VILLA", // Utiliser UNIQUEMENT le type de la demande d'origine
-        transaction_type: request.transaction_type || "Achat"
+        transaction_type: request.transaction_type || "Achat",
+        additional_details: formData.additional_details || request.additional_details
       };
       
       console.log("Envoi des données vers l'API:", propertyData);
@@ -334,8 +348,12 @@ export const PropertyRequestApproval = (): JSX.Element => {
         if (requestImages.length > 0) {
           try {
             // Use the dedicated endpoint to copy media from property request to property
+            // En spécifiant qu'on ne veut que les images (pas les vidéos)
             await apiService.post<ApiResponse<any>>(`/properties/${response.data.data.property_id}/copy-media-from-request`, 
-              { request_id: request.request_id }
+              { 
+                request_id: request.request_id,
+                media_types: ["image"] 
+              }
             );
             
             console.log("Images transférées avec succès");
@@ -349,6 +367,18 @@ export const PropertyRequestApproval = (): JSX.Element => {
         await apiService.put<ApiResponse<any>>(`/property-requests/${request.request_id}`, 
           { status: 'Accepté' }
         );
+        
+        // Créer une notification pour l'utilisateur qui a fait la demande
+        try {
+          await notificationService.createNotification(
+            request.user_id,
+            `Votre demande de mise en ligne pour "${formData.title || request.title}" a été acceptée. La propriété est maintenant visible sur la plateforme.`
+          );
+          console.log("Notification de confirmation de propriété créée avec succès");
+        } catch (notifErr) {
+          console.error("Erreur lors de la création de la notification:", notifErr);
+          // On continue même s'il y a une erreur avec la notification
+        }
         
         // Propriété créée avec succès
         setSuccess(true);
@@ -455,6 +485,14 @@ export const PropertyRequestApproval = (): JSX.Element => {
                 <span className={textSecondaryColor}>Description:</span>
                 <p className="mt-1 text-sm">{createdProperty.description || "Aucune description fournie"}</p>
               </div>
+              
+              {/* Afficher les détails supplémentaires dans le message de succès */}
+              {createdProperty.additional_details && (
+                <div className="mt-3">
+                  <span className={textSecondaryColor}>Détails supplémentaires:</span>
+                  <p className="mt-1 text-sm">{createdProperty.additional_details}</p>
+                </div>
+              )}
             </div>
             
             <p className="text-sm">Redirection vers le tableau de bord dans quelques secondes...</p>
@@ -513,6 +551,14 @@ export const PropertyRequestApproval = (): JSX.Element => {
                   <span className={textSecondaryColor}>Description:</span>
                   <p className="mt-1 text-sm">{formData.description || "Aucune description fournie"}</p>
                 </div>
+                
+                {/* Détails supplémentaires */}
+                {formData.additional_details && (
+                  <div className="mt-4">
+                    <span className={textSecondaryColor}>Détails supplémentaires:</span>
+                    <p className="mt-1 text-sm">{formData.additional_details}</p>
+                  </div>
+                )}
                 
                 {/* Afficher les images dans la confirmation */}
                 {requestImages.length > 0 && (
@@ -811,6 +857,22 @@ export const PropertyRequestApproval = (): JSX.Element => {
                     onChange={handleInputChange}
                     className={`w-full ${inputBgColor} border ${inputBorderColor} rounded-lg px-4 py-2 ${textPrimaryColor} min-h-[80px]`}
                     placeholder="Décrivez le bien immobilier..."
+                    disabled={!isEditMode}
+                  />
+                </div>
+
+                {/* Ajout des détails supplémentaires dans le formulaire */}
+                <div>
+                  <label htmlFor="additional_details" className={`block text-sm ${textColor} mb-1`}>
+                    Détails supplémentaires
+                  </label>
+                  <textarea
+                    id="additional_details"
+                    name="additional_details"
+                    value={formData.additional_details}
+                    onChange={handleInputChange}
+                    className={`w-full ${inputBgColor} border ${inputBorderColor} rounded-lg px-4 py-2 ${textPrimaryColor} min-h-[80px]`}
+                    placeholder="Informations complémentaires..."
                     disabled={!isEditMode}
                   />
                 </div>

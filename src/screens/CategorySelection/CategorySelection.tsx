@@ -231,7 +231,6 @@ export const CategorySelection = (): JSX.Element => {
                 whileHover={{ scale: 1.03, y: -5, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
                 className="backdrop-blur-[1px] backdrop-saturate-150 bg-white/15 dark:bg-black/15 rounded-2xl overflow-hidden border-2 border-white/40 dark:border-[#59e0c5]/30 shadow-[0_10px_30px_rgba(0,0,0,0.12),_inset_0_1px_2px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.2),_inset_0_2px_3px_rgba(255,255,255,0.6)]"
-                onClick={() => handleCategorySelection('LITE')}
                 layout
               >
                 <div className="p-3 flex flex-col items-center text-center h-full relative">
@@ -251,7 +250,7 @@ export const CategorySelection = (): JSX.Element => {
                     animate={{ width: 48, transition: { delay: 0.3, duration: 0.5 } }}
                   ></motion.div>
                   <p className={`${textSecondaryColor} text-xs mb-1`}>
-                    Service de base pour les propriétés
+                    Pour les loyers moins de 500 000 Ar/mois
                   </p>
                   <ul className={`text-left ${textSecondaryColor} text-[10px] space-y-0.5 mb-2 w-full px-2`}>
                     <motion.li 
@@ -260,7 +259,7 @@ export const CategorySelection = (): JSX.Element => {
                       custom={0}
                     >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Publication standard</span>
+                      <span>Visite virtuelle : 3 000 Ar</span>
                     </motion.li>
                     <motion.li 
                       className="flex items-start"
@@ -268,7 +267,23 @@ export const CategorySelection = (): JSX.Element => {
                       custom={1}
                     >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Visibilité normale</span>
+                      <span>Caution : 50 % du loyer</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={2}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Gestion locative (optionnelle): 10 % loyer/mois pendant 1 an</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={3}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Sans engagement: 10 %/mois prélevés</span>
                     </motion.li>
                   </ul>
                   <motion.button 
@@ -276,6 +291,7 @@ export const CategorySelection = (): JSX.Element => {
                     variants={buttonVariants}
                     whileHover="hover"
                     whileTap="tap"
+                    onClick={() => handleCategorySelection('LITE')}
                   >
                     Sélectionner
                   </motion.button>
@@ -289,7 +305,6 @@ export const CategorySelection = (): JSX.Element => {
                 whileHover={{ scale: 1.03, y: -5, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
                 className="backdrop-blur-[1px] backdrop-saturate-150 bg-white/15 dark:bg-black/20 rounded-2xl overflow-hidden border-2 border-white/40 dark:border-[#59e0c5]/40 shadow-[0_10px_30px_rgba(0,0,0,0.18),_inset_0_1px_2px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.25),_inset_0_2px_3px_rgba(255,255,255,0.6)] relative"
-                onClick={() => handleCategorySelection('ESSENTIEL')}
                 layout
               >
                 {/* Éclat d'accent */}
@@ -320,7 +335,7 @@ export const CategorySelection = (): JSX.Element => {
                     animate={{ width: 48, transition: { delay: 0.3, duration: 0.5 } }}
                   ></motion.div>
                   <p className={`${textSecondaryColor} text-xs mb-1`}>
-                    Service avec une visibilité accrue
+                    Pour les loyers + de 500 000 Ar/mois
                   </p>
                   <ul className={`text-left ${textSecondaryColor} text-[10px] space-y-0.5 mb-2 w-full px-2`}>
                     <motion.li 
@@ -329,7 +344,7 @@ export const CategorySelection = (): JSX.Element => {
                       custom={0}
                     >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Mise en avant ++</span>
+                      <span>Tous les services de l'offre Lite</span>
                     </motion.li>
                     <motion.li 
                       className="flex items-start"
@@ -337,7 +352,47 @@ export const CategorySelection = (): JSX.Element => {
                       custom={1}
                     >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Priorité affichage</span>
+                      <span>Engagement locataire obligatoire : min. 6 mois</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={2}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Conciergerie et Gestion locative obligatoire</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={3}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Caution : 35 % du loyer</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={4}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Conseil juridique et fiscal</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={5}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Exclusivité (si plusieurs biens)</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={6}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Boost visibilité + publi-reportage (3 mois)</span>
                     </motion.li>
                   </ul>
                   <motion.button 
@@ -345,6 +400,7 @@ export const CategorySelection = (): JSX.Element => {
                     variants={buttonVariants}
                     whileHover="hover"
                     whileTap="tap"
+                    onClick={() => handleCategorySelection('ESSENTIEL')}
                   >
                     Sélectionner
                   </motion.button>
@@ -358,7 +414,6 @@ export const CategorySelection = (): JSX.Element => {
                 whileHover={{ scale: 1.03, y: -5, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.98 }}
                 className="backdrop-blur-[1px] backdrop-saturate-150 bg-white/15 dark:bg-black/15 rounded-2xl overflow-hidden border-2 border-white/40 dark:border-[#59e0c5]/30 shadow-[0_10px_30px_rgba(0,0,0,0.12),_inset_0_1px_2px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(0,0,0,0.2),_inset_0_2px_3px_rgba(255,255,255,0.6)]"
-                onClick={() => handleCategorySelection('PREMIUM')}
                 layout
               >
                 <div className="p-3 flex flex-col items-center text-center h-full relative">
@@ -378,7 +433,7 @@ export const CategorySelection = (): JSX.Element => {
                     animate={{ width: 48, transition: { delay: 0.3, duration: 0.5 } }}
                   ></motion.div>
                   <p className={`${textSecondaryColor} text-xs mb-1`}>
-                    Service premium complet
+                    Biens + de 3 000 000 Ar/mois
                   </p>
                   <ul className={`text-left ${textSecondaryColor} text-[10px] space-y-0.5 mb-2 w-full px-2`}>
                     <motion.li 
@@ -387,7 +442,7 @@ export const CategorySelection = (): JSX.Element => {
                       custom={0}
                     >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Première page garantie</span>
+                      <span>Tous les services de l'offre Lite et Essentielle</span>
                     </motion.li>
                     <motion.li 
                       className="flex items-start"
@@ -395,7 +450,31 @@ export const CategorySelection = (): JSX.Element => {
                       custom={1}
                     >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Marketing premium</span>
+                      <span>Caution : 25 % du loyer</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={2}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Gardiennage</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={3}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Services domestiques</span>
+                    </motion.li>
+                    <motion.li 
+                      className="flex items-start"
+                      variants={listItemVariants}
+                      custom={4}
+                    >
+                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
+                      <span>Assurance du bien</span>
                     </motion.li>
                   </ul>
                   <motion.button 
@@ -403,6 +482,7 @@ export const CategorySelection = (): JSX.Element => {
                     variants={buttonVariants}
                     whileHover="hover"
                     whileTap="tap"
+                    onClick={() => handleCategorySelection('PREMIUM')}
                   >
                     Sélectionner
                   </motion.button>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   BellIcon, HomeIcon, SettingsIcon, ClipboardListIcon, 
   CalendarIcon, BuildingIcon, UserIcon, ListIcon,
   CheckCircleIcon, XCircleIcon, RefreshCwIcon,
   SunIcon, MoonIcon, UsersIcon, ShoppingCartIcon,
-  ClipboardIcon, InfoIcon, MailIcon, PhoneIcon, ImageIcon, FileIcon
+  ClipboardIcon, InfoIcon, MailIcon, PhoneIcon, ImageIcon, FileIcon,
+  FileTextIcon, CreditCardIcon, PlusCircleIcon, ArrowRightIcon, TagIcon, TicketIcon
 } from "lucide-react";
 import apiService from "../../services/apiService";
 import NotificationBadge from "../../components/NotificationBadge";
@@ -302,31 +303,45 @@ export const AdminDashboard = (): JSX.Element => {
   const adminCards = [
     {
       id: 1,
-      title: "Gestion des utilisateurs",
-      description: "Gérer les utilisateurs, voir les détails et modifier les permissions.",
-      icon: <UsersIcon className={`w-10 h-10 ${textColor}`} />,
-      link: "/admin/users"
-    },
-    {
-      id: 2,
-      title: "Gestion des biens",
-      description: "Ajouter, modifier et supprimer des biens immobiliers.",
-      icon: <HomeIcon className={`w-10 h-10 ${textColor}`} />,
+      title: "Propriétés",
+      description: "Gérer les annonces",
+      icon: <FileTextIcon className="h-6 w-6 text-blue-600" />,
       link: "/admin/properties"
     },
     {
+      id: 2,
+      title: "Utilisateurs",
+      description: "Gérer les comptes",
+      icon: <UsersIcon className="h-6 w-6 text-blue-600" />,
+      link: "/admin/users"
+    },
+    {
       id: 3,
-      title: "Gestion des rendez-vous",
-      description: "Gérer les demandes de visites et les planifier.",
-      icon: <CalendarIcon className={`w-10 h-10 ${textColor}`} />,
-      link: "/admin/appointments"
+      title: "Demandes de mise en ligne",
+      description: "Approuver les requêtes",
+      icon: <PlusCircleIcon className="h-6 w-6 text-blue-600" />,
+      link: "/admin/property-requests"
     },
     {
       id: 4,
-      title: "Gestion des commandes",
-      description: "Suivre et gérer les commandes d'achat et de location.",
-      icon: <ShoppingCartIcon className={`w-10 h-10 ${textColor}`} />,
+      title: "Rendez-vous",
+      description: "Gérer les visites",
+      icon: <CalendarIcon className="h-6 w-6 text-blue-600" />,
+      link: "/admin/appointments"
+    },
+    {
+      id: 5,
+      title: "Commandes",
+      description: "Gérer les transactions",
+      icon: <CreditCardIcon className="h-6 w-6 text-blue-600" />,
       link: "/admin/orders"
+    },
+    {
+      id: 6,
+      title: "Coupons",
+      description: "Accès aux vidéos",
+      icon: <TicketIcon className="h-6 w-6 text-blue-600" />,
+      link: "/admin/coupons"
     }
   ];
 
@@ -557,29 +572,40 @@ export const AdminDashboard = (): JSX.Element => {
                   <div className="flex-none">
                     <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Accès Rapides</h2>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {adminCards.map(card => (
-                    <motion.button
+                      <Link
                         key={card.id}
-                      variants={itemVariants}
-                      className={`${cardBgColor} p-4 rounded-lg flex items-center ${cardBorder} hover:shadow-md transition-all`}
-                        onClick={() => {
-                          // Pour les demandes de propriété, utiliser la fonction spéciale
-                          if (card.title === "Demandes de mise en ligne") {
-                            navigateToPropertyRequestManagement();
-                          } else {
-                            navigate(card.link);
-                          }
-                        }}
-                    >
-                      <div className={`${iconBgColor} p-3 rounded-lg mr-4`}>
-                          {card.icon}
-                      </div>
-                      <div className="text-left">
-                          <h3 className={`font-medium ${textPrimaryColor}`}>{card.title}</h3>
-                          <p className={`text-sm ${textSecondaryColor}`}>{card.description}</p>
-                      </div>
-                    </motion.button>
+                        to={card.link}
+                        className="bg-white overflow-hidden shadow rounded-lg transition-all hover:shadow-lg"
+                      >
+                        <div className="px-4 py-5 sm:p-6">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                              {card.icon}
+                            </div>
+                            <div className="ml-5 w-0 flex-1">
+                              <dl>
+                                <dt className="text-sm font-medium text-gray-500 truncate">
+                                  {card.title}
+                                </dt>
+                                <dd>
+                                  <div className="text-lg font-medium text-gray-900">
+                                    {card.description}
+                                  </div>
+                                </dd>
+                              </dl>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-gray-50 px-4 py-4 sm:px-6">
+                          <div className="text-sm">
+                            <p className="font-medium text-blue-600 hover:text-blue-500">
+                              Gérer {card.title.toLowerCase()} &rarr;
+                            </p>
+                          </div>
+                        </div>
+                      </Link>
                     ))}
                   </div>
                 </div>

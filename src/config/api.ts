@@ -1,6 +1,4 @@
-// Configuration de l'API
-
-export const API_URL = 'http://192.168.8.116:8000';
+export const API_URL = 'https://0ad9-129-222-109-75.ngrok-free.app';
 //
 export const API_ENDPOINT = `${API_URL}/api`;
 

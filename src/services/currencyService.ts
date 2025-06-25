@@ -14,7 +14,15 @@ export const formatCurrency = (amount: number, isEuro: boolean): string => {
       : amountInEuro.toFixed(2); // 2 décimales pour les autres
     return `${formattedAmount} €`;
   }
-  return `${amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} Ar`;
+  
+  // Pour Ariary, supprimer les décimales si c'est un nombre entier
+  let formattedAmount = amount.toString();
+  
+  // Supprimer les décimales .00 si présentes
+  formattedAmount = formattedAmount.replace(/\.00$/, '');
+  
+  // Ajouter les séparateurs d'espaces pour les milliers
+  return `${formattedAmount.replace(/\B(?=(\d{3})+(?!\d))/g, " ")} Ar`;
 };
 
 // Fonction pour mettre à jour le taux de change (à appeler périodiquement)

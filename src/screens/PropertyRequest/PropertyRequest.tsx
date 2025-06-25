@@ -720,7 +720,7 @@ export const PropertyRequest = (): JSX.Element => {
                 
                 <div>
                   <label htmlFor="surface" className={`block text-sm ${textColor} mb-1`}>
-                    Surface (m²)
+                    Surface (m²) (optionnel)
                   </label>
                   <input
                     id="surface"

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('phone', 20)->nullable();
             $table->string('address', 255)->nullable();
             $table->string('password_hash');
+            $table->string('profile_image')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

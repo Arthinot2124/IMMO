@@ -19,8 +19,11 @@ return new class extends Migration
             $table->decimal('price', 15, 2);
             $table->decimal('surface', 10, 2)->nullable();
             $table->string('location', 255)->nullable();
+            $table->enum('property_type', ['VILLA', 'TERRAIN', 'APPARTEMENT', 'MAISON', 'AUTRE'])->default('AUTRE');
+            $table->enum('transaction_type', ['AHOFA', 'AMIDY']);
             $table->enum('category', ['LITE', 'ESSENTIEL', 'PREMIUM'])->default('LITE');
             $table->enum('status', ['Disponible', 'Réservé', 'Vendu', 'Loué'])->default('Disponible');
+            $table->integer('views')->default(0);
             $table->timestamps();
         });
     }

@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('category')->nullable();
             $table->string('property_status')->nullable();
             $table->text('additional_details')->nullable();
+            $table->enum('property_type', ['VILLA', 'TERRAIN', 'APPARTEMENT'])->default('VILLA');
+            $table->enum('transaction_type', ['AHOFA', 'AMIDY']);
             $table->enum('status', ['En attente', 'Accepté', 'Refusé'])->default('En attente');
             $table->timestamp('submitted_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();

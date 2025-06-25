@@ -40,6 +40,7 @@ class Property extends Model
         'category',
         'status',
         'views',
+        'additional_details',
     ];
 
     /**
@@ -55,6 +56,7 @@ class Property extends Model
         'category' => 'string',
         'status' => 'string',
         'views' => 'integer',
+        'additional_details' => 'string',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

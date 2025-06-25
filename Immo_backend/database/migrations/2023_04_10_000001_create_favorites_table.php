@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('appointments', function (Blueprint $table) {
-            $table->id('appointment_id');
-            $table->foreignId('property_id')->constrained('properties', 'property_id')->cascadeOnDelete()->cascadeOnUpdate();
+        Schema::create('favorites', function (Blueprint $table) {
+            $table->id('favorite_id');
             $table->foreignId('user_id')->constrained('users', 'user_id')->cascadeOnDelete()->cascadeOnUpdate();
-            $table->dateTime('appointment_date');
-            $table->text('comments')->nullable();
-            $table->enum('confirmation_status', ['En attente', 'Confirmé', 'Annulé'])->default('En attente');
+            $table->foreignId('property_id')->constrained('properties', 'property_id')->cascadeOnDelete()->cascadeOnUpdate();
             $table->timestamp('created_at')->useCurrent();
+            
+            // Add a unique constraint to prevent duplicate favorites
+            $table->unique(['user_id', 'property_id'], 'unique_favorite');
         });
     }
 
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('appointments');
+        Schema::dropIfExists('favorites');
     }
-};
+}; 

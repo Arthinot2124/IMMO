@@ -248,7 +248,7 @@ class UserController extends Controller
         );
 
         // Construire le lien de réinitialisation
-        $frontendUrl = config('app.frontend_url') ?: 'http://192.168.8.192:5173';
+        $frontendUrl = config('app.frontend_url') ?: 'http://192.168.43.33:5173';
         $resetLink = $frontendUrl . '/login?token=' . $token . '&email=' . urlencode($user->email ?? $user->phone);
 
         // Envoyer l'email

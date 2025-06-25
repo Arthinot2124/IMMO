@@ -93,6 +93,7 @@ class PropertyController extends Controller
             'transaction_type' => 'required|in:AHOFA,AMIDY',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
+            'additional_details' => 'nullable|string',
         ]);
 
         // Ajouter l'ID utilisateur par défaut s'il n'est pas fourni
@@ -137,6 +138,7 @@ class PropertyController extends Controller
             'transaction_type' => 'sometimes|required|in:AHOFA,AMIDY',
             'category' => 'nullable|in:LITE,ESSENTIEL,PREMIUM',
             'status' => 'nullable|in:Disponible,Réservé,Vendu,Loué',
+            'additional_details' => 'nullable|string',
         ]);
 
         $property->update($validated);

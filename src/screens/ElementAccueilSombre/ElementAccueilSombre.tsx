@@ -14,8 +14,8 @@ const CountUp = ({ value }: { value: number }) => {
   const [count, setCount] = React.useState(0);
 
   useEffect(() => {
-    const duration = 2000; // 2 seconds
-    const steps = 60; // 60 steps for smooth animation
+    const duration = 2000;
+    const steps = 60;
     const increment = value / steps;
     const interval = duration / steps;
 

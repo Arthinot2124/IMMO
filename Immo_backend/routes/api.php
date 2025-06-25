@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\AdCampaignController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\CouponController;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,6 +106,12 @@ Route::apiResource('ad-campaigns', AdCampaignController::class);
 Route::get('/users/{admin}/ad-campaigns', [AdCampaignController::class, 'adminCampaigns']);
 Route::get('/ad-campaigns/active', [AdCampaignController::class, 'activeCampaigns']);
 
+// Coupons
+Route::apiResource('coupons', CouponController::class);
+Route::post('/coupons/validate', [CouponController::class, 'validateCoupon']);
+Route::post('/coupons/apply', [CouponController::class, 'applyCoupon']);
+Route::post('/coupons/generate-batch', [CouponController::class, 'generateBatch']);
+
 // Dashboard data (pour admin)
 Route::get('/dashboard/stats', function (Request $request) {
     // Get dashboard statistics
@@ -120,6 +127,9 @@ Route::get('/dashboard/stats', function (Request $request) {
         'pending_property_requests' => \App\Models\PropertyRequest::where('status', 'En attente')->count(),
         'recent_orders' => \App\Models\Order::with(['user', 'property'])->orderBy('order_date', 'desc')->take(5)->get(),
         'recent_properties' => \App\Models\Property::orderBy('created_at', 'desc')->take(5)->get(),
+        'total_coupons' => \App\Models\Coupon::count(),
+        'used_coupons' => \App\Models\Coupon::where('is_used', true)->count(),
+        'unused_coupons' => \App\Models\Coupon::where('is_used', false)->count(),
     ];
     
     return response()->json([

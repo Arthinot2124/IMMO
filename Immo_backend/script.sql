@@ -93,6 +93,7 @@ CREATE TABLE appointments (
     property_id INT NOT NULL,
     user_id INT NOT NULL,
     appointment_date DATETIME NOT NULL,
+    comments TEXT,
     confirmation_status ENUM('En attente', 'Confirmé', 'Annulé') DEFAULT 'En attente',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_appointment_property FOREIGN KEY (property_id) REFERENCES properties(property_id)
@@ -177,8 +178,3 @@ CREATE TABLE property_views (
     CONSTRAINT fk_view_user FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
-
--- Insertion d'utilisateurs
-INSERT INTO users (role_id, full_name, email, phone, address, password_hash) VALUES
-(1, 'Rakoto Admin', 'admin@tafoimmo.mg', '0341234567', 'Antananarivo, Madagascar', '$2a$10$N.zmdr9k7uOCQb376NoUnuTa.8tqrwBYg8n9zesdxhbXVccULX1kW'), -- mdp: admin123
-

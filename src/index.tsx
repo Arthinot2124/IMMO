@@ -26,7 +26,8 @@ import {
   UserManagement as UserManagementAdmin, 
   AppointmentManagement as AppointmentManagementAdmin, 
   PropertyRequestApproval as PropertyRequestApprovalAdmin,
-  OrderManagement as OrderManagementAdmin 
+  OrderManagement as OrderManagementAdmin,
+  CouponManagement as CouponManagementAdmin 
 } from "./screens/Admin";
 
 createRoot(document.getElementById("app") as HTMLElement).render(
@@ -106,6 +107,14 @@ createRoot(document.getElementById("app") as HTMLElement).render(
           element={
             <ProtectedRoute requiredRole="admin">
               <OrderManagementAdmin />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/coupons" 
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <CouponManagementAdmin />
             </ProtectedRoute>
           } 
         />
