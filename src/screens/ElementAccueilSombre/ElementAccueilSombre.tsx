@@ -322,7 +322,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
       {/* Main Content Container */}
       <div className="relative mx-auto px-6 sm:px-8 md:px-12 pt-10 sm:pt-12 md:pt-16 pb-6 sm:pb-8 md:pb-10 small-screen-container">
         {/* Header Section */}
-        <div className="flex justify-between items-start mb-14 sm:mb-18 animate-on-mount small-screen-header">
+        <div className="flex justify-between items-start mb-10 sm:mb-12 animate-on-mount small-screen-header">
           <div>
             <h1 className={`text-5xl sm:text-4xl md:text-5xl lg:text-[80px] font-bold leading-tight ml-4 sm:ml-6 md:ml-8`} style={{ color: titleStatsColor }}>
               Salut,
@@ -335,7 +335,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
 
         {/* Welcome Card */}
         <div 
-          className="relative rounded-3xl p-6 sm:p-8 mb-8 sm:mb-12 animate-on-mount h-[180px] sm:h-[220px] md:h-[260px] small-screen-welcome-card"
+          className="relative rounded-2xl p-6 sm:p-8 mb-4 sm:mb-10 animate-on-mount h-[180px] sm:h-[220px] md:h-[260px] small-screen-welcome-card"
           style={{ 
             backgroundColor: cardBgColor, 
             animationDelay: '100ms',
@@ -434,7 +434,7 @@ export const ElementAccueilSombre = (): JSX.Element => {
         </div>
 
         {/* Feature Cards Grid */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mb-4 small-screen-grid">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 small-screen-grid">
           {/* Sell/Rent Card */}
           <Card 
             style={{ 
@@ -636,10 +636,14 @@ export const ElementAccueilSombre = (): JSX.Element => {
               </div>
             </CardContent>
           </Card>
+         </div>
+        
+        {/* Bottom Line */}
+        <div className="flex justify-center w-full">
+          <div className={`h-[2px] ${isLightMode ? "bg-[#0150BC]" : "bg-white"} mt-4 sm:mt-12 md:mt-16 max-w-[16rem] sm:max-w-[20rem] md:max-w-[26rem] w-full animate-on-mount small-screen-bottom-line`} style={{animationDelay: '700ms'}}></div>
         </div>
 
-        {/* Bottom Line */}
-        <div className={`w-full h-[2px] ${isLightMode ? "bg-[#0150BC]" : "bg-white"} mt-20 sm:mt-24 md:mt-32 mx-auto max-w-[16rem] sm:max-w-[20rem] md:max-w-[26rem] animate-on-mount small-screen-bottom-line`} style={{animationDelay: '700ms'}}></div>
+       
       </div>
     </div>
   );

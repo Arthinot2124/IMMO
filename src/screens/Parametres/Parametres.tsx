@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BellIcon, HomeIcon, SettingsIcon, UserIcon, LogOutIcon, Edit2Icon, SaveIcon, AlertCircleIcon, XIcon, SunIcon, MoonIcon } from "lucide-react";
+import { BellIcon, HomeIcon, SettingsIcon, UserIcon, LogOutIcon, Edit2Icon, SaveIcon, AlertCircleIcon, XIcon, SunIcon, MoonIcon, LayoutDashboardIcon } from "lucide-react";
 import authService, { UserData } from "../../services/authService";
 import apiService from "../../services/apiService";
 import { getMediaUrl } from "../../config/api";
@@ -405,7 +405,7 @@ export const Parametres = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex justify-between items-center py-2 xs:py-4 mb-8 xs:mb-10"
+          className="flex justify-between items-center py-2 xs:py-4 mb-4 xs:mb-6"
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
@@ -449,7 +449,7 @@ export const Parametres = (): JSX.Element => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-8 ${cardBorder}`}
+          className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-4 ${cardBorder}`}
         >
           <div className="flex items-center justify-between mb-6">
             <h2 className={`text-xl sm:text-2xl md:text-3xl font-bold ${textPrimaryColor}`}>Mon Profil</h2>
@@ -482,9 +482,9 @@ export const Parametres = (): JSX.Element => {
             )}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-6 sm:gap-10">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-5">
             <div className="flex flex-col items-center">
-              <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full ${isLightMode ? "bg-[#0150BC]/10" : "bg-[#59e0c5]/20"} border-4 ${borderColor} flex items-center justify-center mb-3 overflow-hidden relative`}>
+              <div className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full ${isLightMode ? "bg-[#0150BC]/10" : "bg-[#59e0c5]/20"} border-4 ${borderColor} flex items-center justify-center overflow-hidden relative`}>
                 {imagePreview ? (
                   <>
                     <img
@@ -495,7 +495,9 @@ export const Parametres = (): JSX.Element => {
                    
                   </>
                 ) : (
-                  <UserIcon className={`w-14 h-14 ${textColor}`} />
+                  <UserIcon 
+                   onClick={openFileSelector}
+                   className={`w-14 h-14 ${textColor}`} />
                 )}
               </div>
               <input
@@ -529,7 +531,7 @@ export const Parametres = (): JSX.Element => {
               </label>
             </div>
 
-            <div className="flex-1 space-y-4">
+            <div className="flex-1 space-y-2">
               <div>
                 <label className={`block text-sm ${textColor} mb-1`}>Nom Complet</label>
                 {isEditing ? (
@@ -600,25 +602,16 @@ export const Parametres = (): JSX.Element => {
           transition={{ duration: 0.5, delay: 0.3 }}
           className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-8 ${cardBorder}`}
         >
-          <h3 className={`text-lg sm:text-xl font-semibold ${textPrimaryColor} mb-4`}>Sécurité du compte</h3>
+          {/* <h3 className={`text-lg sm:text-xl font-semibold ${textPrimaryColor} mb-4`}>Sécurité du compte</h3> */}
           
           <button 
             className={`w-full flex items-center justify-between ${textPrimaryColor} ${darkBgColor} p-3 rounded-lg mb-3 hover:opacity-90`}
             onClick={navigateToDashboard}
           >
             <span>Mon tableau de bord</span>
-            <span className={`${buttonPrimaryBg} ${buttonPrimaryText} px-2 py-0.5 rounded text-xs`}>Nouveau</span>
+            <LayoutDashboardIcon size={26} className={`${buttonPrimaryBg} ${buttonPrimaryText} p-1 rounded`} />
           </button>
           
-          <button className={`w-full flex items-center justify-between ${textPrimaryColor} ${darkBgColor} p-3 rounded-lg mb-3 hover:opacity-90`}>
-            <span>Changer le mot de passe</span>
-            <SettingsIcon size={20} className={textColor} />
-          </button>
-          
-          <button className={`w-full flex items-center justify-between ${textPrimaryColor} ${darkBgColor} p-3 rounded-lg mb-3 hover:opacity-90`}>
-            <span>Paramètres de notification</span>
-            <BellIcon size={20} className={textColor} />
-          </button>
           
           <button 
             onClick={showLogoutConfirmation}

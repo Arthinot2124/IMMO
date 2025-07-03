@@ -185,7 +185,7 @@ export const CategorySelection = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="p-4 z-50 mb-8"
+          className="p-4 z-50"
         >
           <div className="flex gap-3">
             <HomeIcon 
@@ -201,13 +201,13 @@ export const CategorySelection = (): JSX.Element => {
         </motion.header>
         
         <div className="flex-grow flex items-center justify-center">
-          <div className="max-w-5xl mx-auto w-full px-4 py-4">
+          <div className="max-w-5xl mx-auto w-full px-4">
             {/* Titre de la page */}
             <motion.div 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-center mb-10 -mt-14"
+              className="text-center mb-6"
             >
               <h1 className={`text-2xl md:text-3xl font-bold ${textPrimaryColor}`}>
                 Choisissez votre catégorie
@@ -261,14 +261,7 @@ export const CategorySelection = (): JSX.Element => {
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
                       <span>Visite virtuelle : 3 000 Ar</span>
                     </motion.li>
-                    <motion.li 
-                      className="flex items-start"
-                      variants={listItemVariants}
-                      custom={1}
-                    >
-                      <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Caution : 50 % du loyer</span>
-                    </motion.li>
+                
                     <motion.li 
                       className="flex items-start"
                       variants={listItemVariants}
@@ -283,7 +276,7 @@ export const CategorySelection = (): JSX.Element => {
                       custom={3}
                     >
                       <CheckIcon className={`${textColor} w-2.5 h-2.5 mt-0.5 mr-1 flex-shrink-0`} />
-                      <span>Sans engagement: 10 %/mois prélevés</span>
+                      <span>Sans engagement</span>
                     </motion.li>
                   </ul>
                   <motion.button 
@@ -495,12 +488,12 @@ export const CategorySelection = (): JSX.Element => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.6 }}
-              className="text-center mt-4"
+              className="text-center mb-10"
             >
-              <p className={`${textSecondaryColor} text-[10px]`}>
+              {/* <p className={`${textSecondaryColor} text-[10px]`}>
                 Chaque catégorie offre des niveaux différents de visibilité et de fonctionnalités.<br />
                 Vous pouvez modifier la catégorie ultérieurement.
-              </p>
+              </p> */}
             </motion.div>
           </div>
         </div>

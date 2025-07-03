@@ -105,11 +105,11 @@ export const PropertyRequest = (): JSX.Element => {
     routePraticable: false
   });
   
-  // États pour contrôler les sections pliées/dépliées
+  // États pour contrôler les sections pliées/dépliées - par défaut toutes ouvertes
   const [sectionsExpanded, setSectionsExpanded] = useState({
-    caracteristiques: false,
-    pieces: false,
-    commodites: false
+    caracteristiques: true,
+    pieces: true,
+    commodites: true
   });
   const [activePropertyType, setActivePropertyType] = useState<string>("VILLA");
   const [ahofaFilter, setAhofaFilter] = useState<boolean>(true);
@@ -175,7 +175,7 @@ export const PropertyRequest = (): JSX.Element => {
     };
   }, [isLightMode]);
   
-  // Mettre à jour la description quand les caractéristiques changent
+  // Mettre à jour la description quand les caractéristiques ou le type de bien changent
   useEffect(() => {
     const newDescription = generateDescription();
     setFormData(prev => ({
@@ -184,7 +184,7 @@ export const PropertyRequest = (): JSX.Element => {
       // Assurez-vous que additional_details reste ce que l'utilisateur a entré
       additional_details: prev.additional_details
     }));
-  }, [features]);
+  }, [features, activePropertyType]);
 
   // Fonction pour basculer entre le mode clair et sombre
   const toggleLightMode = () => {
@@ -262,10 +262,23 @@ export const PropertyRequest = (): JSX.Element => {
   // Gérer le changement de type de propriété (VILLA/TERRAIN)
   const handlePropertyTypeChange = (type: string) => {
     setActivePropertyType(type);
+    
+    // Pour TANY, on sélectionne automatiquement AMIDY
+    if (type === "TERRAIN") {
+      setAmidyFilter(true);
+      setAhofaFilter(false);
+      setFormData({
+        ...formData,
+        property_type: type,
+        transaction_type: "AMIDY"
+      });
+    } else {
+      // La mise à jour de formData est déjà gérée par l'effet useEffect qui surveille activePropertyType
     setFormData({
       ...formData,
       property_type: type
     });
+    }
   };
 
   // Gérer le changement de type de transaction (AHOFA/AMIDY)
@@ -326,6 +339,32 @@ export const PropertyRequest = (): JSX.Element => {
   const generateDescription = () => {
     let description = "";
     
+    // Si c'est un terrain, description simplifiée
+    if (activePropertyType === "TERRAIN") {
+      // Commodités spécifiques aux terrains
+      const terrainFeatures = [];
+      if (features.eauCourante) terrainFeatures.push("Eau courante");
+      if (features.electriciteJirama) terrainFeatures.push("Électricité Jirama");
+      if (features.foragePuits) terrainFeatures.push("Forage/Puits");
+      if (features.reservoirEau) terrainFeatures.push("Réservoir d'eau");
+      if (features.chauffeEau) terrainFeatures.push("Chauffe-eau");
+      if (features.internetDisponible) terrainFeatures.push("Internet disponible");
+      if (features.reseauMobileFort) terrainFeatures.push("Bon réseau mobile");
+      if (features.accesVehicule) terrainFeatures.push("Accès véhicule");
+      if (features.routePraticable) terrainFeatures.push("Route praticable");
+      
+      description = "Terrain";
+      
+      if (terrainFeatures.length > 0) {
+        description += " avec " + terrainFeatures.join(", ") + ".";
+      } else {
+        description += ".";
+      }
+      
+      return description;
+    }
+    
+    // Pour une villa (TRANO), description complète
     // Caractéristiques générales
     const generalFeatures = [];
     if (features.meuble) generalFeatures.push("Meublé");
@@ -339,23 +378,23 @@ export const PropertyRequest = (): JSX.Element => {
     if (features.accesVehicule) generalFeatures.push("Accès véhicule");
     if (features.portailSecurite) generalFeatures.push("Portail/Sécurité");
     
+    // Description simplifiée sans émojis ni titres formatés
     if (generalFeatures.length > 0) {
-      description += "📋 Caractéristiques générales: " + generalFeatures.join(", ") + ".\n\n";
+      description += generalFeatures.join(", ") + ". ";
     }
     
     // Détails des pièces
-    description += `🏠 Détails des pièces: ${features.nombreChambres} chambre(s), ${features.nombreSallesDeBain} salle(s) de bain`;
+    description += `${features.nombreChambres} chambre(s), ${features.nombreSallesDeBain} salle(s) de bain`;
     
     // WC
     const wcFeatures = [];
     if (features.wcInterne) wcFeatures.push("interne");
     if (features.wcExterne) wcFeatures.push("externe");
     
-    
     if (wcFeatures.length > 0) {
       description += `, WC ${wcFeatures.join(" et ")}`;
     }
-    description += ".\n\n";
+    description += ". ";
     
     // Autres commodités
     const otherFeatures = [];
@@ -369,7 +408,7 @@ export const PropertyRequest = (): JSX.Element => {
     if (features.routePraticable) otherFeatures.push("Route praticable");
     
     if (otherFeatures.length > 0) {
-      description += "🔌 Commodités: " + otherFeatures.join(", ") + ".";
+      description += otherFeatures.join(", ") + ".";
     }
     
     return description;
@@ -538,7 +577,7 @@ export const PropertyRequest = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex justify-between items-center py-2 xs:py-4 mb-6 xs:mb-10"
+          className="flex justify-between items-center py-2 xs:py-4 mb-4 xs:mb-8"
         >
           <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-colors" onClick={() => navigate('/category-selection')}>
             <img 
@@ -566,20 +605,20 @@ export const PropertyRequest = (): JSX.Element => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-6 ${cardBorder}`}
+          className={`${cardBgColor} rounded-2xl p-5 sm:p-8 ${cardBorder} mb-4`}
         >
-          <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold ${textPrimaryColor} mb-6`}>
+          <h1 className={`text-center text-lg sm:text-xl md:text-2xl font-bold ${textPrimaryColor} mb-5`}>
             Soumettre votre Bien immobilier
           </h1>
           
           {submitSuccess ? (
-            <div className={`${successBgColor} border border-green-500 rounded-lg p-4 mb-6`}>
+            <div className={`${successBgColor} border border-green-500 rounded-lg p-4 mb-4`}>
               <p className={successTextColor + " text-center"}>
                 Votre demande a été soumise avec succès! L'agence vous contactera bientôt.
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {error && (
                 <div className={`${errorBgColor} border border-red-500 rounded-lg p-4 mb-4`}>
                   <p className={`${errorTextColor} text-center`}>{error}</p>
@@ -633,13 +672,14 @@ export const PropertyRequest = (): JSX.Element => {
                     className="flex items-center gap-2 cursor-pointer" 
                     onClick={handleAhofaFilterChange}
                   >
-                    <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
+                    <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${
                       ahofaFilter 
-                        ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
+                        ? `${borderColor}` 
                         : `border-2 ${borderColor}`
                     }`}>
+                      {ahofaFilter && <CheckCircleIcon className={`w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 ${textColor}`} />}
                     </div>
-                    <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+                    <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap ${ahofaFilter ? 'font-bold' : 'font-normal'}`}>
                       AHOFA (Location)
                     </span>
                   </div>
@@ -648,13 +688,14 @@ export const PropertyRequest = (): JSX.Element => {
                     className="flex items-center gap-2 cursor-pointer" 
                     onClick={handleAmidyFilterChange}
                   >
-                    <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
+                    <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${
                       amidyFilter 
-                        ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
+                        ? `${borderColor}` 
                         : `border-2 ${borderColor}`
                     }`}>
+                      {amidyFilter && <CheckCircleIcon className={`w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 ${textColor}`} />}
                     </div>
-                    <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+                    <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap ${amidyFilter ? 'font-bold' : 'font-normal'}`}>
                       AMIDY (Achat)
                     </span>
                   </div>
@@ -741,8 +782,8 @@ export const PropertyRequest = (): JSX.Element => {
                 </label>
                 
                 <div className={`${cardBgColor} border ${borderColor} rounded-lg p-4 divide-y ${borderColor}`}>
-                  {/* Caractéristiques générales */}
-                  <div className="pb-4">
+                  {/* Caractéristiques générales - S'affiche uniquement pour VILLA/TRANO */}
+                  <div className={`pb-4 ${activePropertyType === "TERRAIN" ? "hidden" : ""}`}>
                     <div 
                       className={`flex items-center justify-between cursor-pointer mb-3`}
                       onClick={() => toggleSection('caracteristiques')}
@@ -898,8 +939,8 @@ export const PropertyRequest = (): JSX.Element => {
                     </div>
                   </div>
                   
-                  {/* Détails des pièces */}
-                  <div className="py-4">
+                  {/* Détails des pièces - S'affiche uniquement pour VILLA/TRANO */}
+                  <div className={`py-4 ${activePropertyType === "TERRAIN" ? "hidden" : ""}`}>
                     <div 
                       className={`flex items-center justify-between cursor-pointer mb-3`}
                       onClick={() => toggleSection('pieces')}
@@ -1022,14 +1063,16 @@ export const PropertyRequest = (): JSX.Element => {
                     </div>
                   </div>
                   
-                  {/* Autres commodités */}
+                  {/* Autres commodités - Titre adapté selon le type de bien */}
                   <div className="pt-4">
                     <div 
                       className={`flex items-center justify-between cursor-pointer mb-3`}
                       onClick={() => toggleSection('commodites')}
                     >
                       <h3 className={`text-base font-semibold ${textPrimaryColor}`}>
-                        ✅ Autres commodités :
+                        {activePropertyType === "TERRAIN" ? 
+                          "✅ Caractéristiques du terrain :" : 
+                          "✅ Autres commodités :"}
                       </h3>
                       {sectionsExpanded.commodites ? 
                         <ChevronUp className={`w-5 h-5 ${textColor}`} /> : 

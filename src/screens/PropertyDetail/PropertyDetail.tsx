@@ -106,6 +106,7 @@ export const PropertyDetail = (): JSX.Element => {
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState<string | null>(null);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 361);
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -648,7 +649,7 @@ export const PropertyDetail = (): JSX.Element => {
       console.error("Erreur lors de la validation du coupon:", error);
       
       // Fallback pour la démo : codes de secours en cas d'erreur d'API
-      if (couponCode === "TAFO2023" || couponCode === "ADMIN123" || couponCode === "123456") {
+      if (couponCode === "Arthi2124") {
         setIsVideoLocked(false);
         setShowCouponModal(false);
         
@@ -746,6 +747,18 @@ export const PropertyDetail = (): JSX.Element => {
     );
   };
 
+  // Ajout d'un effet pour détecter les changements de taille d'écran
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 361);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -819,7 +832,7 @@ export const PropertyDetail = (): JSX.Element => {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="mb-2 sm:mb-4"
             >
-              <div className={`relative ${imageBgColor} rounded-2xl overflow-hidden h-[200px] xs:h-[250px] sm:h-[350px] md:h-[450px] ${imageBorder}`}>
+              <div className={`relative ${imageBgColor} rounded-2xl overflow-hidden ${isSmallScreen ? 'h-[180px]' : 'h-[200px]'} xs:h-[250px] sm:h-[350px] md:h-[450px] ${imageBorder}`}>
                 {videos.length > 0 ? (
                   isVideoLocked ? (
                     // Afficher le cadenas et l'overlay de verrouillage
@@ -905,31 +918,31 @@ export const PropertyDetail = (): JSX.Element => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-4 sm:mb-6 ${cardBorder}`}
+              className={`${cardBgColor} rounded-2xl p-2 sm:p-8 mb-4 sm:mb-6 ${cardBorder}`}
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start">
                 <div>
-                  <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold ${textPrimaryColor} mb-2`}>{property.title}</h1>
+                  <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold ${textPrimaryColor}`}>{property.title}</h1>
                   <p className={`${textColor} text-lg sm:text-xl font-semibold`}>{formatPrice(property.price)}</p>
                   <p className={`${textSecondaryColor} text-sm`}>{property.location || "Emplacement non spécifié"}</p>
                 </div>
                 {renderRatingSection()}
               </div>
               
-              <div className={`border-t ${borderColorLight} my-4 pt-4`}>
+              <div className={`border-t ${borderColorLight} my-2`}>
                 <h3 className={`${textColor} font-semibold mb-2`}>Description</h3>
                 <p className={`${textSecondaryColor} text-sm`}>{property.description || "Aucune description disponible."}</p>
               </div>
               
               {/* Affichage des détails supplémentaires s'ils existent */}
               {property.additional_details && (
-                <div className={`border-t ${borderColorLight} my-4 pt-4`}>
+                <div className={`border-t ${borderColorLight} my-2`}>
                   <h3 className={`${textColor} font-semibold mb-2`}>Détails supplémentaires</h3>
                   <p className={`${textSecondaryColor} text-sm`}>{property.additional_details}</p>
                 </div>
               )}
               
-              <div className={`border-t ${borderColorLight} my-4 pt-4`}>
+              <div className={`border-t ${borderColorLight} my-2`}>
                 <h3 className={`${textColor} font-semibold mb-2`}>Caractéristiques</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {/* Caractéristiques extraites des propriétés */}
@@ -960,49 +973,49 @@ export const PropertyDetail = (): JSX.Element => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8"
+              className="flex flex-col gap-4 mb-8"
             >
               {property.status === "Réservé" || property.status === "Vendu" || property.status === "Loué" ? (
-                <div className={`col-span-full text-center ${isLightMode ? "text-red-600" : "text-red-400"} font-semibold py-4 ${isLightMode ? "bg-red-50" : "bg-red-900/20"} rounded-lg border ${isLightMode ? "border-red-200" : "border-red-800/30"}`}>
+                <div className={`w-full text-center ${isLightMode ? "text-red-600" : "text-red-400"} font-semibold py-4 ${isLightMode ? "bg-red-50" : "bg-red-900/20"} rounded-lg border ${isLightMode ? "border-red-200" : "border-red-800/30"}`}>
                   {property.status === "Réservé" && "Le bien que vous consultez est déjà Réservé"}
                   {property.status === "Vendu" && "Le bien que vous consultez est déjà Vendu"}
                   {property.status === "Loué" && "Le bien que vous consultez est déjà Loué"}
                 </div>
               ) : (
-                <>
+                <div className="flex flex-row gap-4">
                   <button 
-                    className={`flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
+                    className={`flex-1 flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
                     onClick={() => navigate(`/property/${propertyId}/book`)}
                   >
                     <CalendarIcon size={20} />
-                    <span>Réserver une visite</span>
+                    <span>{isSmallScreen ? "Visite" : "Réserver une visite"}</span>
                   </button>
                   
                   <button 
-                    className={`flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
+                    className={`flex-1 flex items-center justify-center gap-2 ${buttonPrimaryBg} ${buttonPrimaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
                     onClick={() => navigate(`/property/${propertyId}/order`)}
                   >
                     {property.transaction_type === "AHOFA" ? (
                       <>
                         <HomeIcon size={20} />
-                        <span>Louer ce bien</span>
+                        <span>{isSmallScreen ? "Louer" : "Louer ce bien"}</span>
                       </>
                     ) : (
                       <>
                         <HomeIcon size={20} />
-                        <span>Acheter ce bien</span>
+                        <span>{isSmallScreen ? "Acheter" : "Acheter ce bien"}</span>
                       </>
                     )}
                   </button>
-                </>
+                </div>
               )}
               
               <button 
-                className={`flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"} ${property.status === "Réservé" || property.status === "Vendu" || property.status === "Loué" ? "col-span-full" : ""}`}
+                className={`w-full flex items-center justify-center gap-2 ${buttonSecondaryBg} ${buttonSecondaryText} font-bold py-3 rounded-lg hover:opacity-90 transition-colors border ${isLightMode ? "border-[#0150BC]" : "border-transparent"}`}
                 onClick={() => navigate(`/property/${propertyId}/contact`)}
               >
                 <MessageSquareIcon size={20} className={textColor} />
-                <span>Contacter l'agence</span>
+                <span>"Contacter l'agence"</span>
               </button>
             </motion.div>
 

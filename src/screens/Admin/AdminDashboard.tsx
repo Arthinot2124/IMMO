@@ -300,47 +300,48 @@ export const AdminDashboard = (): JSX.Element => {
   };
 
   // Modifier les cards de navigation pour ajouter la gestion des commandes
-  const adminCards = [
+  // Générer dynamiquement les cartes d'administration pour que les icônes s'adaptent au mode
+  const getAdminCards = () => [
     {
       id: 1,
       title: "Propriétés",
       description: "Gérer les annonces",
-      icon: <FileTextIcon className="h-6 w-6 text-blue-600" />,
+      icon: <FileTextIcon className={`h-6 w-6 ${textColor}`} />,
       link: "/admin/properties"
     },
     {
       id: 2,
       title: "Utilisateurs",
       description: "Gérer les comptes",
-      icon: <UsersIcon className="h-6 w-6 text-blue-600" />,
+      icon: <UsersIcon className={`h-6 w-6 ${textColor}`} />,
       link: "/admin/users"
     },
     {
       id: 3,
       title: "Demandes de mise en ligne",
       description: "Approuver les requêtes",
-      icon: <PlusCircleIcon className="h-6 w-6 text-blue-600" />,
+      icon: <PlusCircleIcon className={`h-6 w-6 ${textColor}`} />,
       link: "/admin/property-requests"
     },
     {
       id: 4,
       title: "Rendez-vous",
       description: "Gérer les visites",
-      icon: <CalendarIcon className="h-6 w-6 text-blue-600" />,
+      icon: <CalendarIcon className={`h-6 w-6 ${textColor}`} />,
       link: "/admin/appointments"
     },
     {
       id: 5,
       title: "Commandes",
       description: "Gérer les transactions",
-      icon: <CreditCardIcon className="h-6 w-6 text-blue-600" />,
+      icon: <CreditCardIcon className={`h-6 w-6 ${textColor}`} />,
       link: "/admin/orders"
     },
     {
       id: 6,
       title: "Coupons",
       description: "Accès aux vidéos",
-      icon: <TicketIcon className="h-6 w-6 text-blue-600" />,
+      icon: <TicketIcon className={`h-6 w-6 ${textColor}`} />,
       link: "/admin/coupons"
     }
   ];
@@ -573,24 +574,24 @@ export const AdminDashboard = (): JSX.Element => {
                     <h2 className={`text-xl font-semibold mb-4 ${textPrimaryColor}`}>Accès Rapides</h2>
                   </div>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {adminCards.map(card => (
+                    {getAdminCards().map(card => (
                       <Link
                         key={card.id}
                         to={card.link}
-                        className="bg-white overflow-hidden shadow rounded-lg transition-all hover:shadow-lg"
+                        className={`${cardBgColor} overflow-hidden shadow rounded-lg transition-all hover:shadow-lg ${cardBorder}`}
                       >
                         <div className="px-4 py-5 sm:p-6">
                           <div className="flex items-center">
-                            <div className="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                            <div className={`flex-shrink-0 ${iconBgColor} rounded-md p-3`}>
                               {card.icon}
                             </div>
                             <div className="ml-5 w-0 flex-1">
                               <dl>
-                                <dt className="text-sm font-medium text-gray-500 truncate">
+                                <dt className={`text-sm font-medium ${textSecondaryColor} truncate`}>
                                   {card.title}
                                 </dt>
                                 <dd>
-                                  <div className="text-lg font-medium text-gray-900">
+                                  <div className={`text-lg font-medium ${textPrimaryColor}`}>
                                     {card.description}
                                   </div>
                                 </dd>
@@ -598,9 +599,9 @@ export const AdminDashboard = (): JSX.Element => {
                             </div>
                           </div>
                         </div>
-                        <div className="bg-gray-50 px-4 py-4 sm:px-6">
+                        <div className={`${darkBgColor} px-4 py-4 sm:px-6`}>
                           <div className="text-sm">
-                            <p className="font-medium text-blue-600 hover:text-blue-500">
+                            <p className={`font-medium ${textColor} hover:opacity-80`}>
                               Gérer {card.title.toLowerCase()} &rarr;
                             </p>
                           </div>

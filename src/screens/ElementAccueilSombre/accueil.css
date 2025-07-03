@@ -232,8 +232,8 @@
    */
   .small-screen-bottom-line {
     max-width: 10rem !important; /* Largeur maximale réduite */
-    margin-top: 0.75rem !important; /* Marge supérieure très réduite */
-    margin-bottom: 0.5rem !important; /* Marge inférieure réduite */
+    margin-top: 1.5rem !important;
+    /* margin-bottom: 0.5rem !important; Marge inférieure réduite */
     display: block !important; /* Forcer l'affichage */
     height: 2px !important; /* Assurer la hauteur */
     opacity: 1 !important; /* Forcer l'opacité */
@@ -258,21 +258,29 @@
 /* Règles spécifiques pour les écrans de 392dp */
 @media screen and (max-width: 392px) {
   .small-screen-stats h2 {
-    font-size: 1rem !important; /* Taille augmentée pour le titre "Tafo Immo en quelques chiffres" */
+    font-size: 0.9rem !important; /* Taille augmentée pour le titre "Tafo Immo en quelques chiffres" */
   }
 
   .small-screen-stats .border-line {
     width: 10rem !important; /* Ligne plus large au-dessus des stats */
   }
 
-  /* Fixation de la ligne du bas */
-  .small-screen-bottom-line {
-    position: fixed !important;
-    bottom: 1rem !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 10rem !important;
-    margin: 0 !important;
-    z-index: 100 !important;
+  .small-screen-header {
+    margin-bottom: 1rem !important; /* Marge supérieure très réduite */
   }
+ 
+  .small-screen-welcome-card {
+    padding: 0.5rem !important; 
+    height: 130px !important; 
+  }
+  .small-screen-welcome-card .icons svg {
+    width: 1.7rem !important; /* Largeur augmentée des icônes */
+    height: 1.7rem !important; /* Hauteur augmentée des icônes */
+  }
+  .small-screen-header h1 {
+    font-size: 2.2rem !important; /* Taille de police réduite pour le titre principal */
+    line-height: 1.1 !important; /* Espacement des lignes plus serré */
+    
+  }
+
 }

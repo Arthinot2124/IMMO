@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { BellIcon, HomeIcon, SettingsIcon, HomeIcon as HouseIcon, CalendarIcon, HeartIcon, CheckIcon, XIcon, AlertCircleIcon, RefreshCwIcon, SunIcon, MoonIcon } from "lucide-react";
+import { BellIcon, HomeIcon, SettingsIcon, HomeIcon as HouseIcon, CalendarIcon, HeartIcon, CheckIcon, XIcon, AlertCircleIcon, RefreshCwIcon, SunIcon, MoonIcon, MoreVerticalIcon, TrashIcon } from "lucide-react";
 import notificationService, { Notification } from "../../services/notificationService";
 
 export const Notifications = (): JSX.Element => {
@@ -15,6 +15,7 @@ export const Notifications = (): JSX.Element => {
     const savedMode = localStorage.getItem('isLightMode');
     return savedMode !== null ? savedMode === 'true' : true;
   });
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Couleurs qui changent en fonction du mode
   const accentColor = isLightMode ? "#0150BC" : "#59e0c5";
@@ -233,6 +234,27 @@ export const Notifications = (): JSX.Element => {
     }
   };
 
+  // Supprimer toutes les notifications
+  const deleteAllNotifications = async () => {
+    try {
+      // Pour chaque notification, appeler l'API de suppression
+      const promises = notifications.map(notification => 
+        notificationService.deleteNotification(notification.notification_id)
+      );
+      
+      await Promise.all(promises);
+      setNotifications([]);
+      setShowDropdown(false);
+    } catch (err) {
+      console.error("Erreur lors de la suppression de toutes les notifications:", err);
+      setError("Impossible de supprimer toutes les notifications.");
+    }
+  };
+
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown);
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -255,7 +277,7 @@ export const Notifications = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex justify-between items-center py-2 xs:py-4 mb-8 xs:mb-10"
+          className="flex justify-between items-center py-2 xs:py-4 mb-4 xs:mb-6"
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
@@ -301,27 +323,62 @@ export const Notifications = (): JSX.Element => {
           className={`${cardBgColor} rounded-2xl p-5 sm:p-8 mb-8 ${cardBorder}`}
         >
           <div className="flex justify-between items-center mb-6">
-            <h1 className={`text-xl sm:text-2xl font-bold ${textPrimaryColor}`}>Notifications</h1>
-            <div className="flex space-x-3">
+            <h1 className={`text-lg sm:text-xl font-bold ${textPrimaryColor}`}>Notifications</h1>
+            <div className="flex space-x-3 relative">
               <button 
                 onClick={fetchNotifications}
                 className={`text-sm ${textSecondaryColor} hover:${textColor} flex items-center`}
                 title="Rafraîchir"
               >
-                <RefreshCwIcon className="w-4 h-4 mr-1" />
-                Actualiser
+                {/* <RefreshCwIcon className="w-4 h-4 mr-1" />
+                Actualiser */}
               </button>
               
-              {notifications.some(n => !n.is_read) && (
+              <div className="relative">
                 <button 
-                  onClick={markAllAsRead}
-                  className={`text-sm ${textColor} hover:underline flex items-center`}
+                  onClick={toggleDropdown}
+                  className={`p-2 rounded-full ${showDropdown ? buttonPrimaryBg : darkBgColor} ${showDropdown ? buttonPrimaryText : textColor}`}
                 >
-                  <CheckIcon className="w-4 h-4 mr-1" />
-                Tout marquer comme lu
-              </button>
-            )}
-          </div>
+                  <MoreVerticalIcon size={18} />
+                </button>
+                
+                {showDropdown && (
+                  <div 
+                    className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg ${cardBgColor} ring-1 ring-black ring-opacity-5 z-50 ${cardBorder}`}
+                  >
+                    <div className="py-1" role="menu" aria-orientation="vertical">
+                      {notifications.some(n => !n.is_read) && (
+                        <button 
+                          onClick={() => {
+                            markAllAsRead();
+                            setShowDropdown(false);
+                          }}
+                          className={`block px-4 py-2 text-sm ${textColor} hover:${darkBgColor} w-full text-left flex items-center`}
+                          role="menuitem"
+                        >
+                          <CheckIcon className="w-4 h-4 mr-2" />
+                          Tout marquer comme lu
+                        </button>
+                      )}
+                      
+                      {notifications.length > 0 && (
+                        <button 
+                          onClick={() => {
+                            deleteAllNotifications();
+                            setShowDropdown(false);
+                          }}
+                          className={`block px-4 py-2 text-sm text-red-500 hover:${darkBgColor} w-full text-left flex items-center`}
+                          role="menuitem"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" />
+                          Tout supprimer
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Message d'erreur */}

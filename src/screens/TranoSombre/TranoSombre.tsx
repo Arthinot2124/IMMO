@@ -1,4 +1,4 @@
-import { HomeIcon, SettingsIcon } from "lucide-react";
+import { HomeIcon, SettingsIcon, CheckCircleIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -108,6 +108,11 @@ export const TranoSombre = (): JSX.Element => {
   const textSecondaryColor = isLightMode ? "text-gray-700" : "text-gray-300";
   const buttonHoverBg = isLightMode ? "hover:bg-[#0150BC]" : "hover:bg-[#59e0c5]";
   const buttonBg = isLightMode ? "bg-[#EFF6FF]" : "bg-[#1e293b]";
+  // Nouvelles variables avec les couleurs inversées
+  const invertedButtonBg = isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]";
+  const invertedButtonHoverBg = isLightMode ? "hover:bg-[#EFF6FF]" : "hover:bg-[#1e293b]";
+  const invertedTextColor = isLightMode ? "text-white" : "text-[#0f172a]";
+  const invertedTextHoverColor = isLightMode ? "hover:text-[#0150BC]" : "hover:text-[#59e0c5]";
   const buttonBorder = isLightMode ? "border border-[#0150BC]" : "";
   const buttonShadow = isLightMode ? "shadow-sm" : "";
   const borderColor = isLightMode ? "border-[#0150BC]" : "border-[#59e0c5]";
@@ -388,6 +393,13 @@ export const TranoSombre = (): JSX.Element => {
   // Gérer le changement de filtre
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter);
+    
+    // Si l'utilisateur sélectionne TERRAINS (TANY), sélectionne automatiquement AMIDY
+    if (filter === "TERRAINS") {
+      setAmidyFilter(true);
+      setAhofaFilter(false);
+    }
+    
     // Réinitialiser le carrousel à 0 pour afficher la première image du type actif
     setCurrentImageIndex(0);
     setCurrentPage(1);
@@ -659,7 +671,7 @@ export const TranoSombre = (): JSX.Element => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="flex justify-between items-center py-2 xs:py-4 mb-8 xs:mb-10 sticky top-0 z-20 bg-inherit"
+          className="flex justify-between items-center py-2 xs:py-4 mb-4 xs:mb-10 sticky top-0 z-20 bg-inherit"
         >
           <div className="flex gap-2 xs:gap-4">
             <HomeIcon 
@@ -788,13 +800,14 @@ export const TranoSombre = (): JSX.Element => {
                 className="flex items-center gap-2 cursor-pointer" 
                 onClick={handleAhofaFilterChange}
               >
-                <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
+                <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${
                   ahofaFilter 
-                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
+                    ? `${borderColor}` 
                     : `border-2 ${borderColor}`
                 }`}>
+                  {ahofaFilter && <CheckCircleIcon className={`w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 ${textColor}`} />}
                 </div>
-                <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+                <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap ${ahofaFilter ? 'font-bold' : 'font-normal'}`}>
                   AHOFA
                 </span>
               </div>
@@ -803,13 +816,14 @@ export const TranoSombre = (): JSX.Element => {
                 className="flex items-center gap-2 cursor-pointer" 
                 onClick={handleAmidyFilterChange}
               >
-                <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
+                <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${
                   amidyFilter 
-                    ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
+                    ? `${borderColor}` 
                     : `border-2 ${borderColor}`
                 }`}>
+                  {amidyFilter && <CheckCircleIcon className={`w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 ${textColor}`} />}
                 </div>
-                <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+                <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap ${amidyFilter ? 'font-bold' : 'font-normal'}`}>
                   AMIDY
                 </span>
               </div>
@@ -819,13 +833,14 @@ export const TranoSombre = (): JSX.Element => {
               className="flex items-center gap-2 cursor-pointer" 
               onClick={handlePriceFilterChange}
             >
-              <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full ${
+              <div className={`w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${
                 priceFilter 
-                  ? `${isLightMode ? "bg-[#0150BC]" : "bg-[#59e0c5]"}` 
+                  ? `${borderColor}` 
                   : `border-2 ${borderColor}`
               }`}>
+                {priceFilter && <CheckCircleIcon className={`w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 ${textColor}`} />}
               </div>
-              <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap`}>
+              <span className={`text-sm xs:text-base sm:text-xl ${textColor} whitespace-nowrap ${priceFilter ? 'font-bold' : 'font-normal'}`}>
                 + de {isEuro ? formatCurrency(10116000, true).replace('.00', '') : "10 116 000 Ar"}
               </span>
             </div>
@@ -864,7 +879,7 @@ export const TranoSombre = (): JSX.Element => {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="space-y-5 xs:space-y-6 sm:space-y-8 max-h-[calc(102vh-400px)] overflow-y-auto pr-2"
+          className="space-y-2 xs:space-y-4 sm:space-y-6 max-h-[calc(102vh-400px)] overflow-y-auto pr-2"
         >
           {!loading && properties.map((property) => (
             <motion.div
@@ -909,7 +924,7 @@ export const TranoSombre = (): JSX.Element => {
                   </div>
                   <div className="flex justify-end gap-1.5 xs:gap-2 sm:gap-3">
                     <button 
-                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
+                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${invertedButtonBg} ${invertedTextColor} rounded-full ${invertedButtonHoverBg} ${invertedTextHoverColor} transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
                       onClick={() => handlePreviewClick(property)}
                     >
                       Aperçu
@@ -919,7 +934,7 @@ export const TranoSombre = (): JSX.Element => {
                         incrementPropertyView(property.property_id);
                         navigate(`/property/${property.property_id}`);
                       }}
-                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${buttonBg} ${textColor} rounded-full ${buttonHoverBg} hover:text-white transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
+                      className={`px-2 xs:px-3 sm:px-4 py-0.5 xs:py-1 ${invertedButtonBg} ${invertedTextColor} rounded-full ${invertedButtonHoverBg} ${invertedTextHoverColor} transition-all ${buttonBorder} ${buttonShadow} text-[10px] xs:text-xs sm:text-sm`}
                     >
                       Visite virtuel
                     </button>
